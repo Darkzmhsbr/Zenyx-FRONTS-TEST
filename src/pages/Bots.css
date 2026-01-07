@@ -1,0 +1,127 @@
+.bots-container {
+  padding: var(--spacing-xl);
+  margin-top: var(--header-height);
+  margin-left: var(--sidebar-width);
+}
+
+.bots-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.bots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+/* --- CARD DO BOT --- */
+.bot-card {
+  border: 1px solid var(--card-border);
+  transition: all 0.2s;
+  background: var(--card);
+}
+
+.bot-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.bot-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+}
+
+.bot-identity {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.bot-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2AABEE, #229ED9); /* Azul Telegram */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(42, 171, 238, 0.3);
+}
+
+.bot-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--foreground);
+}
+
+.bot-info p {
+  margin: 4px 0 0 0;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+/* --- STATUS E METRICAS --- */
+.bot-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  margin-bottom: var(--spacing-lg);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+/* --- FOOTER DO CARD --- */
+.bot-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--card-border);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.online { color: #10b981; }
+.online .dot { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+
+.offline { color: #ef4444; }
+.offline .dot { background-color: #ef4444; }

@@ -1,0 +1,59 @@
+:root {
+  /* --- PALETA DE CORES (Baseada no seu projeto original) --- */
+  --background: #0f0b14;       /* Fundo quase preto */
+  --foreground: #f2f2f2;       /* Texto principal */
+  
+  --card: #1b1730;             /* Fundo dos cards */
+  --card-border: #2d2647;      /* Bordas sutis */
+  
+  --primary: #d65ad1;          /* Magenta vibrante (Botões/Destaques) */
+  --primary-hover: #b942b4;    /* Magenta mais escuro (Hover) */
+  --primary-foreground: #ffffff;
+  
+  --secondary: #221d3a;        /* Roxo escuro secundário */
+  --secondary-foreground: #f2f2f2;
+  
+  --muted: #1f1a2e;            /* Cinza/Roxo apagado */
+  --muted-foreground: #b9b6c9; /* Texto secundário */
+  
+  --success: #10b981;          /* Verde (Status Ativo) */
+  --danger: #ef4444;           /* Vermelho (Excluir/Erro) */
+  
+  /* --- MEDIDAS --- */
+  --radius: 12px;              /* Arredondamento moderno */
+  --sidebar-width: 260px;      /* Largura do menu */
+  --header-height: 70px;       /* Altura do topo */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}

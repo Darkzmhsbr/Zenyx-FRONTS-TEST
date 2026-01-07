@@ -1,0 +1,114 @@
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-xl);
+  max-width: 1600px;
+  margin: 0 auto;
+  /* Compensa a Sidebar e Header fixos */
+  margin-top: var(--header-height); 
+  margin-left: var(--sidebar-width);
+}
+
+/* --- BANNER --- */
+.banner {
+  position: relative;
+  background: linear-gradient(135deg, var(--card) 0%, #2a1f3d 100%);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 3rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Círculos decorativos de fundo */
+.banner::before,
+.banner::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+}
+
+.banner::before {
+  top: -50px;
+  right: -50px;
+  width: 300px;
+  height: 300px;
+  background-color: rgba(214, 90, 209, 0.15); /* Rosa */
+}
+
+.banner::after {
+  bottom: -50px;
+  right: 200px;
+  width: 200px;
+  height: 200px;
+  background-color: rgba(100, 50, 200, 0.15); /* Roxo */
+}
+
+.banner-content {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+}
+
+.banner h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--foreground);
+}
+
+.banner p {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.6;
+}
+
+/* --- GRID DE ESTATÍSTICAS --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.stat-icon-wrapper {
+  background-color: rgba(214, 90, 209, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  color: var(--primary);
+  display: inline-flex;
+}
+
+.stat-trend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 20px;
+}
+
+.trend-up {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981; /* Verde */
+}
+
+.trend-down {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444; /* Vermelho */
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: var(--spacing-xs) 0;
+  color: var(--foreground);
+}
+
+.stat-label {
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+}

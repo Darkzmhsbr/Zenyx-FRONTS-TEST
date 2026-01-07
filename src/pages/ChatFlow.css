@@ -1,0 +1,148 @@
+.chatflow-container {
+  padding: var(--spacing-xl);
+  margin-top: var(--header-height);
+  margin-left: var(--sidebar-width);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.mb-large {
+  margin-bottom: 40px;
+}
+
+.flow-steps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* --- CORREÇÃO DO CARD PARA O BADGE --- */
+.step-card {
+  width: 100%;
+  position: relative;
+  /* Importante: permite que o badge saia da área do card */
+  overflow: visible !important; 
+  border: 1px solid var(--card-border);
+  transition: transform 0.2s, box-shadow 0.2s;
+  /* Espaço extra em cima para o badge não bater em nada */
+  margin-top: 15px; 
+}
+
+.step-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+
+/* --- BADGE DE PASSO (ALINHADO) --- */
+.step-badge {
+  position: absolute;
+  top: -14px; /* Sobe para ficar metade dentro, metade fora */
+  left: 20px; /* Alinhamento à esquerda */
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3); /* Sombra para destacar */
+  z-index: 20;
+}
+
+.badge-green {
+  background: #10b981;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--card-border);
+  color: var(--foreground);
+  padding-top: 10px; /* Espaço interno para compensar o badge */
+}
+
+.step-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.row-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* --- TOGGLE CUSTOMIZADO --- */
+.toggle-wrapper label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  margin-bottom: 8px;
+}
+
+.custom-toggle {
+  width: 100%;
+  height: 42px;
+  background: var(--background);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.toggle-label {
+  z-index: 2;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.custom-toggle.active {
+  background: rgba(239, 68, 68, 0.15); /* Vermelho suave */
+  border-color: var(--danger);
+}
+.custom-toggle.active .toggle-label { color: var(--danger); }
+
+.custom-toggle.active-green {
+  background: rgba(16, 185, 129, 0.15); /* Verde suave */
+  border-color: #10b981;
+}
+.custom-toggle.active-green .toggle-label { color: #10b981; }
+
+.flow-connector {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+  opacity: 0.5;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted-foreground);
+  margin-top: 50px;
+  font-style: italic;
+}
