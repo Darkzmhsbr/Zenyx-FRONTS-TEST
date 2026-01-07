@@ -1,0 +1,70 @@
+.login-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--background);
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(195, 51, 255, 0.1) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(42, 171, 238, 0.1) 0%, transparent 20%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  text-align: center;
+}
+
+.login-header { margin-bottom: 30px; }
+
+.logo-glow {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+  
+  /* --- CORREÇÃO AQUI --- */
+  -webkit-background-clip: text; /* Para Chrome/Safari/Edge */
+  background-clip: text;         /* Padrão oficial */
+  
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 5px;
+  letter-spacing: -1px;
+}
+
+.login-header p { color: var(--muted-foreground); font-size: 0.9rem; }
+
+.input-group-login {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+}
+
+.input-group-login input {
+  width: 100%;
+  padding: 12px 12px 12px 45px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.input-group-login input:focus {
+  border-color: var(--primary);
+  background: rgba(195, 51, 255, 0.05);
+}
