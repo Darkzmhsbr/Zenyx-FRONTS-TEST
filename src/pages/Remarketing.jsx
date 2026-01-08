@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBot } from '../context/BotContext';
 import { remarketingService, planService } from '../services/api';
-import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock } from 'lucide-react';
+import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, Repeat } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import Swal from 'sweetalert2';
@@ -41,29 +41,46 @@ export function Remarketing() {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
 
+  // FUNÇÃO DE REUTILIZAR (DO SEU ARQUIVO ANTIGO)
+  const handleReuse = (h) => {
+      let config = {};
+      try { config = typeof h.config === 'object' ? h.config : JSON.parse(h.config); } catch(e){}
+      
+      setFormData({
+          target: h.target || 'todos',
+          mensagem: config.msg || '',
+          media_url: config.media || '',
+          incluir_oferta: config.offer || false,
+          plano_oferta_id: config.plano_id || '',
+          price_mode: 'custom', 
+          custom_price: config.promo_price || '',
+          expiration_mode: 'none', 
+          expiration_value: ''
+      });
+      
+      Swal.fire({
+          title: 'Dados Carregados!', text: 'Revise antes de enviar.', icon: 'success',
+          timer: 1500, showConfirmButton: false, background: '#151515', color:'#fff'
+      });
+      setStep(2); // Vai para conteúdo
+  };
+
   const handleSend = async () => {
-    // Validações básicas
     if (!formData.mensagem) return Swal.fire('Erro', 'Escreva uma mensagem!', 'error');
-    if (formData.incluir_oferta && !formData.plano_oferta_id) return Swal.fire('Erro', 'Selecione um plano!', 'error');
     
     setLoading(true);
     try {
-      // --- AQUI ESTÁ A CORREÇÃO DO ERRO 422 ---
-      // Convertemos strings vazias para 0 ou null antes de enviar
+      // --- SANITIZAÇÃO (CORREÇÃO ERRO 422) ---
       const payload = {
         bot_id: selectedBot.id,
-        tipo_envio: formData.target, // Backend novo espera 'tipo_envio'
+        tipo_envio: formData.target,
         mensagem: formData.mensagem,
         media_url: formData.media_url || null,
-        
         incluir_oferta: formData.incluir_oferta,
         plano_oferta_id: formData.plano_oferta_id || null,
-        
-        // Converte preço e validade para números
         valor_oferta: (formData.price_mode === 'custom' && formData.custom_price) ? parseFloat(formData.custom_price) : 0.0,
-        expire_timestamp: 0, // Backend novo usa isso, mas calculamos depois se precisar
-        
-        // Campos de suporte para o Backend "Permissivo"
+        expire_timestamp: 0, 
+        // Campos extras tratados
         price_mode: formData.price_mode,
         custom_price: parseFloat(formData.custom_price) || 0.0,
         expiration_mode: formData.expiration_mode,
@@ -73,18 +90,11 @@ export function Remarketing() {
       await remarketingService.send(payload);
       
       Swal.fire({
-        title: 'Enviando! 🚀',
-        text: 'Campanha iniciada com sucesso.',
-        icon: 'success',
-        background: '#151515',
-        color: '#fff'
+        title: 'Enviando! 🚀', text: 'Campanha iniciada.', icon: 'success',
+        background: '#151515', color: '#fff'
       });
       
-      // Reset
       setStep(1);
-      setFormData({ 
-        ...formData, mensagem: '', media_url: '', incluir_oferta: false, custom_price: '', expiration_value: ''
-      });
       setTimeout(carregarHistorico, 2000);
       
     } catch (error) {
@@ -111,24 +121,18 @@ export function Remarketing() {
 
       <Card className="wizard-card">
         <CardContent>
-          
           {/* PASSO 1 */}
           {step === 1 && (
             <div className="step-content fade-in">
               <h3>Quem deve receber?</h3>
               <div className="target-grid">
                 {['todos', 'pendentes', 'pagantes', 'expirados'].map(t => (
-                    <div key={t} 
-                      className={`target-option ${formData.target === t ? 'selected' : ''}`}
-                      onClick={() => setFormData({...formData, target: t})}
-                    >
+                    <div key={t} className={`target-option ${formData.target === t ? 'selected' : ''}`} onClick={() => setFormData({...formData, target: t})}>
                       <span>{t.toUpperCase()}</span>
                     </div>
                 ))}
               </div>
-              <div className="wizard-actions right">
-                <Button onClick={handleNext}>Próximo</Button>
-              </div>
+              <div className="wizard-actions right"><Button onClick={handleNext}>Próximo</Button></div>
             </div>
           )}
 
@@ -138,19 +142,11 @@ export function Remarketing() {
               <h3>Conteúdo</h3>
               <div className="form-group">
                 <label>Mensagem</label>
-                <textarea 
-                  className="input-field area"
-                  value={formData.mensagem}
-                  onChange={e => setFormData({...formData, mensagem: e.target.value})}
-                />
+                <textarea className="input-field area" value={formData.mensagem} onChange={e => setFormData({...formData, mensagem: e.target.value})}/>
               </div>
               <div className="form-group">
                 <label>Mídia (URL)</label>
-                <input 
-                  className="input-field"
-                  value={formData.media_url}
-                  onChange={e => setFormData({...formData, media_url: e.target.value})}
-                />
+                <input className="input-field" value={formData.media_url} onChange={e => setFormData({...formData, media_url: e.target.value})}/>
               </div>
               
               <div className="offer-toggle">
@@ -166,7 +162,6 @@ export function Remarketing() {
                           <option value="">Selecione o Plano...</option>
                           {plans.map(p => <option key={p.id} value={p.id}>{p.nome_exibicao}</option>)}
                       </select>
-                      {/* Inputs de preço e validade aqui se necessário, mantendo simples por enquanto */}
                   </div>
               )}
 
@@ -194,17 +189,18 @@ export function Remarketing() {
               </div>
             </div>
           )}
-
         </CardContent>
       </Card>
       
-      {/* Histórico Simples */}
       <div className="history-section">
-          <h3>Histórico</h3>
+          <h3>Histórico Recente</h3>
           {history.map(h => (
               <div key={h.id} className="history-item">
                   <span>{h.data} - {h.target}</span>
-                  <span>✅ {h.sent}</span>
+                  <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
+                      <span style={{color: h.sent > 0 ? '#10b981' : '#666'}}>✅ {h.sent}</span>
+                      <Button onClick={() => handleReuse(h)} style={{fontSize:'0.7rem', padding:'5px', height:'auto'}}><Repeat size={12}/> Reutilizar</Button>
+                  </div>
               </div>
           ))}
       </div>

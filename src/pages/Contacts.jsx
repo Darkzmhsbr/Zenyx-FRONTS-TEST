@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { crmService, remarketingService } from '../services/api'; 
 import { useBot } from '../context/BotContext';
-import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Send, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Send, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
 import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Contacts.css';
 
 export function Contacts() {
   const { selectedBot } = useBot();
-  const [contactsData, setContactsData] = useState([]); // Dados da tabela
+  const [contactsData, setContactsData] = useState([]); 
   const [loading, setLoading] = useState(false);
   
-  // Filtros e Paginação
+  // Filtros
   const [filter, setFilter] = useState('todos');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   
-  // Modal e Histórico
+  // Modal
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [rmktHistory, setRmktHistory] = useState([]);
@@ -33,14 +33,14 @@ export function Contacts() {
     if (!selectedBot) return;
     setLoading(true);
     try {
-      // CORREÇÃO: Passa o ID do bot, o filtro e a página
+      // Passa o ID do bot selecionado e a paginação
       const data = await crmService.getContacts(selectedBot.id, filter, page);
       
-      // CORREÇÃO: Lê a propriedade .users do objeto retornado
+      // Lógica Híbrida: Suporta retorno novo { users: [] } ou antigo []
       if (data && data.users) {
           setContactsData(data.users);
-          setTotalPages(data.pages || data.total_pages || 1);
-          setTotalRecords(data.total || data.total_records || 0);
+          setTotalPages(data.total_pages || data.pages || 1);
+          setTotalRecords(data.total_records || data.total || 0);
       } else if (Array.isArray(data)) {
           setContactsData(data);
       } else {
@@ -64,7 +64,8 @@ export function Contacts() {
           telegram_id: user.telegram_id,
           role: user.role || 'user',
           status: user.status,
-          custom_expiration: user.custom_expiration || user.expiration_date ? new Date(user.custom_expiration || user.expiration_date).toISOString().split('T')[0] : ''
+          // Formata data YYYY-MM-DD para o input
+          custom_expiration: user.expiration_date ? new Date(user.expiration_date).toISOString().split('T')[0] : ''
       });
       setShowUserModal(true);
   };
@@ -77,21 +78,17 @@ export function Contacts() {
               role: editingUser.role,
               custom_expiration: editingUser.custom_expiration || 'remover'
           });
-          Swal.fire('Sucesso', 'Usuário atualizado!', 'success');
+          Swal.fire('Sucesso', 'Salvo!', 'success');
           setShowUserModal(false);
           carregarContatos(); 
-      } catch (error) {
-          Swal.fire('Erro', 'Falha ao atualizar.', 'error');
-      }
+      } catch (error) { Swal.fire('Erro', 'Falha ao salvar.', 'error'); }
   };
 
   const handleResendAccess = async () => {
       try {
           await crmService.resendAccess(editingUser.id);
           Swal.fire('Enviado!', 'Acesso reenviado.', 'success');
-      } catch (error) {
-          Swal.fire('Erro', 'Falha ao enviar.', 'error');
-      }
+      } catch (error) { Swal.fire('Erro', 'Falha ao enviar.', 'error'); }
   };
 
   // Funções Visuais
@@ -106,19 +103,17 @@ export function Contacts() {
     return <span className="status-badge status-pending"><Clock size={12}/> Pendente</span>;
   };
 
-  if (!selectedBot) return <div className="contacts-container"><div style={{textAlign:'center', marginTop:'100px', color:'#666'}}>Selecione um bot.</div></div>;
-
   return (
     <div className="contacts-container">
       <div className="contacts-header">
-        <h1>Base de Usuários <span style={{fontSize:'0.9rem', color:'#666'}}>({totalRecords})</span></h1>
+        <h1>Contatos <span style={{fontSize:'0.9rem', color:'#666'}}>({totalRecords})</span></h1>
         <Button onClick={carregarContatos} variant="outline"><RefreshCw size={16}/></Button>
       </div>
 
       <div className="tabs-container">
           {['todos', 'pagantes', 'pendentes', 'expirados'].map(f => (
               <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => {setFilter(f); setPage(1);}}>
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                  {f.toUpperCase()}
               </button>
           ))}
       </div>
@@ -130,7 +125,6 @@ export function Contacts() {
                     <thead>
                         <tr>
                             <th>Usuário</th>
-                            <th>Plano / Valor</th>
                             <th>Status</th>
                             <th>Entrada</th>
                             <th>Expiração</th>
@@ -141,53 +135,43 @@ export function Contacts() {
                         {contactsData.length > 0 ? contactsData.map(u => (
                             <tr key={u.id}>
                                 <td>
-                                    <div style={{fontWeight:'bold', color:'#fff'}}>{u.first_name || u.telegram_id}</div>
+                                    <div style={{fontWeight:'bold'}}>{u.first_name || u.telegram_id}</div>
                                     <div style={{fontSize:'0.8rem', color:'#666'}}>@{u.username || '...'}</div>
-                                </td>
-                                <td>
-                                    <div style={{fontSize:'0.85rem'}}>{u.plano_nome || '-'}</div>
-                                    <div style={{fontWeight:'bold'}}>R$ {u.valor ? u.valor.toFixed(2) : '0.00'}</div>
                                 </td>
                                 <td>{getStatusBadge(u.status)}</td>
                                 <td>{formatDate(u.created_at)}</td>
                                 <td>
                                     {['active','paid'].includes(u.status) 
-                                        ? (u.custom_expiration || u.expiration_date ? formatDate(u.custom_expiration || u.expiration_date) : <span style={{color:'#10b981'}}>Vitalício</span>) 
+                                        ? (u.expiration_date ? formatDate(u.expiration_date) : <span style={{color:'#10b981'}}>Vitalício</span>) 
                                         : '-'}
                                 </td>
-                                <td>
-                                    <Button size="sm" onClick={() => openUserEdit(u)} style={{background:'#252525', border:'1px solid #333'}}>
-                                        <Edit size={14}/>
-                                    </Button>
-                                </td>
+                                <td><Button size="sm" onClick={() => openUserEdit(u)}><Edit size={14}/></Button></td>
                             </tr>
                         )) : (
-                            <tr><td colSpan="6" style={{textAlign:'center', padding:'30px', color:'#666'}}>Nenhum contato encontrado.</td></tr>
+                            <tr><td colSpan="5" style={{textAlign:'center', padding:'30px', color:'#666'}}>Nenhum contato.</td></tr>
                         )}
                     </tbody>
                 </table>
             </div>
-
-            {totalPages > 1 && (
-                <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', marginTop:'20px'}}>
-                    <Button disabled={page === 1} onClick={handlePrevPage}><ChevronLeft size={16}/> Anterior</Button>
-                    <span style={{color:'#888'}}>Página {page} de {totalPages}</span>
-                    <Button disabled={page >= totalPages} onClick={handleNextPage}>Próximo <ChevronRight size={16}/></Button>
-                </div>
-            )}
+            
+            <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', marginTop:'20px'}}>
+                <Button disabled={page === 1} onClick={handlePrevPage}><ChevronLeft size={16}/></Button>
+                <span style={{color:'#888'}}>Pag {page} de {totalPages}</span>
+                <Button disabled={page >= totalPages} onClick={handleNextPage}><ChevronRight size={16}/></Button>
+            </div>
         </>
       )}
 
       {showUserModal && editingUser && (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>Gerenciar: {editingUser.name}</h2>
+                <h2>{editingUser.name}</h2>
                 <form onSubmit={handleSaveUser}>
                     <div className="form-group">
                         <label>Status</label>
                         <select className="input-field" value={editingUser.status} onChange={e => setEditingUser({...editingUser, status: e.target.value})}>
                             <option value="pending">Pendente</option>
-                            <option value="paid">Ativo / Pago</option>
+                            <option value="paid">Ativo</option>
                             <option value="expired">Expirado</option>
                         </select>
                     </div>
@@ -195,12 +179,12 @@ export function Contacts() {
                         <label>Expiração</label>
                         <input type="date" className="input-field" value={editingUser.custom_expiration} onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})} />
                         <div style={{marginTop:'10px', display:'flex', gap:'10px'}}>
-                            <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>♾️ Vitalício</button>
+                            <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>Vitalício</button>
                             <button type="button" className="btn-small primary" onClick={handleResendAccess}>Reenviar Acesso</button>
                         </div>
                     </div>
                     <div className="modal-actions" style={{marginTop:'20px'}}>
-                        <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Fechar</button>
+                        <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Cancelar</button>
                         <button type="submit" className="btn-save">Salvar</button>
                     </div>
                 </form>
