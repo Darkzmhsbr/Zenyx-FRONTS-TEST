@@ -39,14 +39,29 @@ export const botService = {
     const response = await api.put(`/api/admin/bots/${botId}`, dados);
     return response.data;
   },
-  // NOVA: LIGA/DESLIGA BOT
   toggleBot: async (botId) => {
     const response = await api.post(`/api/admin/bots/${botId}/toggle`);
     return response.data;
   },
-  // NOVA: DELETA BOT
   deleteBot: async (botId) => {
     const response = await api.delete(`/api/admin/bots/${botId}`);
+    return response.data;
+  }
+};
+
+// --- SERVIÇO DE ADMINISTRADORES (NOVO - FASE 1) ---
+export const adminService = {
+  listAdmins: async (botId) => {
+    const response = await api.get(`/api/admin/bots/${botId}/admins`);
+    return response.data;
+  },
+  addAdmin: async (botId, dados) => {
+    // dados = { telegram_id: "123", nome: "Fulano" }
+    const response = await api.post(`/api/admin/bots/${botId}/admins`, dados);
+    return response.data;
+  },
+  removeAdmin: async (botId, telegramId) => {
+    const response = await api.delete(`/api/admin/bots/${botId}/admins/${telegramId}`);
     return response.data;
   }
 };

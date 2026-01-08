@@ -13,6 +13,7 @@ import { BotConfig } from './pages/BotConfig';
 import { Integrations } from './pages/Integrations';
 import { ChatFlow } from './pages/ChatFlow';
 import { Remarketing } from './pages/Remarketing';
+import { AdminManager } from './pages/AdminManager'; // <--- NOVO IMPORT (ADICIONADO)
 
 // Placeholder para Logout
 const Logout = () => {
@@ -30,8 +31,8 @@ const PlaceholderPage = ({ title }) => (
 
 function App() {
   return (
-    <AuthProvider> {/* 1. Auth envolve tudo */}
-      <BotProvider> {/* 2. Bot envolve tudo */}
+    <AuthProvider> {/* 1. Auth envolve tudo para prover user */}
+      <BotProvider> {/* 2. BotProvider dentro de Auth (opcional, mas comum) */}
         <Router>
           <Routes>
             
@@ -55,7 +56,10 @@ function App() {
               
               <Route path="/config" element={<PlaceholderPage title="Configurações Gerais" />} />
               <Route path="/tutorial" element={<PlaceholderPage title="Tutoriais" />} />
+              
+              {/* FUNÇÕES EXTRAS */}
               <Route path="/funcoes" element={<PlaceholderPage title="Funções Extras" />} />
+              <Route path="/funcoes/admins" element={<AdminManager />} /> {/* <--- NOVA ROTA (ADICIONADA) */}
             </Route>
 
             {/* Qualquer outra rota redireciona para login */}
