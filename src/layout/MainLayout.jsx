@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sidebar } from '../components/Sidebar';
-import { Header } from '../components/Header';
+// 👇 AQUI ESTAVA O ERRO: Adicionamos .jsx para garantir que o Vercel encontre
+import { Sidebar } from '../components/Sidebar.jsx';
+import { Header } from '../components/Header.jsx';
 
 export function MainLayout() {
   const { user } = useAuth();
