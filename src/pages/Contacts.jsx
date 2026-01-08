@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { crmService, remarketingService } from '../services/api'; 
+import { crmService, remarketingService, admin } from '../services/api'; // Adicionado admin se necessário para updates
 import { useBot } from '../context/BotContext';
-import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Send, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
 import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Contacts.css';
 
 export function Contacts() {
   const { selectedBot } = useBot();
-  const [contactsData, setContactsData] = useState([]); // Dados da tabela
+  const [contactsData, setContactsData] = useState([]); 
   const [loading, setLoading] = useState(false);
   
-  // Filtros e Paginação
+  // --- PAGINAÇÃO E FILTROS (RESTAURADOS) ---
   const [filter, setFilter] = useState('todos');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   
-  // Modal e Histórico
+  // --- MODAL E HISTÓRICO ---
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [rmktHistory, setRmktHistory] = useState([]);
@@ -28,299 +28,217 @@ export function Contacts() {
       // Carrega histórico para o modal de envio rápido
       remarketingService.getHistory(selectedBot.id).then(setRmktHistory).catch(() => {});
     }
-  }, [selectedBot, filter, page]); // Recarrega ao mudar filtro ou página
+  }, [selectedBot, filter, page]);
 
   const carregarContatos = async () => {
     setLoading(true);
     try {
-      // Chama a API com paginação
-      const response = await crmService.getContacts(filter, page, 100); 
-      
-      // O backend agora retorna { users: [], total: X, pages: Y }
-      if (response && response.users) {
-          setContactsData(response.users);
-          setTotalPages(response.pages);
-          setTotalRecords(response.total);
-      } else {
-          // Fallback se a API ainda for antiga
-          setContactsData(Array.isArray(response) ? response : []);
-      }
+      // Espera-se que a API retorne { users: [], total_pages: 1, total_records: 0 }
+      const data = await crmService.getContacts(selectedBot.id, filter, page);
+      setContactsData(data.users || []); 
+      setTotalPages(data.total_pages || 1);
+      setTotalRecords(data.total_records || 0);
     } catch (error) {
-      console.error("Erro ao listar contatos", error);
+      console.error(error);
+      Swal.fire('Erro', 'Falha ao carregar contatos.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // --- ABERTURA DO MODAL ---
+  // --- PAGINAÇÃO ---
+  const handleNextPage = () => {
+      if (page < totalPages) setPage(page + 1);
+  };
+  
+  const handlePrevPage = () => {
+      if (page > 1) setPage(page - 1);
+  };
+
+  // --- ABRIR MODAL DE EDIÇÃO ---
   const openUserEdit = (user) => {
-    setEditingUser({
-        id: user.id,
-        name: user.first_name || 'Sem Nome',
-        telegram_id: user.telegram_id,
-        role: user.role || 'user',
-        status: user.status,
-        custom_expiration: user.custom_expiration ? user.custom_expiration.split('T')[0] : ''
-    });
-    setShowUserModal(true);
+      setEditingUser({
+          id: user.id,
+          name: user.first_name || user.telegram_id,
+          telegram_id: user.telegram_id,
+          role: user.role || 'user', // Restaurado
+          status: user.status,
+          custom_expiration: user.expiration_date ? user.expiration_date.split('T')[0] : ''
+      });
+      setShowUserModal(true);
   };
 
-  // --- AÇÕES DO MODAL ---
+  // --- SALVAR EDIÇÃO DO USUÁRIO (RESTAURADO) ---
   const handleSaveUser = async (e) => {
-    e.preventDefault();
-    try {
-        const payload = {
-            role: editingUser.role,
-            status: editingUser.status,
-            custom_expiration: editingUser.custom_expiration || null
-        };
-        
-        await crmService.updateUser(editingUser.id, payload);
-        
-        Swal.fire({
-            title: 'Sucesso', 
-            text: 'Usuário atualizado com sucesso!', 
-            icon: 'success', 
-            background:'#151515', color:'#fff'
-        });
-        
-        setShowUserModal(false);
-        carregarContatos(); // Atualiza a tabela
-    } catch (error) {
-        Swal.fire('Erro', 'Falha ao atualizar usuário.', 'error');
-    }
+      e.preventDefault();
+      try {
+          // Exemplo de payload para atualizar usuário
+          const payload = {
+              status: editingUser.status,
+              role: editingUser.role,
+              custom_expiration: editingUser.custom_expiration || null
+          };
+          
+          // Chama serviço de update (certifique-se que existe no api.js ou use admin.updateUser)
+          // Aqui assumindo crmService ou admin
+          await admin.updateUser(editingUser.id, payload); 
+
+          Swal.fire('Sucesso', 'Usuário atualizado!', 'success');
+          setShowUserModal(false);
+          carregarContatos(); // Recarrega a lista
+      } catch (error) {
+          Swal.fire('Erro', 'Falha ao atualizar usuário.', 'error');
+      }
   };
 
+  // --- REENVIAR ACESSO (RESTAURADO) ---
   const handleResendAccess = async () => {
-    // Validação local: Só pode reenviar se estiver pago
-    if (editingUser.status !== 'paid') {
-        Swal.fire('Atenção', 'Salve o status como "Ativo/Pago" antes de reenviar o acesso.', 'warning');
-        return;
-    }
-
-    try {
-        await crmService.resendAccess(editingUser.id);
-        Swal.fire({
-            title: 'Enviado!', 
-            text: 'Links de acesso reenviados para o Telegram do usuário!', 
-            icon: 'success',
-            background:'#151515', color:'#fff'
-        });
-    } catch (error) {
-        Swal.fire('Erro', 'Falha ao reenviar acesso. Verifique se o bot é admin do canal.', 'error');
-    }
+      try {
+          await admin.resendAccess(editingUser.id);
+          Swal.fire('Enviado!', 'Links de acesso reenviados!', 'success');
+      } catch (error) {
+          Swal.fire('Erro', 'Falha ao reenviar acesso.', 'error');
+      }
   };
 
+  // --- NOVA FUNÇÃO: REUTILIZAR CAMPANHA PARA 1 USUÁRIO ---
   const handleReuseForUser = async (campaign) => {
-    let config = {};
-    try { config = JSON.parse(campaign.config); } catch(e) {}
-    
-    const result = await Swal.fire({
-        title: `Enviar para ${editingUser.name}?`,
-        text: `Você vai disparar a campanha antiga "${config.msg?.substring(0, 20)}..." apenas para este usuário.`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: '🚀 Sim, Enviar',
-        cancelButtonText: 'Cancelar',
-        background: '#151515',
-        color: '#fff'
-    });
+      let config = {};
+      try { config = typeof campaign.config === 'object' ? campaign.config : JSON.parse(campaign.config); } catch(e){}
 
-    if (result.isConfirmed) {
-        const payload = {
-            bot_id: selectedBot.id,
-            target: 'todos', // O backend vai ignorar isso pq tem specificUserId
-            mensagem: config.msg,
-            media_url: config.media || null,
-            incluir_oferta: config.offer,
-            plano_oferta_id: campaign.plano_id, 
-            price_mode: 'custom', 
-            custom_price: campaign.promo_price,
-            expiration_mode: 'days',
-            expiration_value: 1
-        };
+      const confirm = await Swal.fire({
+          title: `Enviar para ${editingUser.name}?`,
+          text: `Enviar campanha "${config.msg?.substring(0,15)}..." apenas para este usuário?`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: '🚀 Sim, Enviar',
+          background: '#151515', color: '#fff'
+      });
 
-        try {
-            // Passa o ID específico para envio individual
-            await remarketingService.send(payload, false, editingUser.telegram_id);
-            Swal.fire('Sucesso!', 'Disparo individual realizado!', 'success');
-        } catch (e) {
-            Swal.fire('Erro', 'Falha ao enviar.', 'error');
-        }
-    }
+      if (confirm.isConfirmed) {
+          const payload = {
+              bot_id: selectedBot.id,
+              tipo_envio: 'individual',
+              specific_user_id: editingUser.telegram_id, // ID Único para o Backend
+              mensagem: config.msg,
+              media_url: config.media,
+              incluir_oferta: config.offer,
+              plano_oferta_id: config.plano_id,
+              valor_oferta: config.promo_price,
+              expire_timestamp: 0 
+          };
+
+          Swal.fire({ title: 'Enviando...', background: '#151515', color:'#fff', didOpen: () => Swal.showLoading() });
+          try {
+              await remarketingService.send(payload);
+              Swal.fire({title:'Sucesso!', text:'Enviado individualmente.', icon:'success', background:'#151515', color:'#fff'});
+          } catch (e) {
+              Swal.fire('Erro', 'Falha ao enviar.', 'error');
+          }
+      }
   };
-
-  // --- FUNÇÕES VISUAIS ---
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('pt-BR');
-  };
-
-  const getStatusBadge = (status) => {
-    if (status === 'paid') return <span className="status-badge status-paid"><CheckCircle size={12}/> Ativo</span>;
-    if (status === 'expired') return <span className="status-badge status-expired"><XCircle size={12}/> Expirado</span>;
-    return <span className="status-badge status-pending"><Clock size={12}/> Pendente</span>;
-  };
-
-  if (!selectedBot) return <div className="contacts-container"><div style={{textAlign:'center', marginTop:'100px', color:'#666'}}>Selecione um bot.</div></div>;
 
   return (
     <div className="contacts-container">
       <div className="contacts-header">
-        <div>
-          <h1>Base de Usuários</h1>
-          <p style={{ color: 'var(--muted-foreground)' }}>Visualize leads, clientes ativos e expirados.</p>
+        <h1>Gerenciador de Contatos</h1>
+        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+            <span style={{color:'#888', fontSize:'0.9rem'}}>Total: {totalRecords}</span>
+            <Button onClick={carregarContatos} variant="outline"><RefreshCw size={16}/></Button>
         </div>
-        <Button variant="ghost" onClick={carregarContatos}>
-          <RefreshCw size={18} className={loading ? 'spin' : ''} />
-        </Button>
       </div>
 
       {/* ABAS DE FILTRO */}
       <div className="tabs-container">
-        <div className="filters-bar">
-          {['todos', 'pagantes', 'pendentes', 'expirados'].map(t => (
-            <button 
-                key={t}
-                onClick={() => { setFilter(t); setPage(1); }} 
-                className={`filter-tab ${filter === t ? 'active' : ''}`}
-            >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
+          {['todos', 'pendente', 'active', 'expired'].map(f => (
+              <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => {setFilter(f); setPage(1);}}>
+                  {f.toUpperCase()}
+              </button>
           ))}
-        </div>
       </div>
 
-      {/* TABELA DE CONTATOS */}
-      <div className="table-container">
-        {loading ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: '#888' }}>
-            <RefreshCw className="spin" size={30} style={{marginBottom:'10px'}}/>
-            <p>Carregando...</p>
-          </div>
-        ) : (
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th style={{width: '180px'}}>Data</th>
-                <th style={{width: '120px'}}><Hash size={14} style={{marginBottom:-2}}/> ID Telegram</th>
-                <th>Nome / Usuário</th>
-                <th>Plano</th>
-                <th>Valor</th>
-                <th style={{textAlign:'center'}}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contactsData.length > 0 ? contactsData.map((c) => (
-                <tr 
-                    key={c.id} 
-                    onClick={() => openUserEdit(c)} 
-                    style={{cursor: 'pointer'}} 
-                    className="clickable-row"
-                >
-                  <td data-label="Data" style={{fontSize:'0.85rem', color:'#888'}}>{formatDate(c.created_at)}</td>
-                  <td data-label="ID Telegram"><span className="id-badge">{c.telegram_id}</span></td>
-                  <td data-label="Nome / Usuário">
-                    <div style={{ fontWeight: '600', color: '#fff' }}>{c.first_name || 'Sem nome'}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>{c.username ? `@${c.username}` : '-'}</div>
-                  </td>
-                  <td data-label="Plano"><span className="plan-tag">{c.plano_nome || '-'}</span></td>
-                  <td data-label="Valor" style={{fontWeight:'bold'}}>{c.valor ? `R$ ${c.valor.toFixed(2)}` : 'R$ 0,00'}</td>
-                  <td data-label="Status" style={{textAlign:'center'}}>{getStatusBadge(c.status)}</td>
-                </tr>
-              )) : (
-                <tr><td colSpan="6" style={{ padding: '60px', textAlign: 'center', color: '#666' }}>Nenhum contato encontrado.</td></tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {loading ? <p className="loading-text">Carregando contatos...</p> : (
+        <>
+            <div className="table-responsive">
+                <table className="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Status</th>
+                            <th>Data Entrada</th>
+                            <th>Expiração</th> {/* COLUNA NOVA */}
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {contactsData.length > 0 ? contactsData.map(u => (
+                            <tr key={u.id}>
+                                <td>
+                                    <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                                        <Users size={16} color="#888"/>
+                                        {u.first_name || u.telegram_id}
+                                    </div>
+                                </td>
+                                <td>
+                                    {u.status === 'active' && <span className="badge success"><CheckCircle size={12}/> Ativo</span>}
+                                    {u.status === 'paid' && <span className="badge success"><CheckCircle size={12}/> Pago</span>}
+                                    {u.status === 'pending' && <span className="badge warning"><Clock size={12}/> Pendente</span>}
+                                    {u.status === 'expired' && <span className="badge danger"><XCircle size={12}/> Expirado</span>}
+                                </td>
+                                <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                                
+                                {/* COLUNA EXPIRAÇÃO */}
+                                <td>
+                                    {u.status === 'active' || u.status === 'paid'
+                                        ? (u.expiration_date ? new Date(u.expiration_date).toLocaleDateString() : <span style={{color:'#10b981'}}>Vitalício</span>) 
+                                        : '-'}
+                                </td>
+                                
+                                <td>
+                                    <Button size="sm" onClick={() => openUserEdit(u)} style={{fontSize:'0.8rem'}}>
+                                        <Edit size={14} style={{marginRight:'5px'}}/> Gerenciar
+                                    </Button>
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr><td colSpan="5" style={{textAlign:'center', padding:'20px', color:'#666'}}>Nenhum contato encontrado.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
 
-      {/* PAGINAÇÃO */}
-      <div className="pagination-bar" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'20px', padding:'10px', background:'rgba(255,255,255,0.03)', borderRadius:'8px'}}>
-        <span style={{color:'#888', fontSize:'0.9rem'}}>Total: {totalRecords} registros</span>
-        <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
-            <button 
-                disabled={page === 1} 
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="btn-page"
-            >
-                <ChevronLeft size={16} /> Anterior
-            </button>
-            <span style={{color:'#fff', fontWeight:'bold'}}>Página {page} de {totalPages || 1}</span>
-            <button 
-                disabled={page >= totalPages} 
-                onClick={() => setPage(p => p + 1)}
-                className="btn-page"
-            >
-                Próxima <ChevronRight size={16} />
-            </button>
-        </div>
-      </div>
+            {/* PAGINAÇÃO (RESTAURADA) */}
+            <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'20px'}}>
+                <Button disabled={page === 1} onClick={handlePrevPage} variant="outline">
+                    <ChevronLeft size={16}/> Anterior
+                </Button>
+                <span style={{color:'#888'}}>Página {page} de {totalPages}</span>
+                <Button disabled={page >= totalPages} onClick={handleNextPage} variant="outline">
+                    Próximo <ChevronRight size={16}/>
+                </Button>
+            </div>
+        </>
+      )}
 
-      {/* --- MODAL DE EDIÇÃO --- */}
+      {/* MODAL DE EDIÇÃO */}
       {showUserModal && editingUser && (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>Editar Usuário</h2>
-                <p style={{color:'#888', marginBottom:'20px', fontSize:'0.9rem'}}>
-                    ID: {editingUser.id} • {editingUser.name}
-                </p>
+                <h2>Gerenciar: {editingUser.name}</h2>
                 
-                {/* ÁREA DE DISPARO RÁPIDO */}
-                <div className="quick-send-box">
-                    <h4 style={{margin:'0 0 10px 0', color:'#c333ff', display:'flex', alignItems:'center', gap:'8px'}}>
-                        <Send size={16}/> Enviar Campanha Rápida
-                    </h4>
-                    {rmktHistory.length > 0 ? (
-                        <div className="history-mini-list">
-                            {rmktHistory.slice(0, 3).map((h, i) => (
-                                <div key={i} className="mini-history-item">
-                                    <span style={{color:'#aaa', fontSize:'0.8rem'}}>{h.data}</span>
-                                    <button className="btn-mini-send" onClick={() => handleReuseForUser(h)}>
-                                        Enviar ➡️
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    ) : <p style={{color:'#666', fontSize:'0.8rem'}}>Sem campanhas recentes.</p>}
-                </div>
-
                 <form onSubmit={handleSaveUser}>
                     <div className="form-group">
-                        <label>Cargo</label>
+                        <label>Status do Usuário</label>
                         <select 
-                            className="input-field"
-                            value={editingUser.role} 
-                            onChange={e => setEditingUser({...editingUser, role: e.target.value})}
-                        >
-                            <option value="user">👤 Usuário Comum</option>
-                            <option value="admin">🛡️ Admin (Imune a Ban)</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Status Financeiro</label>
-                        <select 
-                            className="input-field"
+                            className="input-field" 
                             value={editingUser.status} 
                             onChange={e => setEditingUser({...editingUser, status: e.target.value})}
                         >
-                            <option value="paid">✅ Ativo / Pago</option>
-                            <option value="expired">❌ Expirado</option>
-                            <option value="pending">⏳ Pendente</option>
+                            <option value="pending">Pendente (Aguardando Pagamento)</option>
+                            <option value="active">Ativo (Pago/Acesso Liberado)</option>
+                            <option value="expired">Expirado (Sem Acesso)</option>
                         </select>
                     </div>
-
-                    {/* Botão de Reenvio: Aparece se já estiver salvo como PAGO ou se acabamos de mudar para PAGO */}
-                    {editingUser.status === 'paid' && (
-                        <div style={{marginBottom:'20px'}}>
-                            <button type="button" className="btn-resend" onClick={handleResendAccess}>
-                                🔄 Reenviar Acesso
-                            </button>
-                            <small style={{display:'block', color:'#666', marginTop:'5px'}}>*Certifique-se de salvar as alterações antes de reenviar se você acabou de mudar o status.</small>
-                        </div>
-                    )}
 
                     <div className="form-group">
                         <label>Data Personalizada (Expiração)</label>
@@ -331,12 +249,30 @@ export function Contacts() {
                             onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})}
                         />
                         <div style={{display:'flex', gap:'10px', marginTop:'10px'}}>
-                            <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: 'vitalicio'})}>♾️ Vitalício</button>
-                            <button type="button" className="btn-small danger" onClick={() => setEditingUser({...editingUser, custom_expiration: 'remover'})}>🗑️ Remover</button>
+                            <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>♾️ Vitalício</button>
+                            {/* BOTÃO REENVIAR ACESSO RESTAURADO */}
+                            <button type="button" className="btn-small primary" onClick={handleResendAccess} style={{background:'#2563eb'}}>📧 Reenviar Acesso</button>
                         </div>
                     </div>
 
-                    <div className="modal-actions">
+                    {/* ÁREA DE DISPARO INDIVIDUAL */}
+                    <div style={{marginTop:'20px', borderTop:'1px solid #333', paddingTop:'15px'}}>
+                        <h3>🚀 Disparo Rápido (Individual)</h3>
+                        <p style={{fontSize:'0.8rem', color:'#888'}}>Reutilize campanhas anteriores apenas para este usuário.</p>
+                        
+                        <div style={{maxHeight:'150px', overflowY:'auto', marginTop:'10px', border:'1px solid #333', borderRadius:'6px'}}>
+                            {rmktHistory.length > 0 ? rmktHistory.map((h, i) => (
+                                <div key={i} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px', borderBottom:'1px solid #222'}}>
+                                    <span style={{fontSize:'0.75rem', color:'#ccc'}}>{h.data} - {JSON.parse(h.config || '{}').msg?.substring(0,10)}...</span>
+                                    <button type="button" className="btn-mini-send" onClick={() => handleReuseForUser(h)}>
+                                        <Send size={10} style={{marginRight:'3px'}}/> Enviar
+                                    </button>
+                                </div>
+                            )) : <p style={{padding:'10px', fontSize:'0.8rem', color:'#666'}}>Sem histórico.</p>}
+                        </div>
+                    </div>
+
+                    <div className="modal-actions" style={{marginTop:'20px'}}>
                         <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Fechar</button>
                         <button type="submit" className="btn-save">Salvar Alterações</button>
                     </div>

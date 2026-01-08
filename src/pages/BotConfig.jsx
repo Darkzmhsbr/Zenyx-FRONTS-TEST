@@ -18,10 +18,10 @@ export function BotConfig() {
     token: '',
     id_canal_vip: '',
     admin_principal_id: '',
-    status: 'desconectado' // Adicionado para controlar o visual
+    status: 'desconectado'
   });
 
-  // Estados visuais das mensagens
+  // Estados visuais das mensagens (Mantidos)
   const [welcomeMsg, setWelcomeMsg] = useState("Olá! Seja bem-vindo ao nosso atendimento.");
   const [fallbackMsg, setFallbackMsg] = useState("Não entendi. Digite /ajuda para ver as opções.");
 
@@ -40,8 +40,9 @@ export function BotConfig() {
           nome: currentBot.nome || '',
           token: currentBot.token || '',
           id_canal_vip: currentBot.id_canal_vip || '',
-          admin_principal_id: currentBot.admin_principal_id || '',
-          status: currentBot.status || 'desconectado' // Carrega o status real
+          // Se o backend enviar null, garante string vazia para o input não quebrar
+          admin_principal_id: currentBot.admin_principal_id || '', 
+          status: currentBot.status || 'desconectado'
         });
       }
     } catch (error) {
@@ -52,17 +53,15 @@ export function BotConfig() {
     }
   };
 
-  // --- NOVA FUNÇÃO: LIGAR/DESLIGAR BOT ---
+  // --- FUNÇÃO: LIGAR/DESLIGAR BOT ---
   const handleToggleBot = async () => {
     try {
       const response = await botService.toggleBot(id);
-      // Atualiza o estado local imediatamente com a resposta do backend
       setConfig(prev => ({ ...prev, status: response.status }));
       
       const isAtivo = response.status === 'ativo';
       Swal.fire({
         title: isAtivo ? 'Bot Ativado! 🟢' : 'Bot Pausado! 🔴',
-        text: isAtivo ? 'Ele voltará a responder mensagens.' : 'Ele parou de responder.',
         icon: 'success',
         timer: 1500,
         showConfirmButton: false,
@@ -95,7 +94,6 @@ export function BotConfig() {
     }
   };
 
-  // Define a cor do status
   const isOnline = config.status === 'ativo';
 
   return (
@@ -108,20 +106,15 @@ export function BotConfig() {
           </Button>
           <div>
             <h1>Configurar: {config.nome || `Bot #${id}`}</h1>
-            <p style={{ color: 'var(--muted-foreground)' }}>Gerencie conexão e status.</p>
+            <p style={{ color: 'var(--muted-foreground)' }}>Gerencie conexão, admins e status.</p>
           </div>
-        </div>
-        
-        {/* BOTÃO DE STATUS NO CABEÇALHO (Opcional, mas útil) */}
-        <div className={`status-badge ${isOnline ? 'online' : 'offline'}`} style={{padding: '5px 15px', borderRadius: '20px', background: isOnline ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: isOnline ? '#10b981' : '#ef4444', border: `1px solid ${isOnline ? '#10b981' : '#ef4444'}`}}>
-            {isOnline ? '● ONLINE' : '○ PAUSADO'}
         </div>
       </div>
 
       {loading ? <p style={{color:'#888', marginLeft:'20px'}}>Carregando configurações...</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* --- CARD 0: CONTROLE DE STATUS (NOVO) --- */}
+          {/* --- CARD 0: CONTROLE DE STATUS --- */}
           <Card style={{ border: isOnline ? '1px solid #10b981' : '1px solid #ef4444', background: isOnline ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)' }}>
             <CardContent>
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
@@ -143,7 +136,7 @@ export function BotConfig() {
                         }}
                     >
                         <Power size={18} style={{marginRight:'8px'}}/>
-                        {isOnline ? 'PAUSAR BOT' : 'ATIVAR BOT'}
+                        {isOnline ? 'PAUSAR' : 'ATIVAR'}
                     </Button>
                 </div>
             </CardContent>
@@ -187,7 +180,7 @@ export function BotConfig() {
             </CardContent>
           </Card>
 
-           {/* --- CARD 2: ADMINISTRAÇÃO --- */}
+           {/* --- CARD 2: ADMINISTRAÇÃO (PERMANENTE) --- */}
            <Card style={{ border: '1px solid #3b82f6', background: 'rgba(59, 130, 246, 0.05)' }}>
             <CardContent>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#3b82f6' }}>
@@ -197,6 +190,9 @@ export function BotConfig() {
               
               <div className="form-group">
                 <label style={{marginBottom:'5px', color:'#ccc'}}>ID do Admin Principal (Telegram)</label>
+                <p style={{fontSize:'0.8rem', color:'#888', marginBottom:'8px'}}>
+                    Receberá avisos de vendas aprovadas e alertas do sistema. Use o comando <code>/id</code> no seu bot.
+                </p>
                 <input 
                   className="input-field" 
                   placeholder="Ex: 123456789"
@@ -222,7 +218,7 @@ export function BotConfig() {
             </Button>
           </div>
 
-          {/* --- ÁREA DE MENSAGENS (Visual) --- */}
+          {/* --- ÁREA DE MENSAGENS (Visual apenas) --- */}
           <div className="bots-grid" style={{ gridTemplateColumns: '1fr 1fr', marginTop:'10px' }}>
             <Card>
               <CardContent>

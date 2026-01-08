@@ -15,6 +15,10 @@ export function Bots() {
 
   useEffect(() => {
     carregarBots();
+    // Fecha o menu se clicar fora
+    const handleClickOutside = () => setActiveMenu(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
   const carregarBots = async () => {
@@ -30,9 +34,9 @@ export function Bots() {
   };
 
   // --- LIGA / DESLIGA BOT ---
-  const toggleBotStatus = async (id) => {
+  const toggleBotStatus = async (e, id) => {
+    e.stopPropagation(); // Evita abrir o menu ou navegar
     try {
-      // Chama API para persistir a mudança
       const updatedBot = await botService.toggleBot(id);
       
       // Atualiza visualmente
@@ -45,29 +49,23 @@ export function Bots() {
       
       const isAtivo = updatedBot.status === 'ativo';
       
-      // Feedback visual rápido
       const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        background: '#151515',
-        color: '#fff'
+        toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
+        background: '#151515', color: '#fff'
       });
-      
       Toast.fire({
         icon: isAtivo ? 'success' : 'warning',
         title: isAtivo ? 'Bot Ativado!' : 'Bot Pausado'
       });
 
     } catch (error) {
-      console.error(error);
       Swal.fire('Erro', 'Falha ao alterar status.', 'error');
     }
   };
 
   // --- EXCLUIR BOT ---
-  const handleDeleteBot = async (bot) => {
+  const handleDeleteBot = async (e, bot) => {
+      e.stopPropagation();
       const result = await Swal.fire({
           title: `Excluir ${bot.nome}?`,
           text: "Isso apagará todo o histórico, leads e configurações deste bot. Não tem volta!",
@@ -77,8 +75,7 @@ export function Bots() {
           cancelButtonColor: '#3085d6',
           confirmButtonText: 'Sim, excluir',
           cancelButtonText: 'Cancelar',
-          background: '#151515',
-          color: '#fff'
+          background: '#151515', color: '#fff'
       });
 
       if (result.isConfirmed) {
@@ -98,7 +95,7 @@ export function Bots() {
       <div className="bots-header">
         <div>
             <h1>Meus Bots</h1>
-            <p style={{color: 'var(--muted-foreground)'}}>Gerencie seus assistentes.</p>
+            <p style={{color: 'var(--muted-foreground)'}}>Gerencie seus assistentes de venda.</p>
         </div>
         <Button onClick={() => navigate('/bots/new')}>
           <Plus size={20} /> Criar Novo Bot
@@ -127,19 +124,23 @@ export function Bots() {
                         </div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            <p>@{bot.username || '...'}</p>
+                            <p style={{color:'#888', fontSize:'0.9rem'}}>{bot.username || '...'}</p>
                         </div>
                     </div>
                     
                     {/* MENU DE OPÇÕES (3 Pontinhos) */}
-                    <div style={{position: 'relative'}}>
+                    <div style={{position: 'relative'}} onClick={(e) => e.stopPropagation()}>
                         <button className="icon-btn" onClick={() => setActiveMenu(activeMenu === bot.id ? null : bot.id)}>
                             <MoreVertical size={20} color="#888" />
                         </button>
                         {activeMenu === bot.id && (
                             <div className="dropdown-menu">
-                                <div onClick={() => navigate(`/bots/config/${bot.id}`)}><Settings size={14}/> Configurar</div>
-                                <div onClick={() => handleDeleteBot(bot)} className="danger"><Trash2 size={14}/> Excluir</div>
+                                <div onClick={() => navigate(`/bots/config/${bot.id}`)}>
+                                    <Settings size={14}/> Configurar
+                                </div>
+                                <div onClick={(e) => handleDeleteBot(e, bot)} className="danger">
+                                    <Trash2 size={14}/> Excluir
+                                </div>
                             </div>
                         )}
                     </div>
@@ -147,20 +148,19 @@ export function Bots() {
 
                 <div className="bot-stats">
                   <div className="stat-item">
-                    <span className="stat-label">Leads</span>
+                    <span className="stat-label">Leads Total</span>
                     <span className="stat-value">{bot.leads_count || 0}</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-label">Vendas (Hoje)</span>
+                    <span className="stat-label">Receita Total</span>
                     <span className="stat-value highlight">
-                        R$ {bot.vendas_hoje?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                        R$ {bot.vendas_total?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </span>
                   </div>
                 </div>
 
                 <div className="bot-footer">
                   {/* Status Visual: Online = Verde / Pausado = Vermelho */}
-                  {/* CORREÇÃO AQUI: Verificamos se é 'ativo' em vez de 'conectado' */}
                   <div className={`status-indicator ${bot.status === 'ativo' ? 'online' : 'offline'}`}>
                     <span className="dot"></span>
                     {bot.status === 'ativo' ? 'Online' : 'Parado'}
@@ -171,9 +171,8 @@ export function Bots() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => toggleBotStatus(bot.id)}
+                      onClick={(e) => toggleBotStatus(e, bot.id)}
                       style={{
-                        // Se ativo, borda vermelha (para pausar). Se pausado, borda verde (para ativar).
                         borderColor: bot.status === 'ativo' ? '#ef4444' : '#10b981',
                         color: bot.status === 'ativo' ? '#ef4444' : '#10b981'
                       }}

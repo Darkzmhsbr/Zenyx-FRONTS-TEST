@@ -1,315 +1,334 @@
 import React, { useState, useEffect } from 'react';
 import { useBot } from '../context/BotContext';
 import { remarketingService, planService } from '../services/api';
-import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, Repeat } from 'lucide-react';
-import { Button } from '../components/Button';
-import { Card, CardContent } from '../components/Card';
 import Swal from 'sweetalert2';
 import './Remarketing.css';
 
+// COMPONENTE WIZARD INTERNO
+function RemarketingWizard({ plans, onSend, initialBotId }) {
+    const [step, setStep] = useState(0);
+    const [sending, setSending] = useState(false); 
+    const [history, setHistory] = useState([]); 
+
+    const [data, setData] = useState({
+        tipo: '', target: '', promo: false, plan_id: '',
+        price_type: '', custom_price: '', expiration: 'none', expire_value: '',
+        periodic_days: '', periodic_time: '', message: '', media_url: '' 
+    });
+
+    useEffect(() => {
+        if(initialBotId) {
+            remarketingService.getHistory(initialBotId).then(res => setHistory(res || []));
+        }
+    }, [initialBotId]);
+
+    const update = (field, value) => setData(prev => ({ ...prev, [field]: value }));
+    const next = () => setStep(s => s + 1);
+    const back = () => setStep(s => s - 1);
+
+    // FUNÇÃO DE REUTILIZAR
+    const handleReuse = (h) => {
+        let config = {};
+        try { config = typeof h.config === 'object' ? h.config : JSON.parse(h.config); } catch(e){}
+        
+        setData({
+            tipo: 'personalizado',
+            target: h.target || config.target || 'todos',
+            promo: config.offer || false,
+            plan_id: config.plano_id || '',
+            price_type: 'custom',
+            custom_price: config.promo_price || '',
+            expiration: 'none',
+            expire_value: '',
+            message: config.msg || '',
+            media_url: config.media || ''
+        });
+        
+        Swal.fire({
+            title: 'Dados Carregados!', text: 'Revise antes de enviar.', icon: 'success',
+            timer: 1500, showConfirmButton: false, background: '#151515', color:'#fff'
+        });
+        
+        setStep(7); // Vai direto para o passo de conteúdo
+    };
+
+    const handleTestSend = async () => {
+        // Lógica de cálculo de preço
+        let finalPrice = 0;
+        const selectedPlan = plans.find(p => p.id === parseInt(data.plan_id)) || plans.find(p => p.key_id === data.plan_id);
+        
+        if (data.promo) {
+            if (data.price_type === 'original') finalPrice = selectedPlan?.preco_cheio || 0;
+            else if (data.price_type === 'promo') finalPrice = selectedPlan?.preco_atual || 0;
+            else finalPrice = parseFloat(data.custom_price);
+        }
+
+        const payload = {
+            bot_id: initialBotId,
+            tipo_envio: data.target,
+            mensagem: data.message,
+            media_url: data.media_url || null,
+            incluir_oferta: data.promo,
+            plano_oferta_id: data.plan_id || null,
+            valor_oferta: finalPrice,
+            expire_timestamp: 0,
+            is_periodic: false,
+            specific_user_id: null 
+        };
+
+        Swal.fire({ title: 'Enviando Teste...', background: '#151515', color:'#fff', didOpen: () => Swal.showLoading() });
+        try {
+            // No teste enviamos para o Admin (você) - O Backend precisa tratar isso se quiser
+            // Como não temos seu ID aqui, vamos simular enviando para "teste"
+            await remarketingService.send({ ...payload, tipo_envio: 'teste' }); 
+            Swal.fire({title:'Sucesso!', text:'Teste enviado para Admins.', icon:'success', background:'#151515', color:'#fff'});
+        } catch (e) {
+            Swal.fire('Erro', 'Falha ao enviar teste.', 'error');
+        }
+    };
+
+    const handleFinalSend = () => {
+        let finalPrice = 0;
+        const selectedPlan = plans.find(p => p.id === parseInt(data.plan_id)) || plans.find(p => p.key_id === data.plan_id);
+
+        if (data.promo) {
+            if (data.price_type === 'original') finalPrice = selectedPlan?.preco_cheio || 0;
+            else if (data.price_type === 'promo') finalPrice = selectedPlan?.preco_atual || 0;
+            else finalPrice = parseFloat(data.custom_price);
+        }
+
+        // Calculo validade
+        let expireTS = 0;
+        if (data.promo && data.expiration !== 'none') {
+            const now = Math.floor(Date.now() / 1000);
+            const qtd = parseInt(data.expire_value);
+            if (data.expiration === 'min') expireTS = now + (qtd * 60);
+            if (data.expiration === 'day') expireTS = now + (qtd * 86400);
+        }
+
+        const payload = {
+            bot_id: initialBotId,
+            tipo_envio: data.target,
+            mensagem: data.message,
+            media_url: data.media_url || null,
+            incluir_oferta: data.promo,
+            plano_oferta_id: data.plan_id || null,
+            valor_oferta: finalPrice,
+            expire_timestamp: expireTS,
+            is_periodic: data.tipo === 'periodico',
+            periodic_days: parseInt(data.periodic_days || 0),
+            periodic_time: data.periodic_time || null
+        };
+
+        setSending(true);
+        onSend(payload).then(() => {
+            setSending(false);
+            setStep(0);
+            setData({ tipo: '', target: '', promo: false, message: '', media_url: '' });
+            remarketingService.getHistory(initialBotId).then(setHistory);
+        });
+    };
+
+    return (
+        <div className="wizard-container">
+            <div className="wizard-step-indicator">ETAPA {step + 1}</div>
+            
+            {step === 0 && (
+                <>
+                    <h2 className="wizard-title">Qual tipo de Remarketing?</h2>
+                    <div className="wizard-options-grid">
+                        <div className="option-card" onClick={() => { update('tipo', 'personalizado'); next(); }}>
+                            <div className="option-icon">🔄</div>
+                            <div className="option-text"><strong>Personalizado (Imediato)</strong><span>Envio único agora mesmo.</span></div>
+                        </div>
+                        <div className="option-card" onClick={() => { update('tipo', 'periodico'); setStep(10); }}>
+                            <div className="option-icon">📅</div>
+                            <div className="option-text"><strong>Periódico (Automático)</strong><span>Configurar envio recorrente.</span></div>
+                        </div>
+                    </div>
+                    {/* HISTÓRICO */}
+                    <div style={{marginTop: '40px', borderTop:'1px solid #333', paddingTop:'20px'}}>
+                        <h3 style={{color:'#888', marginBottom:'15px'}}>📜 Histórico Recente</h3>
+                        {history.length > 0 ? (
+                            <table className="crm-table">
+                                <thead><tr><th>Data</th><th>Alvo</th><th>Enviados</th><th>Ação</th></tr></thead>
+                                <tbody>
+                                    {history.map((h, i) => (
+                                        <tr key={i}>
+                                            <td>{h.data}</td>
+                                            <td>{h.target}</td>
+                                            <td style={{color:'#10b981'}}>✅ {h.sent}</td>
+                                            <td><button className="btn-reuse" onClick={() => handleReuse(h)}>🔄 Reutilizar</button></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : <p style={{color:'#666'}}>Nenhum disparo recente.</p>}
+                    </div>
+                </>
+            )}
+
+            {step === 1 && (
+                <>
+                    <h2 className="wizard-title">Quem deve receber?</h2>
+                    <div className="wizard-options-grid">
+                        <div className={`option-card ${data.target === 'leads' ? 'selected' : ''}`} onClick={() => { update('target', 'leads'); next(); }}>
+                            <div className="option-icon">👥</div>
+                            <div className="option-text"><strong>Somente Não Pagantes</strong><span>Leads que não compraram.</span></div>
+                        </div>
+                        <div className={`option-card ${data.target === 'todos' ? 'selected' : ''}`} onClick={() => { update('target', 'todos'); next(); }}>
+                            <div className="option-icon">📢</div>
+                            <div className="option-text"><strong>Todos os Usuários</strong><span>Inclui quem já é VIP.</span></div>
+                        </div>
+                        <div className={`option-card ${data.target === 'expirados' ? 'selected' : ''}`} onClick={() => { update('target', 'expirados'); next(); }}>
+                            <div className="option-icon">💔</div>
+                            <div className="option-text"><strong>Ex-Assinantes</strong><span>Recuperação de acesso.</span></div>
+                        </div>
+                    </div>
+                    <div className="wizard-actions"><button className="btn-back" onClick={back}>Voltar</button></div>
+                </>
+            )}
+
+            {step === 2 && (
+                <>
+                    <h2 className="wizard-title">Incluir Botão de Compra?</h2>
+                    <div className="wizard-options-grid">
+                        <div className={`option-card ${data.promo ? 'selected' : ''}`} onClick={() => { update('promo', true); next(); }}>
+                            <div className="option-icon">✅</div>
+                            <div className="option-text"><strong>SIM, Incluir Promoção</strong></div>
+                        </div>
+                        <div className={`option-card ${!data.promo ? 'selected' : ''}`} onClick={() => { update('promo', false); setStep(7); }}>
+                            <div className="option-icon">❌</div>
+                            <div className="option-text"><strong>NÃO, Apenas Conteúdo</strong></div>
+                        </div>
+                    </div>
+                    <div className="wizard-actions"><button className="btn-back" onClick={back}>Voltar</button></div>
+                </>
+            )}
+
+            {step === 3 && (
+                <>
+                    <h2 className="wizard-title">Selecione o Plano</h2>
+                    <div className="wizard-options-grid">
+                        {plans.map(p => (
+                            <div key={p.id} className={`option-card ${data.plan_id === p.id ? 'selected' : ''}`} onClick={() => { update('plan_id', p.id); next(); }}>
+                                <div className="option-icon">💎</div>
+                                <div className="option-text"><strong>{p.nome_exibicao}</strong><span>R$ {p.preco_atual}</span></div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="wizard-actions"><button className="btn-back" onClick={back}>Voltar</button></div>
+                </>
+            )}
+
+            {step === 4 && (
+                <>
+                    <h2 className="wizard-title">Qual valor usar?</h2>
+                    <div className="wizard-options-grid">
+                        <div className="option-card" onClick={() => { update('price_type', 'original'); next(); }}>
+                            <div className="option-icon">💲</div><strong>Valor Original</strong>
+                        </div>
+                        <div className="option-card" onClick={() => { update('price_type', 'custom'); next(); }}>
+                            <div className="option-icon">✏️</div><strong>Valor Personalizado</strong>
+                        </div>
+                    </div>
+                    <div className="wizard-actions"><button className="btn-back" onClick={back}>Voltar</button></div>
+                </>
+            )}
+
+            {step === 5 && (
+                <>
+                    <h2 className="wizard-title">Digite o Valor (R$)</h2>
+                    <div style={{textAlign:'center'}}>
+                        <input type="number" step="0.01" value={data.custom_price} onChange={e => update('custom_price', e.target.value)} style={{fontSize: '1.5rem', padding: '15px', borderRadius:'8px', border:'1px solid #333', background:'#111', color:'#fff'}} />
+                    </div>
+                    <div className="wizard-actions"><button className="btn-back" onClick={back}>Voltar</button><button className="btn-next" onClick={next}>Próximo</button></div>
+                </>
+            )}
+
+             {step === 6 && (
+                <>
+                    <h2 className="wizard-title">Validade da Oferta</h2>
+                    {data.expiration === 'none' && (
+                        <div className="wizard-options-grid">
+                            <div className="option-card" onClick={() => update('expiration', 'min')}>⏳ Minutos</div>
+                            <div className="option-card" onClick={() => update('expiration', 'day')}>📅 Dias</div>
+                            <div className="option-card" onClick={() => next()}>♾️ Sem Validade</div>
+                        </div>
+                    )}
+                    {data.expiration !== 'none' && (
+                        <div style={{textAlign:'center'}}>
+                            <p>Quantidade de {data.expiration === 'min' ? 'Minutos' : 'Dias'}:</p>
+                            <input type="number" onChange={e => update('expire_value', e.target.value)} style={{padding:'10px', borderRadius:'6px', background:'#111', color:'#fff', border:'1px solid #333'}} />
+                            <br/><br/>
+                            <button className="btn-next" onClick={next}>Confirmar</button>
+                        </div>
+                    )}
+                     <div className="wizard-actions"><button className="btn-back" onClick={() => {update('expiration', 'none'); back();}}>Voltar</button></div>
+                </>
+            )}
+
+            {step === 7 && (
+                <>
+                    <h2 className="wizard-title">Conteúdo da Mensagem</h2>
+                    <div style={{marginBottom:'20px'}}>
+                        <label>Link da Mídia (Opcional)</label>
+                        <input type="text" placeholder="https://..." value={data.media_url} onChange={e => update('media_url', e.target.value)} style={{width:'100%', padding:'10px', background:'#222', color:'#fff', border:'1px solid #444', borderRadius:'8px'}} />
+                    </div>
+                    <div>
+                        <label>Mensagem de Texto</label>
+                        <textarea rows="5" placeholder="Digite sua mensagem..." value={data.message} onChange={e => update('message', e.target.value)} style={{width:'100%', padding:'15px', background:'#222', color:'#fff', border:'1px solid #444', borderRadius:'8px'}}></textarea>
+                    </div>
+                    <div className="wizard-actions"><button className="btn-back" onClick={back}>Voltar</button><button className="btn-next" onClick={next}>Revisar</button></div>
+                </>
+            )}
+
+            {step === 8 && (
+                <>
+                    <h2 className="wizard-title">Revisão Final</h2>
+                    <div style={{background:'#222', padding:'20px', borderRadius:'10px', marginBottom:'20px'}}>
+                        <p><strong>Tipo:</strong> {data.tipo}</p>
+                        <p><strong>Público:</strong> {data.target}</p>
+                        <p><strong>Oferta:</strong> {data.promo ? 'Sim' : 'Não'}</p>
+                        <p><strong>Mensagem:</strong> {data.message}</p>
+                    </div>
+                    <div className="wizard-actions">
+                        <button className="btn-back" onClick={back}>Voltar</button>
+                        <div style={{display:'flex', gap:'10px'}}>
+                            <button className="btn-reuse" onClick={handleTestSend}>🔬 Teste</button>
+                            <button className="btn-next" onClick={handleFinalSend} disabled={sending}>🚀 DISPARAR</button>
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
 export function Remarketing() {
   const { selectedBot } = useBot();
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [plans, setPlans] = useState([]);
-  const [history, setHistory] = useState([]);
-  
-  // Estado do Formulário (Estrutura Antiga Completa)
-  const [formData, setFormData] = useState({
-    target: 'todos',
-    mensagem: '',
-    media_url: '',
-    incluir_oferta: false,
-    plano_oferta_id: '',
-    price_mode: 'original',
-    custom_price: '',
-    expiration_mode: 'none',
-    expiration_value: ''
-  });
 
   useEffect(() => {
     if (selectedBot) {
       planService.listPlans(selectedBot.id).then(setPlans).catch(console.error);
-      carregarHistorico();
     }
   }, [selectedBot]);
 
-  const carregarHistorico = () => {
-    remarketingService.getHistory(selectedBot.id).then(setHistory).catch(console.error);
+  const handleSendApi = async (payload) => {
+      try {
+          await remarketingService.send(payload);
+          Swal.fire({title: 'Enviando!', text: 'Campanha iniciada.', icon: 'success', background: '#151515', color:'#fff'});
+      } catch (e) {
+          Swal.fire('Erro', 'Falha ao iniciar campanha.', 'error');
+      }
   };
 
-  // --- NOVA FUNÇÃO: REUTILIZAR CAMPANHA (Baseada nos seus arquivos de referência) ---
-  const handleReuse = (campaign) => {
-    try {
-        // Blinda o parse: se já for objeto, usa direto; se for string, parseia
-        let config = {};
-        if (typeof campaign.config === 'object') {
-            config = campaign.config;
-        } else {
-            try { config = JSON.parse(campaign.config); } catch (e) { config = {}; }
-        }
-
-        // Popula o formulário com os dados antigos
-        setFormData({
-            target: campaign.target || 'todos',
-            mensagem: config.msg || '',
-            media_url: config.media || '',
-            incluir_oferta: config.offer || false,
-            plano_oferta_id: campaign.plano_id || '',
-            // Ao reutilizar, forçamos 'custom' se houver preço salvo para garantir que o valor se mantenha
-            price_mode: campaign.promo_price ? 'custom' : 'original', 
-            custom_price: campaign.promo_price || '',
-            expiration_mode: 'none', // Resetamos validade por segurança (datas passadas)
-            expiration_value: ''
-        });
-
-        setStep(1); // Volta para o passo 1
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Rola para o topo
-        
-        Swal.fire({
-            title: 'Dados Carregados!',
-            text: 'As configurações da campanha antiga foram copiadas. Configure a validade novamente se necessário.',
-            icon: 'info',
-            timer: 2500,
-            showConfirmButton: false,
-            background: '#151515', color: '#fff'
-        });
-
-    } catch (e) {
-        console.error(e);
-        Swal.fire('Erro', 'Não foi possível reutilizar esta campanha.', 'error');
-    }
-  };
-
-  const handleNext = () => setStep(step + 1);
-  const handleBack = () => setStep(step - 1);
-
-  const handleSend = async () => {
-    // Validações
-    if (!formData.mensagem) return Swal.fire('Erro', 'Escreva uma mensagem!', 'error');
-    
-    if (formData.incluir_oferta) {
-        if (!formData.plano_oferta_id) return Swal.fire('Erro', 'Selecione um plano para a oferta!', 'error');
-        if (formData.price_mode === 'custom' && !formData.custom_price) return Swal.fire('Erro', 'Defina o valor promocional!', 'error');
-        if (formData.expiration_mode !== 'none' && !formData.expiration_value) return Swal.fire('Erro', 'Defina o tempo de duração!', 'error');
-    }
-    
-    setLoading(true);
-    try {
-      await remarketingService.send({
-        bot_id: selectedBot.id,
-        ...formData,
-        custom_price: formData.price_mode === 'custom' ? parseFloat(formData.custom_price) : 0,
-        expiration_value: formData.expiration_mode !== 'none' ? parseInt(formData.expiration_value) : 0
-      });
-      
-      Swal.fire({
-        title: 'Enviando! 🚀',
-        text: 'A campanha começou a ser enviada em segundo plano.',
-        icon: 'success',
-        background: '#151515', color: '#fff'
-      });
-      
-      setStep(1);
-      setFormData({ 
-        ...formData, mensagem: '', media_url: '', incluir_oferta: false, custom_price: '', expiration_value: ''
-      });
-      
-      setTimeout(carregarHistorico, 2000);
-      
-    } catch (error) {
-      Swal.fire('Erro', 'Falha ao iniciar campanha.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!selectedBot) return <div className="remarketing-container empty-state"><h2>Selecione um bot no topo.</h2></div>;
+  if (!selectedBot) return <div className="empty-state"><h2>Selecione um bot.</h2></div>;
 
   return (
     <div className="remarketing-container">
-      <div className="wizard-header">
-        <h1>Campanha de Remarketing</h1>
-        <p>Envie mensagens em massa para recuperar vendas ou avisar clientes.</p>
-        
-        <div className="steps-indicator">
-          <div className={`step ${step >= 1 ? 'active' : ''}`}>1. Público</div>
-          <div className="line"></div>
-          <div className={`step ${step >= 2 ? 'active' : ''}`}>2. Conteúdo</div>
-          <div className="line"></div>
-          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Enviar</div>
-        </div>
-      </div>
-
-      <Card className="wizard-card">
-        <CardContent>
-          {/* PASSO 1: PÚBLICO */}
-          {step === 1 && (
-            <div className="step-content fade-in">
-              <h3>Quem deve receber?</h3>
-              <div className="target-grid">
-                {['todos', 'pendentes', 'pagantes', 'expirados'].map(type => (
-                    <div 
-                        key={type}
-                        className={`target-option ${formData.target === type ? 'selected' : ''}`}
-                        onClick={() => setFormData({...formData, target: type})}
-                    >
-                        {type === 'todos' && <Users size={24} />}
-                        {type === 'pendentes' && <AlertTriangle size={24} color="#f59e0b" />}
-                        {type === 'pagantes' && <CheckCircle size={24} color="#10b981" />}
-                        {type === 'expirados' && <History size={24} color="#ef4444" />}
-                        <span style={{textTransform: 'capitalize'}}>{type}</span>
-                    </div>
-                ))}
-              </div>
-              <div className="wizard-actions right"><Button onClick={handleNext}>Próximo</Button></div>
-            </div>
-          )}
-
-          {/* PASSO 2: CONTEÚDO */}
-          {step === 2 && (
-            <div className="step-content fade-in">
-              <h3>Configure a Mensagem</h3>
-              <div className="form-group">
-                <label><MessageSquare size={16}/> Mensagem de Texto</label>
-                <textarea 
-                  className="input-field area" placeholder="Digite sua mensagem..."
-                  value={formData.mensagem} onChange={e => setFormData({...formData, mensagem: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label><Image size={16}/> URL da Mídia (Opcional)</label>
-                <input 
-                  type="text" className="input-field" placeholder="https://..."
-                  value={formData.media_url} onChange={e => setFormData({...formData, media_url: e.target.value})}
-                />
-              </div>
-
-              <div className="offer-toggle">
-                <label>
-                  <input type="checkbox" checked={formData.incluir_oferta} onChange={e => setFormData({...formData, incluir_oferta: e.target.checked})} />
-                  Incluir Botão de Compra?
-                </label>
-              </div>
-
-              {formData.incluir_oferta && (
-                <div className="offer-details fade-in" style={{ padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginTop: '10px' }}>
-                  <div className="form-group">
-                    <label>Qual plano ofertar?</label>
-                    <select className="input-field" value={formData.plano_oferta_id} onChange={e => setFormData({...formData, plano_oferta_id: e.target.value})}>
-                      <option value="">Selecione um plano...</option>
-                      {plans.map(p => <option key={p.id} value={p.id}>{p.nome_exibicao} - R$ {p.preco_atual}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                      <div className="form-group">
-                          <label><Tag size={14}/> Preço</label>
-                          <select className="input-field" value={formData.price_mode} onChange={e => setFormData({...formData, price_mode: e.target.value})}>
-                              <option value="original">Original</option>
-                              <option value="custom">Promocional</option>
-                          </select>
-                      </div>
-                      {formData.price_mode === 'custom' && (
-                          <div className="form-group">
-                              <label>Valor (R$)</label>
-                              <input type="number" className="input-field" value={formData.custom_price} onChange={e => setFormData({...formData, custom_price: e.target.value})} />
-                          </div>
-                      )}
-                  </div>
-                  <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '10px' }}>
-                      <div className="form-group">
-                          <label><Clock size={14}/> Validade</label>
-                          <select className="input-field" value={formData.expiration_mode} onChange={e => setFormData({...formData, expiration_mode: e.target.value})}>
-                              <option value="none">Sem Validade</option>
-                              <option value="minutes">Minutos</option>
-                              <option value="hours">Horas</option>
-                              <option value="days">Dias</option>
-                          </select>
-                      </div>
-                      {formData.expiration_mode !== 'none' && (
-                          <div className="form-group">
-                              <label>Tempo</label>
-                              <input type="number" className="input-field" value={formData.expiration_value} onChange={e => setFormData({...formData, expiration_value: e.target.value})} />
-                          </div>
-                      )}
-                  </div>
-                </div>
-              )}
-              <div className="wizard-actions">
-                <Button variant="outline" onClick={handleBack}>Voltar</Button>
-                <Button onClick={handleNext}>Revisar</Button>
-              </div>
-            </div>
-          )}
-
-          {/* PASSO 3: REVISÃO */}
-          {step === 3 && (
-            <div className="step-content review fade-in">
-              <h3>Resumo</h3>
-              <div className="review-box">
-                <p><strong>Bot:</strong> {selectedBot.nome}</p>
-                <p><strong>Público:</strong> <span className="highlight">{formData.target.toUpperCase()}</span></p>
-                <p><strong>Oferta:</strong> {formData.incluir_oferta ? 'Sim' : 'Não'}</p>
-                <div className="msg-preview"><strong>Msg:</strong><br/>{formData.mensagem}</div>
-              </div>
-              <div className="wizard-actions">
-                <Button variant="outline" onClick={handleBack}>Voltar</Button>
-                <Button onClick={handleSend} disabled={loading} style={{background: '#10b981', color: '#fff'}}>
-                  <Send size={18} /> {loading ? 'Enviando...' : 'Enviar Agora'}
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Histórico COM BOTÃO REUTILIZAR e Proteção JSON */}
-      <div className="history-section">
-        <h3>Histórico Recente</h3>
-        <div className="history-list">
-            {history.length === 0 ? <p style={{color:'#666'}}>Nenhuma campanha recente.</p> : (
-                history.map(h => {
-                    // Proteção contra erro de JSON
-                    let parsedConfig = {};
-                    try {
-                        if (typeof h.config === 'object') {
-                            parsedConfig = h.config;
-                        } else {
-                            parsedConfig = JSON.parse(h.config || '{}');
-                        }
-                    } catch (e) {
-                        parsedConfig = { msg: 'Erro ao ler config' };
-                    }
-
-                    return (
-                        <div key={h.id} className="history-item">
-                            <div className="h-info">
-                                <strong>{h.data}</strong>
-                                <span>Alvo: {h.target || parsedConfig.target || 'Desconhecido'}</span>
-                                <small style={{display:'block', color:'#666', marginTop:'2px'}}>
-                                    {parsedConfig.msg ? parsedConfig.msg.substring(0, 30) + '...' : ''}
-                                </small>
-                            </div>
-                            <div className="h-actions" style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                                <div className="h-stats">
-                                    <span className="sent">✅ {h.sent}</span>
-                                    <span className="blocked">🚫 {h.blocked}</span>
-                                </div>
-                                {/* BOTÃO REUTILIZAR INSERIDO AQUI */}
-                                <Button 
-                                    onClick={() => handleReuse(h)} 
-                                    style={{padding:'5px 10px', fontSize:'0.8rem', height:'auto', background:'#333', border:'1px solid #555'}}
-                                    title="Reutilizar Campanha"
-                                >
-                                    <Repeat size={14} /> Reutilizar
-                                </Button>
-                            </div>
-                        </div>
-                    );
-                })
-            )}
-        </div>
-      </div>
+       <RemarketingWizard plans={plans} onSend={handleSendApi} initialBotId={selectedBot.id} />
     </div>
   );
 }

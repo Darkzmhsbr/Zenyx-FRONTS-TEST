@@ -22,6 +22,7 @@
   border: 1px solid var(--card-border);
   transition: all 0.2s;
   background: var(--card);
+  position: relative; /* Para o menu absoluto funcionar */
 }
 
 .bot-card:hover {
@@ -46,8 +47,8 @@
 .bot-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #2AABEE, #229ED9); /* Azul Telegram */
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2aabee, #229ed9); /* Azul Telegram */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,6 +67,67 @@
   margin: 4px 0 0 0;
   font-size: 0.85rem;
   color: var(--muted-foreground);
+}
+
+/* --- MENU 3 PONTINHOS (ESTILIZADO) --- */
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 40px;
+  right: 15px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+  z-index: 100;
+  min-width: 150px;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease;
+}
+
+.dropdown-menu div {
+  padding: 12px 15px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
+}
+
+.dropdown-menu div:hover {
+  background: #252525;
+  color: #fff;
+}
+
+.dropdown-menu div.danger {
+  color: #ef4444;
+  border-top: 1px solid #333;
+}
+
+.dropdown-menu div.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* --- STATUS E METRICAS --- */
@@ -89,15 +151,20 @@
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-bottom: 4px;
 }
 
 .stat-value {
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--foreground);
 }
 
-/* --- FOOTER DO CARD --- */
+.stat-value.highlight {
+  color: #10b981; /* Verde Dinheiro */
+}
+
+/* --- FOOTER --- */
 .bot-footer {
   display: flex;
   justify-content: space-between;
@@ -111,7 +178,7 @@
   align-items: center;
   gap: 6px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .dot {
@@ -120,8 +187,8 @@
   border-radius: 50%;
 }
 
-.online { color: #10b981; }
-.online .dot { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+.status-indicator.online { color: #10b981; }
+.status-indicator.online .dot { background-color: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
 
-.offline { color: #ef4444; }
-.offline .dot { background-color: #ef4444; }
+.status-indicator.offline { color: #ef4444; }
+.status-indicator.offline .dot { background-color: #ef4444; }
