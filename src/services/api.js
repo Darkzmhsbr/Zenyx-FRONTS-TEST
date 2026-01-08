@@ -95,9 +95,9 @@ export const integrationService = {
 
 // --- SERVIÇO DE REMARKETING (ATUALIZADO) ---
 export const remarketingService = {
-  send: async (dados, isTest = false) => {
-    // dados: { target, mensagem, media_url, incluir_oferta, plano_oferta_id }
-    const payload = { ...dados, is_test: isTest };
+  send: async (dados, isTest = false, specificUserId = null) => {
+    // Adicionei specific_user_id ao payload
+    const payload = { ...dados, is_test: isTest, specific_user_id: specificUserId };
     const response = await api.post('/api/admin/remarketing/send', payload);
     return response.data;
   },
@@ -123,10 +123,19 @@ export const flowService = {
   }
 };
 
-// --- SERVIÇO DE CRM ---
+// --- SERVIÇO DE CRM (ATUALIZADO) ---
 export const crmService = {
   getContacts: async (filtro = 'todos') => {
     const response = await api.get(`/api/admin/contacts?status=${filtro}`);
+    return response.data;
+  },
+  // NOVOS MÉTODOS:
+  updateUser: async (userId, data) => {
+    const response = await api.put(`/api/admin/users/${userId}`, data);
+    return response.data;
+  },
+  resendAccess: async (userId) => {
+    const response = await api.post(`/api/admin/users/${userId}/resend-access`);
     return response.data;
   }
 };
