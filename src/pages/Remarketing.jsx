@@ -1,232 +1,258 @@
-import React, { useEffect, useState } from 'react';
-import Swal from 'sweetalert2';
-import { History } from 'lucide-react';
-import { planService, remarketingService } from '../services/api';
-import { useBot } from '../context/BotContext'; // <--- Contexto
+import React, { useState, useEffect } from 'react';
+import { useBot } from '../context/BotContext';
+import { remarketingService, planService } from '../services/api';
+import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
-import { Input } from '../components/Input';
-import { Select } from '../components/Select';
-import { TextArea } from '../components/TextArea';
+import Swal from 'sweetalert2';
 import './Remarketing.css';
 
-// --- SUB-COMPONENTE: WIZARD ---
-function RemarketingWizard({ plans, onSend }) {
-    const [step, setStep] = useState(0);
-    const [sending, setSending] = useState(false);
-    const [progress, setProgress] = useState({ sent: 0, total: 0, blocked: 0 });
-
-    const [data, setData] = useState({
-        tipo: '', target: '', promo: false, plan_id: '',
-        price_type: '', custom_price: '', message: '', media_url: '' 
-    });
-
-    const update = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-    const next = () => setStep(s => s + 1);
-    const back = () => setStep(s => s - 1);
-
-    const handleSend = async (isTest = false) => {
-        let finalPrice = 0;
-        const selectedPlan = plans.find(p => p.id === parseInt(data.plan_id));
-        
-        if (data.promo) {
-            if (data.price_type === 'original') finalPrice = selectedPlan?.preco_cheio || 0;
-            else if (data.price_type === 'promo') finalPrice = selectedPlan?.preco_atual || 0;
-            else finalPrice = parseFloat(data.custom_price);
-        }
-
-        const payload = {
-            tipo_envio: data.target,
-            mensagem: data.message,
-            media_url: data.media_url || null,
-            incluir_oferta: data.promo,
-            plano_oferta_id: data.plan_id ? String(data.plan_id) : null,
-            valor_oferta: finalPrice,
-            is_periodic: false
-        };
-
-        if (isTest) {
-            Swal.fire({ title: 'Enviando Teste...', didOpen: () => Swal.showLoading() });
-            try {
-                await onSend(payload, true);
-                Swal.fire('Sucesso!', 'Mensagem de teste enviada.', 'success');
-            } catch (e) {
-                Swal.fire('Erro', 'Falha ao enviar teste.', 'error');
-            }
-        } else {
-            setSending(true);
-            onSend(payload, false).then(() => {
-                const interval = setInterval(async () => {
-                    try {
-                        const status = await remarketingService.getStatus();
-                        setProgress({ sent: status.sent, total: status.total, blocked: status.blocked });
-                        if (!status.running) {
-                            clearInterval(interval);
-                            setSending(false);
-                            Swal.fire({
-                                title: 'Envio Concluído!',
-                                html: `✅ Entregues: <b>${status.sent}</b><br>🚫 Bloqueados: <b>${status.blocked}</b>`,
-                                icon: 'success'
-                            });
-                            setStep(0); 
-                        }
-                    } catch (e) { console.error(e); }
-                }, 1000);
-            });
-        }
-    };
-
-    if (sending) {
-        return (
-            <div className="wizard-card" style={{ textAlign: 'center' }}>
-                <h2 className="wizard-title">🚀 Enviando...</h2>
-                <div style={{ fontSize: '3rem', marginBottom: '20px' }}>
-                    {progress.sent} <span style={{ fontSize: '1.5rem', color: '#666' }}>/ {progress.total}</span>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="wizard-card">
-            <div className="wizard-step-indicator">ETAPA {step + 1} DE 5</div>
-            {/* ETAPA 0 */}
-            {step === 0 && (
-                <>
-                    <h2 className="wizard-title">Qual o tipo de envio?</h2>
-                    <div className="wizard-options-grid">
-                        <div className="option-card selected" onClick={() => next()}>
-                            <span className="option-icon">⚡</span>
-                            <div className="option-text"><strong>Imediato</strong><span>Enviar agora.</span></div>
-                        </div>
-                    </div>
-                </>
-            )}
-            {/* ETAPA 1 */}
-            {step === 1 && (
-                <>
-                    <h2 className="wizard-title">Quem deve receber?</h2>
-                    <div className="wizard-options-grid">
-                        <div className={`option-card ${data.target === 'leads' ? 'selected' : ''}`} onClick={() => { update('target', 'leads'); next(); }}>
-                            <span className="option-icon">👥</span>
-                            <div className="option-text"><strong>Leads</strong></div>
-                        </div>
-                        <div className={`option-card ${data.target === 'todos' ? 'selected' : ''}`} onClick={() => { update('target', 'todos'); next(); }}>
-                            <span className="option-icon">📢</span>
-                            <div className="option-text"><strong>Todos</strong></div>
-                        </div>
-                    </div>
-                    <div className="wizard-actions"><Button variant="ghost" onClick={back}>Voltar</Button></div>
-                </>
-            )}
-            {/* ETAPA 2 */}
-            {step === 2 && (
-                <>
-                    <h2 className="wizard-title">Incluir Botão de Compra?</h2>
-                    <div className="wizard-options-grid">
-                        <div className={`option-card ${data.promo ? 'selected' : ''}`} onClick={() => { update('promo', true); next(); }}>
-                            <span className="option-icon">✅</span>
-                            <div className="option-text"><strong>SIM</strong></div>
-                        </div>
-                        <div className={`option-card ${!data.promo ? 'selected' : ''}`} onClick={() => { update('promo', false); setStep(4); }}>
-                            <span className="option-icon">❌</span>
-                            <div className="option-text"><strong>NÃO</strong></div>
-                        </div>
-                    </div>
-                    <div className="wizard-actions"><Button variant="ghost" onClick={back}>Voltar</Button></div>
-                </>
-            )}
-            {/* ETAPA 3 */}
-            {step === 3 && (
-                <>
-                    <h2 className="wizard-title">Configurar Oferta</h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <Select 
-                            label="Qual plano vender?" 
-                            options={plans.map(p => ({ value: p.id, label: `${p.nome_exibicao} (R$ ${p.preco_atual})` }))}
-                            value={data.plan_id}
-                            onChange={e => update('plan_id', e.target.value)}
-                        />
-                        <div className="wizard-actions">
-                            <Button variant="ghost" onClick={back}>Voltar</Button>
-                            <Button onClick={next}>Próximo</Button>
-                        </div>
-                    </div>
-                </>
-            )}
-            {/* ETAPA 4 */}
-            {step === 4 && (
-                <>
-                    <h2 className="wizard-title">Conteúdo</h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                        <Input label="Mídia (Opcional)" value={data.media_url} onChange={e => update('media_url', e.target.value)} />
-                        <TextArea label="Mensagem" value={data.message} onChange={e => update('message', e.target.value)} />
-                    </div>
-                    <div className="wizard-actions">
-                        <Button variant="ghost" onClick={back}>Voltar</Button>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <Button variant="outline" onClick={() => handleSend(true)}>Testar</Button>
-                            <Button onClick={() => handleSend(false)}>Enviar</Button>
-                        </div>
-                    </div>
-                </>
-            )}
-        </div>
-    );
-}
-
 export function Remarketing() {
-    const { selectedBot } = useBot(); // Contexto
-    const [plans, setPlans] = useState([]);
-    const [history, setHistory] = useState([]);
+  const { selectedBot } = useBot();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [plans, setPlans] = useState([]);
+  const [history, setHistory] = useState([]);
+  
+  // Estado do Formulário
+  const [formData, setFormData] = useState({
+    target: 'todos', // 'todos', 'pendentes', 'pagantes', 'expirados'
+    mensagem: '',
+    media_url: '',
+    incluir_oferta: false,
+    plano_oferta_id: ''
+  });
 
-    useEffect(() => {
-        if (selectedBot) {
-            planService.listPlans(selectedBot.id).then(setPlans);
-            remarketingService.getHistory(selectedBot.id).then(setHistory);
-        } else {
-            setPlans([]); setHistory([]);
-        }
-    }, [selectedBot]);
+  useEffect(() => {
+    if (selectedBot) {
+      // Carregar planos para o dropdown
+      planService.listPlans(selectedBot.id).then(setPlans).catch(console.error);
+      // Carregar histórico
+      remarketingService.getHistory(selectedBot.id).then(setHistory).catch(console.error);
+    }
+  }, [selectedBot]);
 
-    return (
-        <div className="remarketing-container">
-            <div style={{ marginBottom: '40px' }}>
-                <h1>Remarketing: <span style={{color:'#c333ff'}}>{selectedBot?.nome || "..."}</span></h1>
-                <p style={{ color: 'var(--muted-foreground)' }}>Recupere vendas e engaje sua audiência.</p>
+  const handleNext = () => setStep(step + 1);
+  const handleBack = () => setStep(step - 1);
+
+  const handleSend = async () => {
+    if (!formData.mensagem) return Swal.fire('Erro', 'Escreva uma mensagem!', 'error');
+    if (formData.incluir_oferta && !formData.plano_oferta_id) return Swal.fire('Erro', 'Selecione um plano para a oferta!', 'error');
+    
+    setLoading(true);
+    try {
+      await remarketingService.send({
+        bot_id: selectedBot.id,
+        ...formData
+      });
+      
+      Swal.fire({
+        title: 'Enviando! 🚀',
+        text: 'A campanha começou a ser enviada em segundo plano.',
+        icon: 'success',
+        background: '#151515',
+        color: '#fff'
+      });
+      
+      // Reset para passo 1
+      setStep(1);
+      setFormData({ ...formData, mensagem: '', media_url: '' });
+      // Atualiza histórico
+      setTimeout(() => {
+        remarketingService.getHistory(selectedBot.id).then(setHistory).catch(console.error);
+      }, 2000);
+      
+    } catch (error) {
+      Swal.fire('Erro', 'Falha ao iniciar campanha.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!selectedBot) return (
+    <div className="remarketing-container empty-state">
+        <h2>Selecione um bot no topo da tela para acessar o Remarketing.</h2>
+    </div>
+  );
+
+  return (
+    <div className="remarketing-container">
+      <div className="wizard-header">
+        <h1>Campanha de Remarketing</h1>
+        <p>Envie mensagens em massa para recuperar vendas ou avisar clientes.</p>
+        
+        {/* Barra de Progresso */}
+        <div className="steps-indicator">
+          <div className={`step ${step >= 1 ? 'active' : ''}`}>1. Público</div>
+          <div className="line"></div>
+          <div className={`step ${step >= 2 ? 'active' : ''}`}>2. Conteúdo</div>
+          <div className="line"></div>
+          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Enviar</div>
+        </div>
+      </div>
+
+      <Card className="wizard-card">
+        <CardContent>
+          
+          {/* PASSO 1: PÚBLICO ALVO */}
+          {step === 1 && (
+            <div className="step-content fade-in">
+              <h3>Quem deve receber?</h3>
+              <div className="target-grid">
+                <div 
+                  className={`target-option ${formData.target === 'todos' ? 'selected' : ''}`}
+                  onClick={() => setFormData({...formData, target: 'todos'})}
+                >
+                  <Users size={24} />
+                  <span>Todos os Leads</span>
+                  <small>Pagantes, Pendentes e Expirados</small>
+                </div>
+
+                <div 
+                  className={`target-option ${formData.target === 'pendentes' ? 'selected' : ''}`}
+                  onClick={() => setFormData({...formData, target: 'pendentes'})}
+                >
+                  <AlertTriangle size={24} color="#f59e0b" />
+                  <span>Pendentes</span>
+                  <small>Geraram PIX mas não pagaram</small>
+                </div>
+
+                <div 
+                  className={`target-option ${formData.target === 'pagantes' ? 'selected' : ''}`}
+                  onClick={() => setFormData({...formData, target: 'pagantes'})}
+                >
+                  <CheckCircle size={24} color="#10b981" />
+                  <span>Clientes Ativos</span>
+                  <small>Já compraram acesso</small>
+                </div>
+
+                <div 
+                  className={`target-option ${formData.target === 'expirados' ? 'selected' : ''}`}
+                  onClick={() => setFormData({...formData, target: 'expirados'})}
+                >
+                  <History size={24} color="#ef4444" />
+                  <span>Expirados</span>
+                  <small>Acesso vencido (Win-back)</small>
+                </div>
+              </div>
+              <div className="wizard-actions right">
+                <Button onClick={handleNext}>Próximo</Button>
+              </div>
             </div>
+          )}
 
-            {selectedBot ? (
-                <>
-                    <RemarketingWizard 
-                        plans={plans} 
-                        onSend={(payload, isTest) => remarketingService.send({ bot_id: selectedBot.id, ...payload }, isTest)}
-                    />
-                    <div style={{ marginTop: '50px' }}>
-                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--foreground)' }}>
-                            <History size={20} /> Histórico
-                        </h3>
-                        <div style={{ marginTop: '20px' }}>
-                            {history.map(h => (
-                                <div key={h.id} className="history-item">
-                                    <div>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>{h.data}</div>
-                                        <div style={{ fontWeight: '600' }}>{h.config?.content_data?.substring(0, 50)}...</div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ color: '#10b981' }}>✅ {h.sent}</div>
-                                        <div style={{ color: '#ef4444' }}>🚫 {h.blocked}</div>
-                                    </div>
-                                </div>
-                            ))}
+          {/* PASSO 2: CONTEÚDO */}
+          {step === 2 && (
+            <div className="step-content fade-in">
+              <h3>Configure a Mensagem</h3>
+              
+              <div className="form-group">
+                <label><MessageSquare size={16}/> Mensagem de Texto</label>
+                <textarea 
+                  className="input-field area"
+                  placeholder="Ex: Olá! Vi que você não finalizou sua compra. Aproveite o desconto hoje!"
+                  value={formData.mensagem}
+                  onChange={e => setFormData({...formData, mensagem: e.target.value})}
+                />
+              </div>
+
+              <div className="form-group">
+                <label><Image size={16}/> URL da Mídia (Opcional - Foto/Vídeo)</label>
+                <input 
+                  type="text" 
+                  className="input-field"
+                  placeholder="https://imgur.com/exemplo.jpg"
+                  value={formData.media_url}
+                  onChange={e => setFormData({...formData, media_url: e.target.value})}
+                />
+              </div>
+
+              <div className="offer-toggle">
+                <label>
+                  <input 
+                    type="checkbox" 
+                    checked={formData.incluir_oferta}
+                    onChange={e => setFormData({...formData, incluir_oferta: e.target.checked})}
+                  />
+                  Incluir Botão de Compra?
+                </label>
+              </div>
+
+              {formData.incluir_oferta && (
+                <div className="form-group fade-in">
+                  <label>Qual plano ofertar no botão?</label>
+                  <select 
+                    className="input-field"
+                    value={formData.plano_oferta_id}
+                    onChange={e => setFormData({...formData, plano_oferta_id: e.target.value})}
+                  >
+                    <option value="">Selecione um plano...</option>
+                    {plans.map(p => (
+                      <option key={p.id} value={p.id}>{p.nome_exibicao} - R$ {p.preco_atual}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="wizard-actions">
+                <Button variant="outline" onClick={handleBack}>Voltar</Button>
+                <Button onClick={handleNext}>Revisar</Button>
+              </div>
+            </div>
+          )}
+
+          {/* PASSO 3: REVISÃO */}
+          {step === 3 && (
+            <div className="step-content review fade-in">
+              <h3>Resumo da Campanha</h3>
+              
+              <div className="review-box">
+                <p><strong>Bot:</strong> {selectedBot.nome}</p>
+                <p><strong>Público Alvo:</strong> <span className="highlight">{formData.target.toUpperCase()}</span></p>
+                <p><strong>Oferta:</strong> {formData.incluir_oferta ? 'Sim (Botão incluído)' : 'Não'}</p>
+                <div className="msg-preview">
+                  <strong>Mensagem:</strong><br/>
+                  {formData.mensagem}
+                </div>
+                {formData.media_url && <div className="media-preview">📷 Mídia incluída</div>}
+              </div>
+
+              <div className="wizard-actions">
+                <Button variant="outline" onClick={handleBack}>Voltar</Button>
+                <Button 
+                  onClick={handleSend} 
+                  disabled={loading}
+                  style={{background: '#10b981', color: '#fff'}}
+                >
+                  <Send size={18} /> {loading ? 'Enviando...' : 'Enviar Campanha Agora'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+        </CardContent>
+      </Card>
+
+      {/* Histórico */}
+      <div className="history-section">
+        <h3>Histórico Recente</h3>
+        <div className="history-list">
+            {history.length === 0 ? <p style={{color:'#666'}}>Nenhuma campanha recente.</p> : (
+                history.map(h => (
+                    <div key={h.id} className="history-item">
+                        <div className="h-info">
+                            <strong>{h.data}</strong>
+                            <span>Alvo: {h.config ? JSON.parse(h.config).target : 'Desconhecido'}</span>
+                        </div>
+                        <div className="h-stats">
+                            <span className="sent">✅ {h.sent}</span>
+                            <span className="blocked">🚫 {h.blocked}</span>
                         </div>
                     </div>
-                </>
-            ) : (
-                <div style={{textAlign:'center', marginTop:'50px', color:'#666'}}>
-                    <h2>👈 Selecione um bot no topo da tela para continuar.</h2>
-                </div>
+                ))
             )}
         </div>
-    );
+      </div>
+    </div>
+  );
 }

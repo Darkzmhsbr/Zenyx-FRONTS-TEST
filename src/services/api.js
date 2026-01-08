@@ -49,14 +49,13 @@ export const botService = {
   }
 };
 
-// --- SERVIÇO DE ADMINISTRADORES (NOVO - FASE 1) ---
+// --- SERVIÇO DE ADMINISTRADORES ---
 export const adminService = {
   listAdmins: async (botId) => {
     const response = await api.get(`/api/admin/bots/${botId}/admins`);
     return response.data;
   },
   addAdmin: async (botId, dados) => {
-    // dados = { telegram_id: "123", nome: "Fulano" }
     const response = await api.post(`/api/admin/bots/${botId}/admins`, dados);
     return response.data;
   },
@@ -94,9 +93,10 @@ export const integrationService = {
   }
 };
 
-// --- SERVIÇO DE REMARKETING ---
+// --- SERVIÇO DE REMARKETING (ATUALIZADO) ---
 export const remarketingService = {
   send: async (dados, isTest = false) => {
+    // dados: { target, mensagem, media_url, incluir_oferta, plano_oferta_id }
     const payload = { ...dados, is_test: isTest };
     const response = await api.post('/api/admin/remarketing/send', payload);
     return response.data;
