@@ -81,11 +81,10 @@ export function Bots() {
                       <Send size={24} />
                     </div>
                     <div className="bot-info">
-                      {/* Backend retorna 'nome', não 'name' */}
                       <h3>{bot.nome}</h3> 
-                      {/* Backend retorna o token, vamos mascarar para parecer um username visualmente */}
+                      {/* Mascara o token para segurança visual */}
                       <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-                        Token: {bot.token.substring(0, 10)}...
+                        Token: {bot.token ? bot.token.substring(0, 10) + '...' : '****'}
                       </p>
                     </div>
                   </div>
@@ -97,13 +96,15 @@ export function Bots() {
                 <div className="bot-stats">
                   <div className="stat-item">
                     <span className="stat-label">Leads</span>
-                    {/* Backend ainda não calcula leads, usando placeholder 0 */}
-                    <span className="stat-value">0</span>
+                    {/* EXIBE OS LEADS REAIS DO BANCO DE DADOS */}
+                    <span className="stat-value">{bot.leads || 0}</span>
                   </div>
                   <div className="stat-item">
                     <span className="stat-label">Receita</span>
-                    {/* Placeholder */}
-                    <span className="stat-value" style={{ color: '#10b981' }}>R$ 0,00</span>
+                    {/* EXIBE A RECEITA REAL FORMATADA */}
+                    <span className="stat-value" style={{ color: '#10b981' }}>
+                        R$ {(bot.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
                   </div>
                 </div>
 

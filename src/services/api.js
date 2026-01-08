@@ -34,6 +34,11 @@ export const botService = {
   getBot: async (botId) => {
     const response = await api.get(`/api/admin/bots/${botId}`);
     return response.data;
+  },
+  // NOVA FUNÇÃO: ATUALIZAR BOT (Token/ID)
+  updateBot: async (botId, dados) => {
+    const response = await api.put(`/api/admin/bots/${botId}`, dados);
+    return response.data;
   }
 };
 
@@ -102,7 +107,7 @@ export const crmService = {
   }
 };
 
-// --- SERVIÇO DE DASHBOARD (ATUALIZADO) ---
+// --- SERVIÇO DE DASHBOARD ---
 export const dashboardService = {
   getStats: async (botId = null) => {
     // Se passar botId, adiciona na URL, senão busca geral
