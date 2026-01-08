@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBot } from '../context/BotContext';
 import { remarketingService, planService } from '../services/api';
-import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History } from 'lucide-react';
+import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import Swal from 'sweetalert2';
@@ -19,8 +19,16 @@ export function Remarketing() {
     target: 'todos', // 'todos', 'pendentes', 'pagantes', 'expirados'
     mensagem: '',
     media_url: '',
+    
+    // Oferta
     incluir_oferta: false,
-    plano_oferta_id: ''
+    plano_oferta_id: '',
+    
+    // Preço e Validade (Novos Campos)
+    price_mode: 'original', // 'original' ou 'custom'
+    custom_price: '',
+    expiration_mode: 'none', // 'none', 'minutes', 'hours', 'days'
+    expiration_value: ''
   });
 
   useEffect(() => {
@@ -36,14 +44,23 @@ export function Remarketing() {
   const handleBack = () => setStep(step - 1);
 
   const handleSend = async () => {
+    // Validações
     if (!formData.mensagem) return Swal.fire('Erro', 'Escreva uma mensagem!', 'error');
-    if (formData.incluir_oferta && !formData.plano_oferta_id) return Swal.fire('Erro', 'Selecione um plano para a oferta!', 'error');
+    
+    if (formData.incluir_oferta) {
+        if (!formData.plano_oferta_id) return Swal.fire('Erro', 'Selecione um plano para a oferta!', 'error');
+        if (formData.price_mode === 'custom' && !formData.custom_price) return Swal.fire('Erro', 'Defina o valor promocional!', 'error');
+        if (formData.expiration_mode !== 'none' && !formData.expiration_value) return Swal.fire('Erro', 'Defina o tempo de duração!', 'error');
+    }
     
     setLoading(true);
     try {
       await remarketingService.send({
         bot_id: selectedBot.id,
-        ...formData
+        ...formData,
+        // Converte strings para números
+        custom_price: formData.price_mode === 'custom' ? parseFloat(formData.custom_price) : 0,
+        expiration_value: formData.expiration_mode !== 'none' ? parseInt(formData.expiration_value) : 0
       });
       
       Swal.fire({
@@ -56,10 +73,20 @@ export function Remarketing() {
       
       // Reset para passo 1
       setStep(1);
-      setFormData({ ...formData, mensagem: '', media_url: '' });
-      // Atualiza histórico
+      setFormData({ 
+        ...formData, 
+        mensagem: '', 
+        media_url: '', 
+        incluir_oferta: false,
+        custom_price: '',
+        expiration_value: ''
+      });
+      
+      // Atualiza histórico após um tempo
       setTimeout(() => {
-        remarketingService.getHistory(selectedBot.id).then(setHistory).catch(console.error);
+        if (selectedBot) {
+            remarketingService.getHistory(selectedBot.id).then(setHistory).catch(console.error);
+        }
       }, 2000);
       
     } catch (error) {
@@ -178,19 +205,80 @@ export function Remarketing() {
                 </label>
               </div>
 
+              {/* ÁREA DE OFERTA (Expandida) */}
               {formData.incluir_oferta && (
-                <div className="form-group fade-in">
-                  <label>Qual plano ofertar no botão?</label>
-                  <select 
-                    className="input-field"
-                    value={formData.plano_oferta_id}
-                    onChange={e => setFormData({...formData, plano_oferta_id: e.target.value})}
-                  >
-                    <option value="">Selecione um plano...</option>
-                    {plans.map(p => (
-                      <option key={p.id} value={p.id}>{p.nome_exibicao} - R$ {p.preco_atual}</option>
-                    ))}
-                  </select>
+                <div className="offer-details fade-in" style={{ padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginTop: '10px' }}>
+                  
+                  <div className="form-group">
+                    <label>Qual plano ofertar?</label>
+                    <select 
+                      className="input-field"
+                      value={formData.plano_oferta_id}
+                      onChange={e => setFormData({...formData, plano_oferta_id: e.target.value})}
+                    >
+                      <option value="">Selecione um plano...</option>
+                      {plans.map(p => (
+                        <option key={p.id} value={p.id}>{p.nome_exibicao} - R$ {p.preco_atual}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                      <div className="form-group">
+                          <label><Tag size={14}/> Preço</label>
+                          <select 
+                              className="input-field" 
+                              value={formData.price_mode} 
+                              onChange={e => setFormData({...formData, price_mode: e.target.value})}
+                          >
+                              <option value="original">Original do Plano</option>
+                              <option value="custom">Promocional (Custom)</option>
+                          </select>
+                      </div>
+                      
+                      {formData.price_mode === 'custom' && (
+                          <div className="form-group">
+                              <label>Valor (R$)</label>
+                              <input 
+                                  type="number" 
+                                  className="input-field" 
+                                  placeholder="Ex: 9.90"
+                                  value={formData.custom_price}
+                                  onChange={e => setFormData({...formData, custom_price: e.target.value})}
+                              />
+                          </div>
+                      )}
+                  </div>
+
+                  <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '10px' }}>
+                      <div className="form-group">
+                          <label><Clock size={14}/> Validade (Escassez)</label>
+                          <select 
+                              className="input-field" 
+                              value={formData.expiration_mode} 
+                              onChange={e => setFormData({...formData, expiration_mode: e.target.value})}
+                          >
+                              <option value="none">Sem Validade (Eterno)</option>
+                              <option value="minutes">Minutos</option>
+                              <option value="hours">Horas</option>
+                              <option value="days">Dias</option>
+                          </select>
+                      </div>
+                      
+                      {formData.expiration_mode !== 'none' && (
+                          <div className="form-group">
+                              <label>Tempo ({formData.expiration_mode})</label>
+                              <input 
+                                  type="number" 
+                                  className="input-field" 
+                                  placeholder="Ex: 30"
+                                  value={formData.expiration_value}
+                                  onChange={e => setFormData({...formData, expiration_value: e.target.value})}
+                              />
+                          </div>
+                      )}
+                  </div>
+
                 </div>
               )}
 
@@ -209,7 +297,17 @@ export function Remarketing() {
               <div className="review-box">
                 <p><strong>Bot:</strong> {selectedBot.nome}</p>
                 <p><strong>Público Alvo:</strong> <span className="highlight">{formData.target.toUpperCase()}</span></p>
-                <p><strong>Oferta:</strong> {formData.incluir_oferta ? 'Sim (Botão incluído)' : 'Não'}</p>
+                
+                {formData.incluir_oferta ? (
+                    <>
+                        <p><strong>Oferta:</strong> Sim (Botão incluído)</p>
+                        <p><strong>Preço:</strong> {formData.price_mode === 'original' ? 'Original do Plano' : `R$ ${formData.custom_price}`}</p>
+                        <p><strong>Validade:</strong> {formData.expiration_mode === 'none' ? 'Sem limite' : `${formData.expiration_value} ${formData.expiration_mode}`}</p>
+                    </>
+                ) : (
+                    <p><strong>Oferta:</strong> Não</p>
+                )}
+
                 <div className="msg-preview">
                   <strong>Mensagem:</strong><br/>
                   {formData.mensagem}
@@ -242,7 +340,17 @@ export function Remarketing() {
                     <div key={h.id} className="history-item">
                         <div className="h-info">
                             <strong>{h.data}</strong>
-                            <span>Alvo: {h.config ? JSON.parse(h.config).target : 'Desconhecido'}</span>
+                            {/* Tenta fazer parse do config JSON para mostrar detalhes, com fallback */}
+                            <span>
+                                {(() => {
+                                    try {
+                                        const cfg = JSON.parse(h.config);
+                                        return `Alvo: ${h.target || cfg.target || '?'}`;
+                                    } catch {
+                                        return 'Config antiga';
+                                    }
+                                })()}
+                            </span>
                         </div>
                         <div className="h-stats">
                             <span className="sent">✅ {h.sent}</span>
