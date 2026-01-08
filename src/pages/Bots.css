@@ -22,7 +22,7 @@
   border: 1px solid var(--card-border);
   transition: all 0.2s;
   background: var(--card);
-  position: relative; /* Para o menu absoluto funcionar */
+  position: relative; 
 }
 
 .bot-card:hover {
@@ -69,65 +69,74 @@
   color: var(--muted-foreground);
 }
 
-/* --- MENU 3 PONTINHOS (ESTILIZADO) --- */
+/* --- MENU 3 PONTINHOS (GLASSMORPHISM) --- */
 .icon-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 5px;
+  padding: 8px;
   border-radius: 50%;
   transition: background 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #888;
 }
 
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 40px;
-  right: 15px;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-  z-index: 100;
-  min-width: 150px;
-  overflow: hidden;
-  animation: fadeIn 0.2s ease;
-}
-
-.dropdown-menu div {
-  padding: 12px 15px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: #ccc;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: background 0.2s;
-}
-
-.dropdown-menu div:hover {
-  background: #252525;
   color: #fff;
 }
 
-.dropdown-menu div.danger {
-  color: #ef4444;
-  border-top: 1px solid #333;
+.dropdown-menu.glass-menu {
+  position: absolute;
+  top: 45px;
+  right: 10px;
+  background: rgba(20, 20, 20, 0.95); /* Fundo quase opaco */
+  backdrop-filter: blur(10px); /* Efeito vidro */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  z-index: 100;
+  min-width: 160px;
+  overflow: hidden;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.dropdown-menu div.danger:hover {
-  background: rgba(239, 68, 68, 0.1);
+.menu-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding-left: 20px; /* Efeito de slide no hover */
+}
+
+.menu-item.danger {
+  color: #ff6b6b;
+}
+
+.menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ff4444;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* --- STATUS E METRICAS --- */

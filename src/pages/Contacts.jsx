@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { crmService, remarketingService, admin } from '../services/api'; // Adicionado admin se necessário para updates
+import { crmService, remarketingService, admin } from '../services/api'; 
 import { useBot } from '../context/BotContext';
-import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Send, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
+import { Users, CheckCircle, Clock, XCircle, RefreshCw, Send, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
 import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Contacts.css';
@@ -11,7 +11,7 @@ export function Contacts() {
   const [contactsData, setContactsData] = useState([]); 
   const [loading, setLoading] = useState(false);
   
-  // --- PAGINAÇÃO E FILTROS (RESTAURADOS) ---
+  // --- PAGINAÇÃO E FILTROS ---
   const [filter, setFilter] = useState('todos');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -25,7 +25,6 @@ export function Contacts() {
   useEffect(() => {
     if (selectedBot) {
       carregarContatos();
-      // Carrega histórico para o modal de envio rápido
       remarketingService.getHistory(selectedBot.id).then(setRmktHistory).catch(() => {});
     }
   }, [selectedBot, filter, page]);
@@ -33,7 +32,6 @@ export function Contacts() {
   const carregarContatos = async () => {
     setLoading(true);
     try {
-      // Espera-se que a API retorne { users: [], total_pages: 1, total_records: 0 }
       const data = await crmService.getContacts(selectedBot.id, filter, page);
       setContactsData(data.users || []); 
       setTotalPages(data.total_pages || 1);
@@ -47,13 +45,8 @@ export function Contacts() {
   };
 
   // --- PAGINAÇÃO ---
-  const handleNextPage = () => {
-      if (page < totalPages) setPage(page + 1);
-  };
-  
-  const handlePrevPage = () => {
-      if (page > 1) setPage(page - 1);
-  };
+  const handleNextPage = () => { if (page < totalPages) setPage(page + 1); };
+  const handlePrevPage = () => { if (page > 1) setPage(page - 1); };
 
   // --- ABRIR MODAL DE EDIÇÃO ---
   const openUserEdit = (user) => {
@@ -61,37 +54,34 @@ export function Contacts() {
           id: user.id,
           name: user.first_name || user.telegram_id,
           telegram_id: user.telegram_id,
-          role: user.role || 'user', // Restaurado
+          role: user.role || 'user', 
           status: user.status,
           custom_expiration: user.expiration_date ? user.expiration_date.split('T')[0] : ''
       });
       setShowUserModal(true);
   };
 
-  // --- SALVAR EDIÇÃO DO USUÁRIO (RESTAURADO) ---
+  // --- SALVAR EDIÇÃO DO USUÁRIO ---
   const handleSaveUser = async (e) => {
       e.preventDefault();
       try {
-          // Exemplo de payload para atualizar usuário
           const payload = {
               status: editingUser.status,
               role: editingUser.role,
               custom_expiration: editingUser.custom_expiration || null
           };
           
-          // Chama serviço de update (certifique-se que existe no api.js ou use admin.updateUser)
-          // Aqui assumindo crmService ou admin
           await admin.updateUser(editingUser.id, payload); 
 
           Swal.fire('Sucesso', 'Usuário atualizado!', 'success');
           setShowUserModal(false);
-          carregarContatos(); // Recarrega a lista
+          carregarContatos(); 
       } catch (error) {
           Swal.fire('Erro', 'Falha ao atualizar usuário.', 'error');
       }
   };
 
-  // --- REENVIAR ACESSO (RESTAURADO) ---
+  // --- REENVIAR ACESSO ---
   const handleResendAccess = async () => {
       try {
           await admin.resendAccess(editingUser.id);
@@ -119,12 +109,12 @@ export function Contacts() {
           const payload = {
               bot_id: selectedBot.id,
               tipo_envio: 'individual',
-              specific_user_id: editingUser.telegram_id, // ID Único para o Backend
+              specific_user_id: editingUser.telegram_id, 
               mensagem: config.msg,
-              media_url: config.media,
+              media_url: config.media || null,
               incluir_oferta: config.offer,
-              plano_oferta_id: config.plano_id,
-              valor_oferta: config.promo_price,
+              plano_oferta_id: config.plano_id || null,
+              valor_oferta: config.promo_price || 0,
               expire_timestamp: 0 
           };
 
@@ -166,7 +156,7 @@ export function Contacts() {
                             <th>Usuário</th>
                             <th>Status</th>
                             <th>Data Entrada</th>
-                            <th>Expiração</th> {/* COLUNA NOVA */}
+                            <th>Expiração</th> {/* COLUNA NOVA AQUI */}
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -187,7 +177,7 @@ export function Contacts() {
                                 </td>
                                 <td>{new Date(u.created_at).toLocaleDateString()}</td>
                                 
-                                {/* COLUNA EXPIRAÇÃO */}
+                                {/* COLUNA EXPIRAÇÃO (DADOS) */}
                                 <td>
                                     {u.status === 'active' || u.status === 'paid'
                                         ? (u.expiration_date ? new Date(u.expiration_date).toLocaleDateString() : <span style={{color:'#10b981'}}>Vitalício</span>) 
@@ -207,7 +197,7 @@ export function Contacts() {
                 </table>
             </div>
 
-            {/* PAGINAÇÃO (RESTAURADA) */}
+            {/* PAGINAÇÃO */}
             <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'20px'}}>
                 <Button disabled={page === 1} onClick={handlePrevPage} variant="outline">
                     <ChevronLeft size={16}/> Anterior
@@ -250,7 +240,6 @@ export function Contacts() {
                         />
                         <div style={{display:'flex', gap:'10px', marginTop:'10px'}}>
                             <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>♾️ Vitalício</button>
-                            {/* BOTÃO REENVIAR ACESSO RESTAURADO */}
                             <button type="button" className="btn-small primary" onClick={handleResendAccess} style={{background:'#2563eb'}}>📧 Reenviar Acesso</button>
                         </div>
                     </div>

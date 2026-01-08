@@ -35,7 +35,7 @@ export function Bots() {
 
   // --- LIGA / DESLIGA BOT ---
   const toggleBotStatus = async (e, id) => {
-    e.stopPropagation(); // Evita abrir o menu ou navegar
+    e.stopPropagation(); // Evita abrir o menu se clicar no botão
     try {
       const updatedBot = await botService.toggleBot(id);
       
@@ -68,13 +68,12 @@ export function Bots() {
       e.stopPropagation();
       const result = await Swal.fire({
           title: `Excluir ${bot.nome}?`,
-          text: "Isso apagará todo o histórico, leads e configurações deste bot. Não tem volta!",
+          text: "Isso apagará todo o histórico e configurações. Confirmar?",
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#d33',
           cancelButtonColor: '#3085d6',
           confirmButtonText: 'Sim, excluir',
-          cancelButtonText: 'Cancelar',
           background: '#151515', color: '#fff'
       });
 
@@ -124,21 +123,24 @@ export function Bots() {
                         </div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            <p style={{color:'#888', fontSize:'0.9rem'}}>{bot.username || '...'}</p>
+                            {/* CORREÇÃO DO @@: Se já vier com @ do backend, não adiciona outro */}
+                            <p style={{color:'#888', fontSize:'0.9rem'}}>
+                                {bot.username ? (bot.username.startsWith('@') ? bot.username : `@${bot.username}`) : '...'}
+                            </p>
                         </div>
                     </div>
                     
-                    {/* MENU DE OPÇÕES (3 Pontinhos) */}
+                    {/* MENU DE OPÇÕES (3 Pontinhos Moderno) */}
                     <div style={{position: 'relative'}} onClick={(e) => e.stopPropagation()}>
                         <button className="icon-btn" onClick={() => setActiveMenu(activeMenu === bot.id ? null : bot.id)}>
                             <MoreVertical size={20} color="#888" />
                         </button>
                         {activeMenu === bot.id && (
-                            <div className="dropdown-menu">
-                                <div onClick={() => navigate(`/bots/config/${bot.id}`)}>
+                            <div className="dropdown-menu glass-menu">
+                                <div className="menu-item" onClick={() => navigate(`/bots/config/${bot.id}`)}>
                                     <Settings size={14}/> Configurar
                                 </div>
-                                <div onClick={(e) => handleDeleteBot(e, bot)} className="danger">
+                                <div className="menu-item danger" onClick={(e) => handleDeleteBot(e, bot)}>
                                     <Trash2 size={14}/> Excluir
                                 </div>
                             </div>

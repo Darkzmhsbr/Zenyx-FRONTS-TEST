@@ -26,7 +26,6 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
     const next = () => setStep(s => s + 1);
     const back = () => setStep(s => s - 1);
 
-    // FUNÇÃO DE REUTILIZAR
     const handleReuse = (h) => {
         let config = {};
         try { config = typeof h.config === 'object' ? h.config : JSON.parse(h.config); } catch(e){}
@@ -49,11 +48,28 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
             timer: 1500, showConfirmButton: false, background: '#151515', color:'#fff'
         });
         
-        setStep(7); // Vai direto para o passo de conteúdo
+        setStep(7); 
+    };
+
+    // FUNÇÃO AUXILIAR PARA LIMPAR DADOS (CORRIGE ERRO 422)
+    const sanitizePayload = (formData, finalPrice, expireTS) => {
+        return {
+            bot_id: initialBotId,
+            tipo_envio: formData.target,
+            mensagem: formData.message,
+            media_url: formData.media_url || null,
+            incluir_oferta: formData.promo,
+            plano_oferta_id: formData.plan_id || null,
+            valor_oferta: parseFloat(finalPrice) || 0.0,
+            expire_timestamp: parseInt(expireTS) || 0,
+            is_periodic: formData.tipo === 'periodico',
+            periodic_days: formData.periodic_days ? parseInt(formData.periodic_days) : 0,
+            periodic_time: formData.periodic_time || null,
+            specific_user_id: null 
+        };
     };
 
     const handleTestSend = async () => {
-        // Lógica de cálculo de preço
         let finalPrice = 0;
         const selectedPlan = plans.find(p => p.id === parseInt(data.plan_id)) || plans.find(p => p.key_id === data.plan_id);
         
@@ -63,23 +79,11 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
             else finalPrice = parseFloat(data.custom_price);
         }
 
-        const payload = {
-            bot_id: initialBotId,
-            tipo_envio: data.target,
-            mensagem: data.message,
-            media_url: data.media_url || null,
-            incluir_oferta: data.promo,
-            plano_oferta_id: data.plan_id || null,
-            valor_oferta: finalPrice,
-            expire_timestamp: 0,
-            is_periodic: false,
-            specific_user_id: null 
-        };
+        // Usa a função de limpeza
+        const payload = sanitizePayload(data, finalPrice, 0);
 
         Swal.fire({ title: 'Enviando Teste...', background: '#151515', color:'#fff', didOpen: () => Swal.showLoading() });
         try {
-            // No teste enviamos para o Admin (você) - O Backend precisa tratar isso se quiser
-            // Como não temos seu ID aqui, vamos simular enviando para "teste"
             await remarketingService.send({ ...payload, tipo_envio: 'teste' }); 
             Swal.fire({title:'Sucesso!', text:'Teste enviado para Admins.', icon:'success', background:'#151515', color:'#fff'});
         } catch (e) {
@@ -97,7 +101,6 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
             else finalPrice = parseFloat(data.custom_price);
         }
 
-        // Calculo validade
         let expireTS = 0;
         if (data.promo && data.expiration !== 'none') {
             const now = Math.floor(Date.now() / 1000);
@@ -106,19 +109,8 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
             if (data.expiration === 'day') expireTS = now + (qtd * 86400);
         }
 
-        const payload = {
-            bot_id: initialBotId,
-            tipo_envio: data.target,
-            mensagem: data.message,
-            media_url: data.media_url || null,
-            incluir_oferta: data.promo,
-            plano_oferta_id: data.plan_id || null,
-            valor_oferta: finalPrice,
-            expire_timestamp: expireTS,
-            is_periodic: data.tipo === 'periodico',
-            periodic_days: parseInt(data.periodic_days || 0),
-            periodic_time: data.periodic_time || null
-        };
+        // Usa a função de limpeza
+        const payload = sanitizePayload(data, finalPrice, expireTS);
 
         setSending(true);
         onSend(payload).then(() => {
@@ -146,7 +138,6 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
                             <div className="option-text"><strong>Periódico (Automático)</strong><span>Configurar envio recorrente.</span></div>
                         </div>
                     </div>
-                    {/* HISTÓRICO */}
                     <div style={{marginTop: '40px', borderTop:'1px solid #333', paddingTop:'20px'}}>
                         <h3 style={{color:'#888', marginBottom:'15px'}}>📜 Histórico Recente</h3>
                         {history.length > 0 ? (
