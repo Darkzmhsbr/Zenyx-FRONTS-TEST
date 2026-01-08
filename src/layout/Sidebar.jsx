@@ -17,7 +17,7 @@ import {
   ShieldCheck,
   Layers,
   Unlock,
-  X // <--- Importei o ícone X para fechar
+  X 
 } from 'lucide-react';
 import './Sidebar.css';
 

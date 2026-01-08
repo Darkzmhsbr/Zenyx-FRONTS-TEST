@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useBot } from '../context/BotContext';
-import { Bot, ChevronDown, Check, Bell, Moon, Menu } from 'lucide-react'; // Importei o Menu
+import { Bot, ChevronDown, Check, Bell, Moon, Menu } from 'lucide-react'; 
 import './Header.css'; 
 
 export function Header({ onToggleMenu }) {
