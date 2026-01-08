@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 🔗 SEU DOMÍNIO DO RAILWAY
+// 🔗 SEU DOMÍNIO DO RAILWAY (Backend Python)
 const API_URL = 'https://zenyx-gbs-production.up.railway.app';
 
 const api = axios.create({
@@ -10,16 +10,17 @@ const api = axios.create({
   },
 });
 
-// Interceptor para logar erros (ajuda no debug)
 api.interceptors.response.use(
   response => response,
   error => {
-    console.error("API Error:", error.response?.data || error.message);
+    if (error.response && error.response.status === 422) {
+      console.error("❌ ERRO 422 (Dados Inválidos):", error.response.data);
+    }
     return Promise.reject(error);
   }
 );
 
-// --- BOTS ---
+// --- SERVIÇO DE BOTS ---
 export const botService = {
   createBot: async (dados) => (await api.post('/api/admin/bots', dados)).data,
   listBots: async () => (await api.get('/api/admin/bots')).data,
@@ -29,14 +30,20 @@ export const botService = {
   deleteBot: async (botId) => (await api.delete(`/api/admin/bots/${botId}`)).data
 };
 
-// --- PLANOS ---
+// --- SERVIÇO DE FLUXO ---
+export const flowService = {
+  getFlow: async (botId) => (await api.get(`/api/admin/bots/${botId}/flow`)).data,
+  saveFlow: async (botId, dados) => (await api.post(`/api/admin/bots/${botId}/flow`, dados)).data
+};
+
+// --- SERVIÇO DE PLANOS ---
 export const planService = {
   listPlans: async (botId) => (await api.get(`/api/admin/plans/${botId}`)).data,
   savePlan: async (plan) => (await api.post('/api/admin/plans', plan)).data,
   deletePlan: async (planId) => (await api.delete(`/api/admin/plans/${planId}`)).data
 };
 
-// --- REMARKETING ---
+// --- SERVIÇO DE REMARKETING ---
 export const remarketingService = {
   send: async (dados) => (await api.post('/api/admin/remarketing/send', dados)).data,
   getHistory: async (botId) => {
@@ -45,21 +52,35 @@ export const remarketingService = {
   }
 };
 
-// --- CRM / CONTATOS (CORRIGIDO) ---
+// --- SERVIÇO DE CRM (LEGADO) ---
 export const crmService = {
-  // Agora aceita botId explicitamente
-  getContacts: async (botId) => {
-    // Pede 'limit=1000' para trazer todos e filtrar no front (igual versão antiga)
-    const response = await api.get(`/api/admin/contacts?bot_id=${botId}&status=todos&limit=1000`);
+  getContacts: async (botId, filter = 'todos', page = 1) => {
+    // Mantendo compatibilidade
+    const response = await api.get(`/api/admin/contacts?bot_id=${botId}&status=${filter}&page=${page}`);
     return response.data;
-  },
-  updateUser: async (userId, data) => (await api.put(`/api/admin/users/${userId}`, data)).data,
-  resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
+  }
 };
 
-// --- ADMIN (Para compatibilidade com imports antigos ou Vercel) ---
+// --- SERVIÇO ADMIN (CRÍTICO PARA CONTATOS) ---
 export const admin = {
-  getUsers: crmService.getContacts,
-  updateUser: crmService.updateUser,
-  resendAccess: crmService.resendAccess
+  getUsers: async (botId, filter, page) => {
+    const response = await api.get(`/api/admin/contacts?bot_id=${botId}&status=${filter}&page=${page}`);
+    return response.data;
+  },
+  updateUser: async (userId, data) => {
+    const response = await api.put(`/api/admin/users/${userId}`, data);
+    return response.data;
+  },
+  resendAccess: async (userId) => {
+    const response = await api.post(`/api/admin/users/${userId}/resend-access`);
+    return response.data;
+  }
+};
+
+// --- SERVIÇO DE DASHBOARD (O QUE FALTAVA!) ---
+export const dashboardService = {
+  getStats: async (botId) => {
+    const response = await api.get(`/api/admin/dashboard/stats?bot_id=${botId}`);
+    return response.data;
+  }
 };
