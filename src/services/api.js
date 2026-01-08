@@ -35,9 +35,18 @@ export const botService = {
     const response = await api.get(`/api/admin/bots/${botId}`);
     return response.data;
   },
-  // NOVA FUNÇÃO: ATUALIZAR BOT (Token/ID)
   updateBot: async (botId, dados) => {
     const response = await api.put(`/api/admin/bots/${botId}`, dados);
+    return response.data;
+  },
+  // NOVA: LIGA/DESLIGA BOT
+  toggleBot: async (botId) => {
+    const response = await api.post(`/api/admin/bots/${botId}/toggle`);
+    return response.data;
+  },
+  // NOVA: DELETA BOT
+  deleteBot: async (botId) => {
+    const response = await api.delete(`/api/admin/bots/${botId}`);
     return response.data;
   }
 };
@@ -110,7 +119,6 @@ export const crmService = {
 // --- SERVIÇO DE DASHBOARD ---
 export const dashboardService = {
   getStats: async (botId = null) => {
-    // Se passar botId, adiciona na URL, senão busca geral
     const url = botId ? `/api/admin/dashboard/stats?bot_id=${botId}` : '/api/admin/dashboard/stats';
     const response = await api.get(url);
     return response.data;

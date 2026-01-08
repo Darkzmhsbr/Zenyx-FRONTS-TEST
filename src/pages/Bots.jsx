@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Send, Settings, Power, MoreVertical, RefreshCcw } from 'lucide-react';
+import { Plus, Send, Settings, Power, MoreVertical, RefreshCcw, Trash2 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
-import { botService } from '../services/api'; // Importando a API
+import { botService } from '../services/api'; 
+import Swal from 'sweetalert2';
 import './Bots.css';
 
 export function Bots() {
   const navigate = useNavigate();
-  
-  // Estado agora começa vazio e espera os dados da API
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeMenu, setActiveMenu] = useState(null); // Controla qual menu está aberto
 
-  // 🔄 CARREGAR BOTS DO BACKEND
   useEffect(() => {
     carregarBots();
   }, []);
@@ -30,18 +29,60 @@ export function Bots() {
     }
   };
 
-  // Função visual (backend ainda não tem endpoint de pausar bot, então é apenas visual)
-  const toggleBotStatus = (id) => {
-    setBots(bots.map(bot => {
-      if (bot.id === id) {
-        return { ...bot, status: bot.status === 'conectado' ? 'desconectado' : 'conectado' };
+  // --- LIGA / DESLIGA BOT ---
+  const toggleBotStatus = async (id) => {
+    try {
+      // Chama API para persistir a mudança
+      const updatedBot = await botService.toggleBot(id);
+      
+      // Atualiza visualmente
+      setBots(bots.map(bot => {
+        if (bot.id === id) {
+          return { ...bot, status: updatedBot.status };
+        }
+        return bot;
+      }));
+    } catch (error) {
+      Swal.fire('Erro', 'Não foi possível alterar o status.', 'error');
+    }
+  };
+
+  // --- EXCLUIR BOT ---
+  const handleDeleteBot = async (id) => {
+    // Fecha o menu
+    setActiveMenu(null);
+
+    const result = await Swal.fire({
+      title: 'Tem certeza?',
+      text: "Isso apagará o bot, histórico de vendas e configurações. Não pode ser desfeito!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#333',
+      confirmButtonText: 'Sim, excluir',
+      background: '#151515',
+      color: '#fff'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await botService.deleteBot(id);
+        setBots(bots.filter(b => b.id !== id)); // Remove da lista visualmente
+        Swal.fire({
+          title: 'Excluído!',
+          text: 'O bot foi removido com sucesso.',
+          icon: 'success',
+          background: '#151515',
+          color: '#fff'
+        });
+      } catch (error) {
+        Swal.fire('Erro', 'Falha ao excluir o bot.', 'error');
       }
-      return bot;
-    }));
+    }
   };
 
   return (
-    <div className="bots-container">
+    <div className="bots-container" onClick={() => setActiveMenu(null)}>
       
       <div className="bots-header">
         <div>
@@ -75,50 +116,97 @@ export function Bots() {
             <Card key={bot.id} className="bot-card">
               <CardContent>
                 
-                <div className="bot-header-row">
+                <div className="bot-header-row" style={{position: 'relative'}}>
                   <div className="bot-identity">
                     <div className="bot-icon">
                       <Send size={24} />
                     </div>
                     <div className="bot-info">
                       <h3>{bot.nome}</h3> 
-                      {/* Mascara o token para segurança visual */}
                       <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>
                         Token: {bot.token ? bot.token.substring(0, 10) + '...' : '****'}
                       </p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" style={{ color: 'var(--muted-foreground)' }}>
-                    <MoreVertical size={20} />
-                  </Button>
+                  
+                  {/* --- MENU DE TRÊS PONTOS --- */}
+                  <div style={{position: 'relative'}}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      style={{ color: 'var(--muted-foreground)' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenu(activeMenu === bot.id ? null : bot.id);
+                      }}
+                    >
+                      <MoreVertical size={20} />
+                    </Button>
+
+                    {/* DROPDOWN MENU */}
+                    {activeMenu === bot.id && (
+                      <div className="dropdown-menu" style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: '40px',
+                        background: '#1a1a1a',
+                        border: '1px solid #333',
+                        borderRadius: '8px',
+                        zIndex: 100,
+                        width: '150px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                      }}>
+                        <button 
+                          onClick={() => handleDeleteBot(bot.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            width: '100%', padding: '10px 15px',
+                            background: 'transparent', border: 'none',
+                            color: '#ef4444', cursor: 'pointer', textAlign: 'left',
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          <Trash2 size={16} /> Excluir Bot
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="bot-stats">
                   <div className="stat-item">
                     <span className="stat-label">Leads</span>
-                    {/* EXIBE OS LEADS REAIS DO BANCO DE DADOS */}
                     <span className="stat-value">{bot.leads || 0}</span>
                   </div>
                   <div className="stat-item">
                     <span className="stat-label">Receita</span>
-                    {/* EXIBE A RECEITA REAL FORMATADA */}
                     <span className="stat-value" style={{ color: '#10b981' }}>
-                        R$ {(bot.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {(bot.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
 
                 <div className="bot-footer">
-                  {/* Status agora verifica 'conectado' vindo do banco */}
+                  {/* Status Visual: Online = Verde / Pausado ou Erro = Vermelho */}
                   <div className={`status-indicator ${bot.status === 'conectado' ? 'online' : 'offline'}`}>
                     <span className="dot"></span>
                     {bot.status === 'conectado' ? 'Online' : 'Parado'}
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <Button variant="outline" size="sm" onClick={() => toggleBotStatus(bot.id)}>
-                      <Power size={16} color={bot.status === 'conectado' ? '#ef4444' : '#10b981'} />
+                    {/* BOTÃO LIGA/DESLIGA */}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => toggleBotStatus(bot.id)}
+                      style={{
+                        borderColor: bot.status === 'conectado' ? '#ef4444' : '#10b981',
+                        color: bot.status === 'conectado' ? '#ef4444' : '#10b981'
+                      }}
+                    >
+                      <Power size={16} />
                     </Button>
+                    
                     <Button variant="primary" size="sm" onClick={() => navigate(`/bots/config/${bot.id}`)}>
                       <Settings size={16} /> Configurar
                     </Button>
