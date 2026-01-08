@@ -106,6 +106,18 @@ export const dashboardService = {
   }
 };
 
+// --- SERVIÇO DE INTEGRAÇÕES (Corrigido erro atual) ---
+export const integrationService = {
+  getConfig: async () => {
+    const response = await api.get('/api/admin/config');
+    return response.data;
+  },
+  saveConfig: async (data) => {
+    const response = await api.post('/api/admin/config', data);
+    return response.data;
+  }
+};
+
 // --- ADMIN (ALIAS PARA COMPATIBILIDADE) ---
 export const admin = crmService;
 
