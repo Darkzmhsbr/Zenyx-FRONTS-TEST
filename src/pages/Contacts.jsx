@@ -10,14 +10,11 @@ export function Contacts() {
   const { selectedBot } = useBot();
   const [contactsData, setContactsData] = useState([]); 
   const [loading, setLoading] = useState(false);
-  
-  // --- PAGINAÇÃO E FILTROS ---
   const [filter, setFilter] = useState('todos');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   
-  // --- MODAL E HISTÓRICO ---
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [rmktHistory, setRmktHistory] = useState([]);
@@ -38,17 +35,14 @@ export function Contacts() {
       setTotalRecords(data.total_records || 0);
     } catch (error) {
       console.error(error);
-      Swal.fire('Erro', 'Falha ao carregar contatos.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // --- PAGINAÇÃO ---
   const handleNextPage = () => { if (page < totalPages) setPage(page + 1); };
   const handlePrevPage = () => { if (page > 1) setPage(page - 1); };
 
-  // --- ABRIR MODAL DE EDIÇÃO ---
   const openUserEdit = (user) => {
       setEditingUser({
           id: user.id,
@@ -61,7 +55,6 @@ export function Contacts() {
       setShowUserModal(true);
   };
 
-  // --- SALVAR EDIÇÃO DO USUÁRIO ---
   const handleSaveUser = async (e) => {
       e.preventDefault();
       try {
@@ -70,9 +63,7 @@ export function Contacts() {
               role: editingUser.role,
               custom_expiration: editingUser.custom_expiration || null
           };
-          
           await admin.updateUser(editingUser.id, payload); 
-
           Swal.fire('Sucesso', 'Usuário atualizado!', 'success');
           setShowUserModal(false);
           carregarContatos(); 
@@ -81,7 +72,6 @@ export function Contacts() {
       }
   };
 
-  // --- REENVIAR ACESSO ---
   const handleResendAccess = async () => {
       try {
           await admin.resendAccess(editingUser.id);
@@ -91,7 +81,6 @@ export function Contacts() {
       }
   };
 
-  // --- NOVA FUNÇÃO: REUTILIZAR CAMPANHA PARA 1 USUÁRIO ---
   const handleReuseForUser = async (campaign) => {
       let config = {};
       try { config = typeof campaign.config === 'object' ? campaign.config : JSON.parse(campaign.config); } catch(e){}
@@ -138,7 +127,6 @@ export function Contacts() {
         </div>
       </div>
 
-      {/* ABAS DE FILTRO */}
       <div className="tabs-container">
           {['todos', 'pendente', 'active', 'expired'].map(f => (
               <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => {setFilter(f); setPage(1);}}>
@@ -155,115 +143,82 @@ export function Contacts() {
                         <tr>
                             <th>Usuário</th>
                             <th>Status</th>
-                            <th>Data Entrada</th>
-                            <th>Expiração</th> {/* COLUNA NOVA AQUI */}
+                            <th>Entrada</th>
+                            <th>Expiração</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {contactsData.length > 0 ? contactsData.map(u => (
                             <tr key={u.id}>
+                                <td><div style={{display:'flex', gap:'5px'}}><Users size={16}/> {u.first_name || u.telegram_id}</div></td>
                                 <td>
-                                    <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
-                                        <Users size={16} color="#888"/>
-                                        {u.first_name || u.telegram_id}
-                                    </div>
-                                </td>
-                                <td>
-                                    {u.status === 'active' && <span className="badge success"><CheckCircle size={12}/> Ativo</span>}
-                                    {u.status === 'paid' && <span className="badge success"><CheckCircle size={12}/> Pago</span>}
-                                    {u.status === 'pending' && <span className="badge warning"><Clock size={12}/> Pendente</span>}
-                                    {u.status === 'expired' && <span className="badge danger"><XCircle size={12}/> Expirado</span>}
+                                    {u.status === 'active' && <span className="badge success">Ativo</span>}
+                                    {u.status === 'paid' && <span className="badge success">Pago</span>}
+                                    {u.status === 'pending' && <span className="badge warning">Pendente</span>}
+                                    {u.status === 'expired' && <span className="badge danger">Expirado</span>}
                                 </td>
                                 <td>{new Date(u.created_at).toLocaleDateString()}</td>
-                                
-                                {/* COLUNA EXPIRAÇÃO (DADOS) */}
+                                {/* COLUNA EXPIRAÇÃO RENDERIZADA AQUI */}
                                 <td>
-                                    {u.status === 'active' || u.status === 'paid'
+                                    {(u.status === 'active' || u.status === 'paid')
                                         ? (u.expiration_date ? new Date(u.expiration_date).toLocaleDateString() : <span style={{color:'#10b981'}}>Vitalício</span>) 
                                         : '-'}
                                 </td>
-                                
-                                <td>
-                                    <Button size="sm" onClick={() => openUserEdit(u)} style={{fontSize:'0.8rem'}}>
-                                        <Edit size={14} style={{marginRight:'5px'}}/> Gerenciar
-                                    </Button>
-                                </td>
+                                <td><Button size="sm" onClick={() => openUserEdit(u)}><Edit size={14}/> Gerenciar</Button></td>
                             </tr>
                         )) : (
-                            <tr><td colSpan="5" style={{textAlign:'center', padding:'20px', color:'#666'}}>Nenhum contato encontrado.</td></tr>
+                            <tr><td colSpan="5" style={{textAlign:'center', padding:'20px'}}>Nenhum contato.</td></tr>
                         )}
                     </tbody>
                 </table>
             </div>
-
-            {/* PAGINAÇÃO */}
-            <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'20px'}}>
-                <Button disabled={page === 1} onClick={handlePrevPage} variant="outline">
-                    <ChevronLeft size={16}/> Anterior
-                </Button>
-                <span style={{color:'#888'}}>Página {page} de {totalPages}</span>
-                <Button disabled={page >= totalPages} onClick={handleNextPage} variant="outline">
-                    Próximo <ChevronRight size={16}/>
-                </Button>
+            <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', marginTop:'20px'}}>
+                <Button disabled={page === 1} onClick={handlePrevPage}>Anterior</Button>
+                <span>Pag {page} de {totalPages}</span>
+                <Button disabled={page >= totalPages} onClick={handleNextPage}>Próximo</Button>
             </div>
         </>
       )}
 
-      {/* MODAL DE EDIÇÃO */}
       {showUserModal && editingUser && (
         <div className="modal-overlay">
             <div className="modal-content">
                 <h2>Gerenciar: {editingUser.name}</h2>
-                
                 <form onSubmit={handleSaveUser}>
                     <div className="form-group">
-                        <label>Status do Usuário</label>
-                        <select 
-                            className="input-field" 
-                            value={editingUser.status} 
-                            onChange={e => setEditingUser({...editingUser, status: e.target.value})}
-                        >
-                            <option value="pending">Pendente (Aguardando Pagamento)</option>
-                            <option value="active">Ativo (Pago/Acesso Liberado)</option>
-                            <option value="expired">Expirado (Sem Acesso)</option>
+                        <label>Status</label>
+                        <select className="input-field" value={editingUser.status} onChange={e => setEditingUser({...editingUser, status: e.target.value})}>
+                            <option value="pending">Pendente</option>
+                            <option value="active">Ativo</option>
+                            <option value="expired">Expirado</option>
                         </select>
                     </div>
-
                     <div className="form-group">
-                        <label>Data Personalizada (Expiração)</label>
-                        <input 
-                            type="date" 
-                            className="input-field"
-                            value={editingUser.custom_expiration} 
-                            onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})}
-                        />
-                        <div style={{display:'flex', gap:'10px', marginTop:'10px'}}>
-                            <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>♾️ Vitalício</button>
-                            <button type="button" className="btn-small primary" onClick={handleResendAccess} style={{background:'#2563eb'}}>📧 Reenviar Acesso</button>
+                        <label>Expiração</label>
+                        <input type="date" className="input-field" value={editingUser.custom_expiration} onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})} />
+                        <div style={{marginTop:'10px', display:'flex', gap:'10px'}}>
+                            <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>Vitalício</button>
+                            <button type="button" className="btn-small primary" onClick={handleResendAccess}>Reenviar Acesso</button>
                         </div>
                     </div>
-
-                    {/* ÁREA DE DISPARO INDIVIDUAL */}
-                    <div style={{marginTop:'20px', borderTop:'1px solid #333', paddingTop:'15px'}}>
-                        <h3>🚀 Disparo Rápido (Individual)</h3>
-                        <p style={{fontSize:'0.8rem', color:'#888'}}>Reutilize campanhas anteriores apenas para este usuário.</p>
-                        
-                        <div style={{maxHeight:'150px', overflowY:'auto', marginTop:'10px', border:'1px solid #333', borderRadius:'6px'}}>
-                            {rmktHistory.length > 0 ? rmktHistory.map((h, i) => (
-                                <div key={i} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px', borderBottom:'1px solid #222'}}>
-                                    <span style={{fontSize:'0.75rem', color:'#ccc'}}>{h.data} - {JSON.parse(h.config || '{}').msg?.substring(0,10)}...</span>
-                                    <button type="button" className="btn-mini-send" onClick={() => handleReuseForUser(h)}>
-                                        <Send size={10} style={{marginRight:'3px'}}/> Enviar
-                                    </button>
+                    
+                    {/* DISPARO INDIVIDUAL NO MODAL */}
+                    <div style={{marginTop:'15px', borderTop:'1px solid #333', paddingTop:'10px'}}>
+                        <h4>Envio Rápido</h4>
+                        <div style={{maxHeight:'100px', overflowY:'auto'}}>
+                            {rmktHistory.map((h,i) => (
+                                <div key={i} style={{display:'flex', justifyContent:'space-between', padding:'5px', borderBottom:'1px solid #222'}}>
+                                    <small>{h.data}</small>
+                                    <button type="button" onClick={() => handleReuseForUser(h)}>Enviar</button>
                                 </div>
-                            )) : <p style={{padding:'10px', fontSize:'0.8rem', color:'#666'}}>Sem histórico.</p>}
+                            ))}
                         </div>
                     </div>
 
                     <div className="modal-actions" style={{marginTop:'20px'}}>
-                        <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Fechar</button>
-                        <button type="submit" className="btn-save">Salvar Alterações</button>
+                        <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Cancelar</button>
+                        <button type="submit" className="btn-save">Salvar</button>
                     </div>
                 </form>
             </div>

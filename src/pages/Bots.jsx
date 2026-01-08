@@ -11,11 +11,10 @@ export function Bots() {
   const navigate = useNavigate();
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeMenu, setActiveMenu] = useState(null); // Controla qual menu está aberto
+  const [activeMenu, setActiveMenu] = useState(null);
 
   useEffect(() => {
     carregarBots();
-    // Fecha o menu se clicar fora
     const handleClickOutside = () => setActiveMenu(null);
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
@@ -27,48 +26,36 @@ export function Bots() {
       const dados = await botService.listBots();
       setBots(dados);
     } catch (error) {
-      console.error("Erro ao buscar bots:", error);
+      console.error("Erro bots:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- LIGA / DESLIGA BOT ---
   const toggleBotStatus = async (e, id) => {
-    e.stopPropagation(); // Evita abrir o menu se clicar no botão
+    e.stopPropagation();
     try {
       const updatedBot = await botService.toggleBot(id);
-      
-      // Atualiza visualmente
-      setBots(bots.map(bot => {
-        if (bot.id === id) {
-          return { ...bot, status: updatedBot.status };
-        }
-        return bot;
-      }));
+      setBots(bots.map(b => b.id === id ? { ...b, status: updatedBot.status } : b));
       
       const isAtivo = updatedBot.status === 'ativo';
-      
-      const Toast = Swal.mixin({
+      Swal.mixin({
         toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
         background: '#151515', color: '#fff'
-      });
-      Toast.fire({
+      }).fire({
         icon: isAtivo ? 'success' : 'warning',
         title: isAtivo ? 'Bot Ativado!' : 'Bot Pausado'
       });
-
     } catch (error) {
       Swal.fire('Erro', 'Falha ao alterar status.', 'error');
     }
   };
 
-  // --- EXCLUIR BOT ---
   const handleDeleteBot = async (e, bot) => {
       e.stopPropagation();
       const result = await Swal.fire({
           title: `Excluir ${bot.nome}?`,
-          text: "Isso apagará todo o histórico e configurações. Confirmar?",
+          text: "Isso apagará histórico e configurações. Confirmar?",
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#d33',
@@ -83,57 +70,50 @@ export function Bots() {
               setBots(bots.filter(b => b.id !== bot.id));
               Swal.fire({title: 'Excluído!', icon: 'success', background: '#151515', color: '#fff'});
           } catch (error) {
-              Swal.fire('Erro', 'Falha ao excluir bot.', 'error');
+              Swal.fire('Erro', 'Falha ao excluir.', 'error');
           }
       }
   };
 
   return (
     <div className="bots-container">
-      
       <div className="bots-header">
         <div>
             <h1>Meus Bots</h1>
-            <p style={{color: 'var(--muted-foreground)'}}>Gerencie seus assistentes de venda.</p>
+            <p style={{color: 'var(--muted-foreground)'}}>Gerencie seus assistentes.</p>
         </div>
-        <Button onClick={() => navigate('/bots/new')}>
-          <Plus size={20} /> Criar Novo Bot
-        </Button>
+        <Button onClick={() => navigate('/bots/new')}><Plus size={20} /> Criar Novo Bot</Button>
       </div>
 
       {loading ? (
         <div style={{textAlign: 'center', padding: '50px', color: '#666'}}>
-            <RefreshCcw className="spin" /> Carregando bots...
+            <RefreshCcw className="spin" /> Carregando...
         </div>
       ) : bots.length === 0 ? (
         <div className="empty-state" style={{textAlign:'center', marginTop:'50px', color:'#555'}}>
-            <h2>Você ainda não tem bots.</h2>
-            <p>Clique em "Criar Novo Bot" para começar.</p>
+            <h2>Sem bots.</h2>
+            <p>Clique em "Criar Novo Bot".</p>
         </div>
       ) : (
         <div className="bots-grid">
           {bots.map((bot) => (
             <Card key={bot.id} className="bot-card">
               <CardContent>
-                
                 <div className="bot-header-row">
                     <div className="bot-identity">
-                        <div className="bot-icon">
-                            <Send size={24} />
-                        </div>
+                        <div className="bot-icon"><Send size={24} /></div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            {/* CORREÇÃO DO @@: Se já vier com @ do backend, não adiciona outro */}
+                            {/* CORREÇÃO DO @@: Limpa e adiciona um só */}
                             <p style={{color:'#888', fontSize:'0.9rem'}}>
-                                {bot.username ? (bot.username.startsWith('@') ? bot.username : `@${bot.username}`) : '...'}
+                                @{bot.username ? bot.username.replace('@', '') : '...'}
                             </p>
                         </div>
                     </div>
                     
-                    {/* MENU DE OPÇÕES (3 Pontinhos Moderno) */}
                     <div style={{position: 'relative'}} onClick={(e) => e.stopPropagation()}>
                         <button className="icon-btn" onClick={() => setActiveMenu(activeMenu === bot.id ? null : bot.id)}>
-                            <MoreVertical size={20} color="#888" />
+                            <MoreVertical size={20} />
                         </button>
                         {activeMenu === bot.id && (
                             <div className="dropdown-menu glass-menu">
@@ -162,39 +142,26 @@ export function Bots() {
                 </div>
 
                 <div className="bot-footer">
-                  {/* Status Visual: Online = Verde / Pausado = Vermelho */}
                   <div className={`status-indicator ${bot.status === 'ativo' ? 'online' : 'offline'}`}>
                     <span className="dot"></span>
                     {bot.status === 'ativo' ? 'Online' : 'Parado'}
                   </div>
-
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {/* BOTÃO LIGA/DESLIGA */}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={(e) => toggleBotStatus(e, bot.id)}
-                      style={{
-                        borderColor: bot.status === 'ativo' ? '#ef4444' : '#10b981',
-                        color: bot.status === 'ativo' ? '#ef4444' : '#10b981'
-                      }}
-                      title={bot.status === 'ativo' ? "Pausar Bot" : "Ativar Bot"}
+                    <Button variant="outline" size="sm" onClick={(e) => toggleBotStatus(e, bot.id)}
+                      style={{borderColor: bot.status === 'ativo' ? '#ef4444' : '#10b981', color: bot.status === 'ativo' ? '#ef4444' : '#10b981'}}
                     >
                       <Power size={16} />
                     </Button>
-                    
                     <Button variant="primary" size="sm" onClick={() => navigate(`/bots/config/${bot.id}`)}>
                       <Settings size={16} /> Configurar
                     </Button>
                   </div>
                 </div>
-
               </CardContent>
             </Card>
           ))}
         </div>
       )}
-
     </div>
   );
 }
