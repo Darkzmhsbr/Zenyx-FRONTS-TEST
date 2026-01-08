@@ -10,6 +10,7 @@ const api = axios.create({
   },
 });
 
+// --- INTERCEPTOR DE ERROS ---
 api.interceptors.response.use(
   response => response,
   error => {
@@ -22,48 +23,68 @@ api.interceptors.response.use(
 
 // --- SERVIÇO DE BOTS ---
 export const botService = {
-  createBot: async (dados) => (await api.post('/api/admin/bots', dados)).data,
-  listBots: async () => (await api.get('/api/admin/bots')).data,
-  getBot: async (botId) => (await api.get(`/api/admin/bots/${botId}`)).data,
-  updateBot: async (botId, dados) => (await api.put(`/api/admin/bots/${botId}`, dados)).data,
-  toggleBot: async (botId) => (await api.post(`/api/admin/bots/${botId}/toggle`)).data,
-  deleteBot: async (botId) => (await api.delete(`/api/admin/bots/${botId}`)).data
-};
-
-// --- SERVIÇO DE FLUXO ---
-export const flowService = {
-  getFlow: async (botId) => (await api.get(`/api/admin/bots/${botId}/flow`)).data,
-  saveFlow: async (botId, dados) => (await api.post(`/api/admin/bots/${botId}/flow`, dados)).data
-};
-
-// --- SERVIÇO DE PLANOS ---
-export const planService = {
-  listPlans: async (botId) => (await api.get(`/api/admin/plans/${botId}`)).data,
-  savePlan: async (plan) => (await api.post('/api/admin/plans', plan)).data,
-  deletePlan: async (planId) => (await api.delete(`/api/admin/plans/${planId}`)).data
-};
-
-// --- SERVIÇO DE REMARKETING ---
-export const remarketingService = {
-  send: async (dados) => (await api.post('/api/admin/remarketing/send', dados)).data,
-  getHistory: async (botId) => {
-    try { return (await api.get(`/api/admin/remarketing/history/${botId}`)).data; } 
-    catch { return []; }
-  }
-};
-
-// --- SERVIÇO DE CRM (LEGADO) ---
-export const crmService = {
-  getContacts: async (botId, filter = 'todos', page = 1) => {
-    // Mantendo compatibilidade
-    const response = await api.get(`/api/admin/contacts?bot_id=${botId}&status=${filter}&page=${page}`);
+  createBot: async (dados) => {
+    const response = await api.post('/api/admin/bots', dados);
+    return response.data;
+  },
+  listBots: async () => {
+    const response = await api.get('/api/admin/bots');
+    return response.data;
+  },
+  getBot: async (botId) => {
+    const response = await api.get(`/api/admin/bots/${botId}`);
+    return response.data;
+  },
+  updateBot: async (botId, dados) => {
+    const response = await api.put(`/api/admin/bots/${botId}`, dados);
+    return response.data;
+  },
+  toggleBot: async (botId) => {
+    const response = await api.post(`/api/admin/bots/${botId}/toggle`);
+    return response.data;
+  },
+  deleteBot: async (botId) => {
+    const response = await api.delete(`/api/admin/bots/${botId}`);
     return response.data;
   }
 };
 
-// --- SERVIÇO ADMIN (CRÍTICO PARA CONTATOS) ---
-export const admin = {
-  getUsers: async (botId, filter, page) => {
+// --- SERVIÇO DE PLANOS ---
+export const planService = {
+  listPlans: async (botId) => {
+    const response = await api.get(`/api/admin/plans/${botId}`);
+    return response.data;
+  },
+  savePlan: async (plan) => {
+    const response = await api.post('/api/admin/plans', plan);
+    return response.data;
+  },
+  deletePlan: async (planId) => {
+    const response = await api.delete(`/api/admin/plans/${planId}`);
+    return response.data;
+  }
+};
+
+// --- SERVIÇO DE REMARKETING ---
+export const remarketingService = {
+  send: async (dados) => {
+    const response = await api.post('/api/admin/remarketing/send', dados);
+    return response.data;
+  },
+  getHistory: async (botId) => {
+    try {
+        const response = await api.get(`/api/admin/remarketing/history/${botId}`);
+        return response.data;
+    } catch (error) {
+        return [];
+    }
+  }
+};
+
+// --- SERVIÇO DE CRM (CORRIGIDO PARA RECEBER BOT_ID) ---
+export const crmService = {
+  getContacts: async (botId, filter = 'todos', page = 1) => {
+    // Agora passamos o bot_id na URL
     const response = await api.get(`/api/admin/contacts?bot_id=${botId}&status=${filter}&page=${page}`);
     return response.data;
   },
@@ -77,10 +98,15 @@ export const admin = {
   }
 };
 
-// --- SERVIÇO DE DASHBOARD (O QUE FALTAVA!) ---
+// --- SERVIÇO DE DASHBOARD ---
 export const dashboardService = {
   getStats: async (botId) => {
     const response = await api.get(`/api/admin/dashboard/stats?bot_id=${botId}`);
     return response.data;
   }
 };
+
+// --- ADMIN (ALIAS PARA COMPATIBILIDADE) ---
+export const admin = crmService;
+
+export default api;
