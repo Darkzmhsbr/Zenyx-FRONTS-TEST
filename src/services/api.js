@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 🔗 SEU DOMÍNIO DO RAILWAY (Backend Python)
+// 🔗 SEU DOMÍNIO DO RAILWAY
 const API_URL = 'https://zenyx-gbs-production.up.railway.app';
 
 const api = axios.create({
@@ -10,143 +10,56 @@ const api = axios.create({
   },
 });
 
-// --- INTERCEPTOR DE ERROS ---
+// Interceptor para logar erros (ajuda no debug)
 api.interceptors.response.use(
   response => response,
   error => {
-    if (error.response && error.response.status === 422) {
-      console.error("❌ ERRO 422 (Dados Inválidos):", error.response.data);
-    }
+    console.error("API Error:", error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
 
-// --- SERVIÇO DE BOTS ---
+// --- BOTS ---
 export const botService = {
-  createBot: async (dados) => {
-    const response = await api.post('/api/admin/bots', dados);
-    return response.data;
-  },
-  listBots: async () => {
-    const response = await api.get('/api/admin/bots');
-    return response.data;
-  },
-  getBot: async (botId) => {
-    const response = await api.get(`/api/admin/bots/${botId}`);
-    return response.data;
-  },
-  updateBot: async (botId, dados) => {
-    const response = await api.put(`/api/admin/bots/${botId}`, dados);
-    return response.data;
-  },
-  toggleBot: async (botId) => {
-    const response = await api.post(`/api/admin/bots/${botId}/toggle`);
-    return response.data;
-  },
-  deleteBot: async (botId) => {
-    const response = await api.delete(`/api/admin/bots/${botId}`);
-    return response.data;
-  }
+  createBot: async (dados) => (await api.post('/api/admin/bots', dados)).data,
+  listBots: async () => (await api.get('/api/admin/bots')).data,
+  getBot: async (botId) => (await api.get(`/api/admin/bots/${botId}`)).data,
+  updateBot: async (botId, dados) => (await api.put(`/api/admin/bots/${botId}`, dados)).data,
+  toggleBot: async (botId) => (await api.post(`/api/admin/bots/${botId}/toggle`)).data,
+  deleteBot: async (botId) => (await api.delete(`/api/admin/bots/${botId}`)).data
 };
 
-// --- SERVIÇO DE ADMINISTRADORES ---
-export const adminService = {
-  listAdmins: async (botId) => {
-    const response = await api.get(`/api/admin/bots/${botId}/admins`);
-    return response.data;
-  },
-  addAdmin: async (botId, dados) => {
-    const response = await api.post(`/api/admin/bots/${botId}/admins`, dados);
-    return response.data;
-  },
-  removeAdmin: async (botId, telegramId) => {
-    const response = await api.delete(`/api/admin/bots/${botId}/admins/${telegramId}`);
-    return response.data;
-  }
-};
-
-// --- SERVIÇO DE PLANOS ---
+// --- PLANOS ---
 export const planService = {
-  createPlan: async (dados) => {
-    const response = await api.post('/api/admin/plans', dados);
-    return response.data;
-  },
-  listPlans: async (botId) => {
-    const response = await api.get(`/api/admin/plans/${botId}`);
-    return response.data;
-  },
-  deletePlan: async (planId) => {
-    const response = await api.delete(`/api/admin/plans/${planId}`);
-    return response.data;
-  }
+  listPlans: async (botId) => (await api.get(`/api/admin/plans/${botId}`)).data,
+  savePlan: async (plan) => (await api.post('/api/admin/plans', plan)).data,
+  deletePlan: async (planId) => (await api.delete(`/api/admin/plans/${planId}`)).data
 };
 
-// --- SERVIÇO DE INTEGRAÇÕES ---
-export const integrationService = {
-  getPushinStatus: async () => {
-    const response = await api.get('/api/admin/integrations/pushinpay');
-    return response.data;
-  },
-  savePushinToken: async (token) => {
-    const response = await api.post('/api/admin/integrations/pushinpay', { token });
-    return response.data;
-  }
-};
-
-// --- SERVIÇO DE REMARKETING (ATUALIZADO) ---
+// --- REMARKETING ---
 export const remarketingService = {
-  send: async (dados, isTest = false, specificUserId = null) => {
-    // Adicionei specific_user_id ao payload
-    const payload = { ...dados, is_test: isTest, specific_user_id: specificUserId };
-    const response = await api.post('/api/admin/remarketing/send', payload);
-    return response.data;
-  },
+  send: async (dados) => (await api.post('/api/admin/remarketing/send', dados)).data,
   getHistory: async (botId) => {
-    const response = await api.get(`/api/admin/remarketing/history/${botId}`);
-    return response.data;
-  },
-  getStatus: async () => {
-    const response = await api.get('/api/admin/remarketing/status');
-    return response.data;
+    try { return (await api.get(`/api/admin/remarketing/history/${botId}`)).data; } 
+    catch { return []; }
   }
 };
 
-// --- SERVIÇO DE FLUXO ---
-export const flowService = {
-  getFlow: async (botId) => {
-    const response = await api.get(`/api/admin/bots/${botId}/flow`);
-    return response.data;
-  },
-  saveFlow: async (botId, dados) => {
-    const response = await api.post(`/api/admin/bots/${botId}/flow`, dados);
-    return response.data;
-  }
-};
-
-// --- SERVIÇO DE CRM (ATUALIZADO) ---
+// --- CRM / CONTATOS (CORRIGIDO) ---
 export const crmService = {
-  getContacts: async (filtro = 'todos') => {
-    const response = await api.get(`/api/admin/contacts?status=${filtro}`);
+  // Agora aceita botId explicitamente
+  getContacts: async (botId) => {
+    // Pede 'limit=1000' para trazer todos e filtrar no front (igual versão antiga)
+    const response = await api.get(`/api/admin/contacts?bot_id=${botId}&status=todos&limit=1000`);
     return response.data;
   },
-  // NOVOS MÉTODOS:
-  updateUser: async (userId, data) => {
-    const response = await api.put(`/api/admin/users/${userId}`, data);
-    return response.data;
-  },
-  resendAccess: async (userId) => {
-    const response = await api.post(`/api/admin/users/${userId}/resend-access`);
-    return response.data;
-  }
+  updateUser: async (userId, data) => (await api.put(`/api/admin/users/${userId}`, data)).data,
+  resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
 };
 
-// --- SERVIÇO DE DASHBOARD ---
-export const dashboardService = {
-  getStats: async (botId = null) => {
-    const url = botId ? `/api/admin/dashboard/stats?bot_id=${botId}` : '/api/admin/dashboard/stats';
-    const response = await api.get(url);
-    return response.data;
-  }
+// --- ADMIN (Para compatibilidade com imports antigos ou Vercel) ---
+export const admin = {
+  getUsers: crmService.getContacts,
+  updateUser: crmService.updateUser,
+  resendAccess: crmService.resendAccess
 };
-
-export default api;
