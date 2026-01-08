@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { crmService } from '../services/api'; // Ajuste o caminho se necessário (ex: ../config/api)
+import { crmService } from '../services/api'; 
 import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar } from 'lucide-react';
 import { Button } from '../components/Button';
 import './Contacts.css';
@@ -23,7 +23,6 @@ export function Contacts() {
     setLoading(true);
     try {
       // Buscamos 'todos' para poder filtrar "Expirados" localmente
-      // (pois o backend atual só filtra pagantes/pendentes via API)
       const data = await crmService.getContacts('todos'); 
       setAllContacts(data);
     } catch (error) {
@@ -39,7 +38,6 @@ export function Contacts() {
     } else if (filter === 'pagantes') {
       setFilteredContacts(allContacts.filter(c => c.status === 'paid'));
     } else if (filter === 'pendentes') {
-      // Considera leads/pendentes
       setFilteredContacts(allContacts.filter(c => c.status === 'pending'));
     } else if (filter === 'expirados') {
       setFilteredContacts(allContacts.filter(c => c.status === 'expired'));
@@ -50,7 +48,6 @@ export function Contacts() {
   const calcularExpiracao = (dataCriacao, nomePlano, status) => {
     if (!dataCriacao || !nomePlano) return '-';
     
-    // Se já estiver marcado como expirado ou pendente, não precisa calcular futuro
     if (status === 'expired') return <span style={{color:'#ef4444'}}>Vencido</span>;
     if (status === 'pending') return '-';
 
@@ -138,32 +135,37 @@ export function Contacts() {
             <tbody>
               {filteredContacts.length > 0 ? filteredContacts.map((c) => (
                 <tr key={c.id}>
-                  <td style={{fontSize:'0.85rem', color:'#888'}}>{formatDate(c.created_at)}</td>
+                  {/* ADICIONADO data-label EM TODAS AS TDs ABAIXO */}
+                  <td data-label="Data" style={{fontSize:'0.85rem', color:'#888'}}>
+                    {formatDate(c.created_at)}
+                  </td>
                   
-                  {/* COLUNA ID NOVA */}
-                  <td>
+                  <td data-label="ID Telegram">
                     <span className="id-badge">{c.telegram_id}</span>
                   </td>
 
-                  <td>
+                  <td data-label="Nome / Usuário">
                     <div style={{ fontWeight: '600', color: '#fff' }}>{c.first_name || 'Sem nome'}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
                       {c.username ? `@${c.username}` : '-'}
                     </div>
                   </td>
                   
-                  <td><span className="plan-tag">{c.plano_nome || '-'}</span></td>
+                  <td data-label="Plano">
+                    <span className="plan-tag">{c.plano_nome || '-'}</span>
+                  </td>
                   
-                  <td style={{fontWeight:'bold'}}>
+                  <td data-label="Valor" style={{fontWeight:'bold'}}>
                     {c.valor ? `R$ ${c.valor.toFixed(2)}` : 'R$ 0,00'}
                   </td>
 
-                  {/* COLUNA EXPIRAÇÃO NOVA */}
-                  <td style={{fontSize:'0.9rem'}}>
+                  <td data-label="Expiração" style={{fontSize:'0.9rem'}}>
                     {calcularExpiracao(c.created_at, c.plano_nome, c.status)}
                   </td>
 
-                  <td style={{textAlign:'center'}}>{getStatusBadge(c.status)}</td>
+                  <td data-label="Status" style={{textAlign:'center'}}>
+                    {getStatusBadge(c.status)}
+                  </td>
                 </tr>
               )) : (
                 <tr>

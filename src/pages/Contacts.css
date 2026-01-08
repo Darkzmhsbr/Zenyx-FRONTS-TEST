@@ -21,11 +21,8 @@
   font-size: 1.8rem;
   margin-bottom: 5px;
   background: linear-gradient(90deg, #fff, #aaa);
-  
-  /* --- CORREÇÃO: Adicionando a propriedade padrão --- */
-  -webkit-background-clip: text; /* Para Chrome/Safari/Edge */
-  background-clip: text;         /* Padrão oficial (Remove o aviso) */
-  
+  -webkit-background-clip: text; 
+  background-clip: text;       
   -webkit-text-fill-color: transparent;
 }
 
@@ -38,6 +35,8 @@
 .filters-bar {
   display: flex;
   gap: 10px;
+  overflow-x: auto; /* Permite scroll nas abas em telas muito pequenas */
+  padding-bottom: 5px;
 }
 
 .filter-tab {
@@ -50,6 +49,7 @@
   font-weight: 600;
   font-size: 0.95rem;
   transition: all 0.3s;
+  white-space: nowrap;
 }
 
 .filter-tab:hover {
@@ -68,7 +68,7 @@
   background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: 12px;
-  overflow: hidden; /* Arredonda cantos da tabela */
+  overflow: hidden; 
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
@@ -81,7 +81,7 @@
 .custom-table th {
   text-align: left;
   padding: 18px;
-  background: #1a1625; /* Fundo levemente mais escuro pro header */
+  background: #1a1625; 
   color: var(--muted-foreground);
   font-weight: 600;
   font-size: 0.85rem;
@@ -155,19 +155,66 @@
   border: 1px solid rgba(239, 68, 68, 0.3); 
 }
 
-/* Responsividade Básica */
+/* --- RESPONSIVIDADE AVANÇADA (TABELA VIRA CARDS) --- */
 @media (max-width: 768px) {
   .contacts-container {
     padding: 15px;
     margin-left: 0;
   }
-  
+
+  /* Remove o fundo do container da tabela para os cards flutuarem */
   .table-container {
-    overflow-x: auto; /* Scroll horizontal no mobile */
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    overflow: visible; 
   }
-  
-  .custom-table th, .custom-table td {
-    padding: 12px;
-    white-space: nowrap; /* Não quebra linha no mobile */
+
+  /* Esconde o cabeçalho da tabela */
+  .custom-table thead {
+    display: none;
+  }
+
+  /* Transforma elementos em blocos */
+  .custom-table, .custom-table tbody, .custom-table tr, .custom-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* Estilo do CARD (cada linha da tabela vira um card) */
+  .custom-table tr {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    margin-bottom: 20px; /* Espaço entre os cards */
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+
+  /* Ajuste das Células */
+  .custom-table td {
+    display: flex;
+    justify-content: space-between; /* Rótulo na esquerda, Valor na direita */
+    align-items: center;
+    text-align: right;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    min-height: 40px;
+  }
+
+  /* Remove a borda da última célula do card */
+  .custom-table td:last-child {
+    border-bottom: none;
+  }
+
+  /* O TRUQUE: Usa o atributo data-label para criar o título da linha */
+  .custom-table td::before {
+    content: attr(data-label); /* Pega o texto do JSX */
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    margin-right: 15px;
+    text-align: left;
   }
 }
