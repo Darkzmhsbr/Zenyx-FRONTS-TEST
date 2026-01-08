@@ -17,7 +17,7 @@ export function Contacts() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   
-  // Modal
+  // Modal e Histórico
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [rmktHistory, setRmktHistory] = useState([]);
@@ -25,6 +25,7 @@ export function Contacts() {
   useEffect(() => {
     if (selectedBot) {
       carregarContatos();
+      // Carrega silenciosamente o histórico para o botão de envio rápido
       remarketingService.getHistory(selectedBot.id).then(setRmktHistory).catch(() => {});
     }
   }, [selectedBot, filter, page]);
@@ -32,12 +33,20 @@ export function Contacts() {
   const carregarContatos = async () => {
     setLoading(true);
     try {
-      const data = await crmService.getContacts(selectedBot.id, filter, page);
-      setContactsData(data.users || []); 
-      setTotalPages(data.total_pages || 1);
-      setTotalRecords(data.total_records || 0);
+      // Usa o serviço 'admin' que adicionamos no api.js ou crmService se preferir
+      const data = await admin.getUsers(selectedBot.id, filter, page);
+      
+      if (data && data.users) {
+          setContactsData(data.users);
+          setTotalPages(data.total_pages || 1);
+          setTotalRecords(data.total_records || 0);
+      } else {
+          setContactsData([]);
+      }
     } catch (error) {
       console.error(error);
+      // Fallback para array vazio se der erro
+      setContactsData([]);
     } finally {
       setLoading(false);
     }
@@ -53,7 +62,7 @@ export function Contacts() {
           telegram_id: user.telegram_id,
           role: user.role || 'user', 
           status: user.status,
-          // Garante formato YYYY-MM-DD para o input date
+          // Formata data para o input HTML (YYYY-MM-DD)
           custom_expiration: user.expiration_date ? user.expiration_date.split('T')[0] : ''
       });
       setShowUserModal(true);
@@ -68,20 +77,20 @@ export function Contacts() {
               custom_expiration: editingUser.custom_expiration || null
           };
           await admin.updateUser(editingUser.id, payload); 
-          Swal.fire('Sucesso', 'Atualizado!', 'success');
+          Swal.fire('Sucesso', 'Usuário atualizado!', 'success');
           setShowUserModal(false);
           carregarContatos(); 
       } catch (error) {
-          Swal.fire('Erro', 'Falha ao atualizar.', 'error');
+          Swal.fire('Erro', 'Falha ao atualizar usuário.', 'error');
       }
   };
 
   const handleResendAccess = async () => {
       try {
           await admin.resendAccess(editingUser.id);
-          Swal.fire('Enviado!', 'Acesso reenviado!', 'success');
+          Swal.fire('Enviado!', 'Links de acesso reenviados!', 'success');
       } catch (error) {
-          Swal.fire('Erro', 'Falha ao enviar.', 'error');
+          Swal.fire('Erro', 'Falha ao reenviar acesso.', 'error');
       }
   };
 
@@ -94,12 +103,11 @@ export function Contacts() {
           text: `Enviar campanha "${config.msg?.substring(0,15)}..." apenas para este usuário?`,
           icon: 'question',
           showCancelButton: true,
-          confirmButtonText: '🚀 Sim',
+          confirmButtonText: '🚀 Sim, Enviar',
           background: '#151515', color: '#fff'
       });
 
       if (confirm.isConfirmed) {
-          // Sanitização para envio individual
           const payload = {
               bot_id: selectedBot.id,
               tipo_envio: 'individual',
@@ -112,10 +120,9 @@ export function Contacts() {
               expire_timestamp: 0 
           };
 
-          Swal.fire({ title: 'Enviando...', background: '#151515', color:'#fff', didOpen: () => Swal.showLoading() });
           try {
               await remarketingService.send(payload);
-              Swal.fire({title:'Sucesso!', text:'Enviado.', icon:'success', background:'#151515', color:'#fff'});
+              Swal.fire({title:'Sucesso!', text:'Enviado individualmente.', icon:'success', background:'#151515', color:'#fff'});
           } catch (e) {
               Swal.fire('Erro', 'Falha ao enviar.', 'error');
           }
@@ -125,7 +132,7 @@ export function Contacts() {
   return (
     <div className="contacts-container">
       <div className="contacts-header">
-        <h1>Contatos</h1>
+        <h1>Gerenciador de Contatos</h1>
         <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
             <span style={{color:'#888', fontSize:'0.9rem'}}>Total: {totalRecords}</span>
             <Button onClick={carregarContatos} variant="outline"><RefreshCw size={16}/></Button>
@@ -140,7 +147,7 @@ export function Contacts() {
           ))}
       </div>
 
-      {loading ? <p className="loading-text">Carregando...</p> : (
+      {loading ? <p className="loading-text">Carregando contatos...</p> : (
         <>
             <div className="table-responsive">
                 <table className="custom-table">
@@ -148,40 +155,56 @@ export function Contacts() {
                         <tr>
                             <th>Usuário</th>
                             <th>Status</th>
-                            <th>Entrada</th>
-                            <th>Expiração</th> {/* COLUNA */}
+                            <th>Data Entrada</th>
+                            <th>Expiração</th> {/* COLUNA NOVA */}
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {contactsData.length > 0 ? contactsData.map(u => (
                             <tr key={u.id}>
-                                <td><div style={{display:'flex', gap:'5px'}}><Users size={16}/> {u.first_name || u.telegram_id}</div></td>
                                 <td>
-                                    {u.status === 'active' && <span className="badge success">Ativo</span>}
-                                    {u.status === 'paid' && <span className="badge success">Pago</span>}
-                                    {u.status === 'pending' && <span className="badge warning">Pendente</span>}
-                                    {u.status === 'expired' && <span className="badge danger">Expirado</span>}
+                                    <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                                        <Users size={16} color="#888"/>
+                                        {u.first_name || u.telegram_id}
+                                    </div>
+                                </td>
+                                <td>
+                                    {u.status === 'active' && <span className="badge success"><CheckCircle size={12}/> Ativo</span>}
+                                    {u.status === 'paid' && <span className="badge success"><CheckCircle size={12}/> Pago</span>}
+                                    {u.status === 'pending' && <span className="badge warning"><Clock size={12}/> Pendente</span>}
+                                    {u.status === 'expired' && <span className="badge danger"><XCircle size={12}/> Expirado</span>}
                                 </td>
                                 <td>{new Date(u.created_at).toLocaleDateString()}</td>
-                                {/* DADO EXPIRAÇÃO */}
+                                
+                                {/* COLUNA EXPIRAÇÃO */}
                                 <td>
                                     {(u.status === 'active' || u.status === 'paid')
                                         ? (u.expiration_date ? new Date(u.expiration_date).toLocaleDateString() : <span style={{color:'#10b981'}}>Vitalício</span>) 
                                         : '-'}
                                 </td>
-                                <td><Button size="sm" onClick={() => openUserEdit(u)}><Edit size={14}/></Button></td>
+                                
+                                <td>
+                                    <Button size="sm" onClick={() => openUserEdit(u)} style={{fontSize:'0.8rem'}}>
+                                        <Edit size={14} style={{marginRight:'5px'}}/> Gerenciar
+                                    </Button>
+                                </td>
                             </tr>
                         )) : (
-                            <tr><td colSpan="5" style={{textAlign:'center', padding:'20px'}}>Nenhum contato.</td></tr>
+                            <tr><td colSpan="5" style={{textAlign:'center', padding:'20px', color:'#666'}}>Nenhum contato encontrado.</td></tr>
                         )}
                     </tbody>
                 </table>
             </div>
-            <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', marginTop:'20px'}}>
-                <Button disabled={page === 1} onClick={handlePrevPage}><ChevronLeft size={16}/></Button>
-                <span>Pag {page} de {totalPages}</span>
-                <Button disabled={page >= totalPages} onClick={handleNextPage}><ChevronRight size={16}/></Button>
+
+            <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'20px'}}>
+                <Button disabled={page === 1} onClick={handlePrevPage} variant="outline">
+                    <ChevronLeft size={16}/> Anterior
+                </Button>
+                <span style={{color:'#888'}}>Página {page} de {totalPages}</span>
+                <Button disabled={page >= totalPages} onClick={handleNextPage} variant="outline">
+                    Próximo <ChevronRight size={16}/>
+                </Button>
             </div>
         </>
       )}
@@ -189,40 +212,52 @@ export function Contacts() {
       {showUserModal && editingUser && (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>{editingUser.name}</h2>
+                <h2>Gerenciar: {editingUser.name}</h2>
                 <form onSubmit={handleSaveUser}>
                     <div className="form-group">
-                        <label>Status</label>
-                        <select className="input-field" value={editingUser.status} onChange={e => setEditingUser({...editingUser, status: e.target.value})}>
+                        <label>Status do Usuário</label>
+                        <select 
+                            className="input-field" 
+                            value={editingUser.status} 
+                            onChange={e => setEditingUser({...editingUser, status: e.target.value})}
+                        >
                             <option value="pending">Pendente</option>
                             <option value="active">Ativo</option>
                             <option value="expired">Expirado</option>
                         </select>
                     </div>
+
                     <div className="form-group">
-                        <label>Expiração</label>
-                        <input type="date" className="input-field" value={editingUser.custom_expiration} onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})} />
-                        <div style={{marginTop:'10px', display:'flex', gap:'10px'}}>
+                        <label>Data Personalizada (Expiração)</label>
+                        <input 
+                            type="date" 
+                            className="input-field"
+                            value={editingUser.custom_expiration} 
+                            onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})}
+                        />
+                        <div style={{display:'flex', gap:'10px', marginTop:'10px'}}>
                             <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>♾️ Vitalício</button>
-                            <button type="button" className="btn-small primary" onClick={handleResendAccess}>Reenviar Acesso</button>
+                            <button type="button" className="btn-small primary" onClick={handleResendAccess} style={{background:'#2563eb'}}>📧 Reenviar Acesso</button>
                         </div>
                     </div>
-                    
-                    <div style={{marginTop:'15px', borderTop:'1px solid #333', paddingTop:'10px'}}>
-                        <h4>Envio Rápido</h4>
-                        <div style={{maxHeight:'100px', overflowY:'auto'}}>
-                            {rmktHistory.map((h,i) => (
-                                <div key={i} style={{display:'flex', justifyContent:'space-between', padding:'5px', borderBottom:'1px solid #222'}}>
-                                    <small>{h.data}</small>
-                                    <button type="button" className="btn-mini-send" onClick={() => handleReuseForUser(h)}>Enviar</button>
+
+                    <div style={{marginTop:'20px', borderTop:'1px solid #333', paddingTop:'15px'}}>
+                        <h3>🚀 Disparo Rápido (Individual)</h3>
+                        <div style={{maxHeight:'150px', overflowY:'auto', marginTop:'10px', border:'1px solid #333', borderRadius:'6px'}}>
+                            {rmktHistory.length > 0 ? rmktHistory.map((h, i) => (
+                                <div key={i} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px', borderBottom:'1px solid #222'}}>
+                                    <span style={{fontSize:'0.75rem', color:'#ccc'}}>{h.data}</span>
+                                    <button type="button" className="btn-mini-send" onClick={() => handleReuseForUser(h)}>
+                                        <Send size={10} style={{marginRight:'3px'}}/> Enviar
+                                    </button>
                                 </div>
-                            ))}
+                            )) : <p style={{padding:'10px', fontSize:'0.8rem', color:'#666'}}>Sem histórico.</p>}
                         </div>
                     </div>
 
                     <div className="modal-actions" style={{marginTop:'20px'}}>
-                        <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Cancelar</button>
-                        <button type="submit" className="btn-save">Salvar</button>
+                        <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Fechar</button>
+                        <button type="submit" className="btn-save">Salvar Alterações</button>
                     </div>
                 </form>
             </div>

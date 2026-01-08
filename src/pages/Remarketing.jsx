@@ -43,27 +43,28 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
         setStep(7);
     };
 
-    // --- HIGIENIZAÇÃO DE DADOS (CRÍTICO PARA EVITAR ERRO 422) ---
-    const sanitize = (formData, price, expire) => {
+    // --- CORREÇÃO CRÍTICA: SANITIZAÇÃO DE DADOS ---
+    const sanitizePayload = (formData, finalPrice, expireTS) => {
         return {
             bot_id: initialBotId,
             tipo_envio: formData.target,
             mensagem: formData.message,
             media_url: formData.media_url || null,
             incluir_oferta: formData.promo,
-            plano_oferta_id: formData.plan_id || null,
-            valor_oferta: parseFloat(price) || 0.0,
-            expire_timestamp: parseInt(expire) || 0,
+            plano_oferta_id: formData.plan_id ? String(formData.plan_id) : null,
+            valor_oferta: finalPrice ? parseFloat(finalPrice) : 0.0,
+            expire_timestamp: expireTS ? parseInt(expireTS) : 0,
             is_periodic: formData.tipo === 'periodico',
             periodic_days: formData.periodic_days ? parseInt(formData.periodic_days) : 0,
             periodic_time: formData.periodic_time || null,
-            specific_user_id: null
+            specific_user_id: null 
         };
     };
 
     const handleFinalSend = () => {
         let finalPrice = 0;
-        const selectedPlan = plans.find(p => p.id === parseInt(data.plan_id)) || plans.find(p => p.key_id === data.plan_id);
+        const selectedPlan = plans.find(p => p.id == data.plan_id) || plans.find(p => p.key_id == data.plan_id);
+        
         if (data.promo) {
             if (data.price_type === 'original') finalPrice = selectedPlan?.preco_cheio || 0;
             else if (data.price_type === 'promo') finalPrice = selectedPlan?.preco_atual || 0;
@@ -73,12 +74,14 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
         let expireTS = 0;
         if (data.promo && data.expiration !== 'none') {
             const now = Math.floor(Date.now() / 1000);
-            const qtd = parseInt(data.expire_value);
+            const qtd = parseInt(data.expire_value) || 0;
             if (data.expiration === 'min') expireTS = now + (qtd * 60);
             if (data.expiration === 'day') expireTS = now + (qtd * 86400);
         }
 
-        const payload = sanitize(data, finalPrice, expireTS);
+        // Sanitiza antes de enviar
+        const payload = sanitizePayload(data, finalPrice, expireTS);
+
         setSending(true);
         onSend(payload).then(() => {
             setSending(false);
@@ -88,6 +91,7 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
         });
     };
 
+    // (O resto do Wizard permanece com a lógica de navegação)
     return (
         <div className="wizard-container">
             <div className="wizard-step-indicator">ETAPA {step + 1}</div>
@@ -98,7 +102,6 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
                         <div className="option-card" onClick={() => { update('tipo', 'personalizado'); next(); }}>Imediato</div>
                         <div className="option-card" onClick={() => { update('tipo', 'periodico'); setStep(10); }}>Agendado</div>
                     </div>
-                    {/* Histórico */}
                     <div style={{marginTop:'30px'}}>
                         <h3>Histórico</h3>
                         {history.map((h,i) => (
@@ -115,7 +118,7 @@ function RemarketingWizard({ plans, onSend, initialBotId }) {
                 <>
                     <h2 className="wizard-title">Público Alvo</h2>
                     <div className="wizard-options-grid">
-                        <div className="option-card" onClick={() => { update('target', 'leads'); next(); }}>Leads (Não Pagos)</div>
+                        <div className="option-card" onClick={() => { update('target', 'leads'); next(); }}>Leads</div>
                         <div className="option-card" onClick={() => { update('target', 'todos'); next(); }}>Todos</div>
                         <div className="option-card" onClick={() => { update('target', 'expirados'); next(); }}>Ex-Assinantes</div>
                     </div>

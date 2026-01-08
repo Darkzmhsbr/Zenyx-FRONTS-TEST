@@ -48,8 +48,8 @@ export function Bots() {
   const handleDeleteBot = async (e, bot) => {
       e.stopPropagation();
       const result = await Swal.fire({
-          title: `Excluir ${bot.nome}?`, text: "Apagará tudo!", icon: 'warning', showCancelButton: true,
-          confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Sim', background: '#151515', color: '#fff'
+          title: `Excluir ${bot.nome}?`, text: "Isso apagará todo o histórico e configurações.", icon: 'warning',
+          showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Sim', background: '#151515', color: '#fff'
       });
       if (result.isConfirmed) {
           try {
@@ -63,12 +63,12 @@ export function Bots() {
   return (
     <div className="bots-container">
       <div className="bots-header">
-        <div><h1>Meus Bots</h1><p style={{color: 'var(--muted-foreground)'}}>Gerencie seus assistentes.</p></div>
+        <div><h1>Meus Bots</h1><p style={{color: 'var(--muted-foreground)'}}>Gerencie seus assistentes de venda.</p></div>
         <Button onClick={() => navigate('/bots/new')}><Plus size={20} /> Criar Novo Bot</Button>
       </div>
 
       {loading ? ( <div style={{textAlign: 'center', padding: '50px', color: '#666'}}><RefreshCcw className="spin" /> Carregando...</div> ) : 
-       bots.length === 0 ? ( <div className="empty-state"><h2>Sem bots.</h2></div> ) : (
+       bots.length === 0 ? ( <div className="empty-state"><h2>Você ainda não tem bots.</h2></div> ) : (
         <div className="bots-grid">
           {bots.map((bot) => (
             <Card key={bot.id} className="bot-card">
@@ -78,13 +78,13 @@ export function Bots() {
                         <div className="bot-icon"><Send size={24} /></div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            {/* CORREÇÃO DO @@ AQUI */}
-                            <p style={{color:'#888', fontSize:'0.9rem'}}>@{bot.username ? bot.username.replace('@','') : '...'}</p>
+                            {/* CORREÇÃO DO ARROBA: Remove o @ se já existir na string vinda do back */}
+                            <p style={{color:'#888', fontSize:'0.9rem'}}>@{bot.username ? bot.username.replace('@', '') : '...'}</p>
                         </div>
                     </div>
                     
                     <div style={{position: 'relative'}} onClick={(e) => e.stopPropagation()}>
-                        <button className="icon-btn" onClick={() => setActiveMenu(activeMenu === bot.id ? null : bot.id)}><MoreVertical size={20} /></button>
+                        <button className="icon-btn" onClick={() => setActiveMenu(activeMenu === bot.id ? null : bot.id)}><MoreVertical size={20} color="#888" /></button>
                         {activeMenu === bot.id && (
                             <div className="dropdown-menu glass-menu">
                                 <div className="menu-item" onClick={() => navigate(`/bots/config/${bot.id}`)}><Settings size={14}/> Configurar</div>
@@ -95,8 +95,8 @@ export function Bots() {
                 </div>
 
                 <div className="bot-stats">
-                  <div className="stat-item"><span className="stat-label">Leads Total</span><span className="stat-value">{bot.leads_count || 0}</span></div>
-                  <div className="stat-item"><span className="stat-label">Receita Total</span><span className="stat-value highlight">R$ {bot.vendas_total?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span></div>
+                  <div className="stat-item"><span className="stat-label">Leads Total</span><span className="stat-value">{bot.leads || 0}</span></div>
+                  <div className="stat-item"><span className="stat-label">Receita Total</span><span className="stat-value highlight">R$ {bot.revenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span></div>
                 </div>
 
                 <div className="bot-footer">
