@@ -10,15 +10,22 @@
   flex-direction: column;
   padding: var(--spacing-lg);
   z-index: 100;
-  transition: width 0.3s ease;
+  transition: transform 0.3s ease; /* Animação de deslize */
+}
+
+/* Cabeçalho da Sidebar (Logo + Botão Fechar) */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  padding: 0 var(--spacing-sm);
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  margin-bottom: 40px;
-  padding: 0 var(--spacing-sm);
   color: var(--foreground);
   font-size: 1.5rem;
   font-weight: 700;
@@ -33,11 +40,21 @@
   display: inline-block;
 }
 
+/* Botão de Fechar (Escondido no Desktop) */
+.close-sidebar-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
 .sidebar-nav {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
   flex: 1;
+  overflow-y: auto; /* Permite scroll se o menu for grande */
 }
 
 .nav-item {
@@ -75,4 +92,24 @@
 .logout:hover {
   background-color: rgba(239, 68, 68, 0.1);
   color: #ef4444;
+}
+
+/* --- RESPONSIVIDADE MOBILE --- */
+@media (max-width: 768px) {
+  .sidebar {
+    /* No mobile, a sidebar sai da tela por padrão */
+    transform: translateX(-100%);
+    width: 280px; /* Largura fixa no mobile */
+    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    z-index: 200; /* Acima de tudo */
+  }
+
+  /* Classe adicionada via JS quando menu abre */
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .close-sidebar-btn {
+    display: block; /* Mostra o X */
+  }
 }

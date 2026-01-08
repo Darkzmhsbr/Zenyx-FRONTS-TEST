@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
-import { useBot } from '../context/BotContext'; // Usa nosso contexto global
-import { Bot, ChevronDown, Check, Bell, Moon } from 'lucide-react';
+import { useBot } from '../context/BotContext';
+import { Bot, ChevronDown, Check, Bell, Moon, Menu } from 'lucide-react'; // Importei o Menu
 import './Header.css'; 
 
-export function Header() {
+export function Header({ onToggleMenu }) {
   const { bots, selectedBot, changeBot } = useBot();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <header className="header">
-      {/* Lado Esquerdo: Título */}
+      {/* Lado Esquerdo: Botão Menu (Mobile) + Título */}
       <div className="header-left">
+        
+        {/* Botão Hambúrguer (Só aparece no mobile via CSS) */}
+        <button className="mobile-menu-btn" onClick={onToggleMenu}>
+          <Menu size={24} />
+        </button>
+
         <h2 style={{margin:0, fontSize:'1.2rem'}}>Painel de Controle</h2>
       </div>
 

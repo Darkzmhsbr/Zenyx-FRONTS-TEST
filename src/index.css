@@ -64,3 +64,31 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
+
+/* --- RESPONSIVIDADE GLOBAL (MÁGICA AQUI) --- */
+@media (max-width: 768px) {
+  :root {
+    /* No celular, a margem reservada para o menu vira ZERO */
+    /* Isso faz o conteúdo das páginas ocupar a tela toda automaticamente */
+    --sidebar-width: 0px; 
+    --header-height: 60px;
+  }
+
+  /* Ajuste fino para os containers das páginas não ficarem colados na borda */
+  [class*="-container"] {
+    padding: var(--spacing-md) !important; /* Menos padding que no desktop */
+  }
+}
+
+/* Fundo escuro quando o menu mobile abre */
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: 99; /* Fica abaixo do menu (100) mas acima de tudo */
+  animation: fadeIn 0.3s ease;
+}
