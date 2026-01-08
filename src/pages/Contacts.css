@@ -35,7 +35,7 @@
 .filters-bar {
   display: flex;
   gap: 10px;
-  overflow-x: auto; 
+  overflow-x: auto; /* Permite scroll nas abas em telas muito pequenas */
   padding-bottom: 5px;
 }
 
@@ -58,7 +58,7 @@
 }
 
 .filter-tab.active {
-  color: #c333ff; 
+  color: #c333ff; /* Cor roxa do tema */
   border-bottom: 2px solid #c333ff;
   background: linear-gradient(180deg, rgba(195, 51, 255, 0.1) 0%, transparent 100%);
 }
@@ -97,8 +97,12 @@
   vertical-align: middle;
 }
 
-.clickable-row:hover td {
-  background: rgba(255, 255, 255, 0.03);
+.custom-table tr:last-child td {
+  border-bottom: none;
+}
+
+.custom-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* --- BADGES E TAGS --- */
@@ -114,7 +118,7 @@
 .plan-tag {
   font-size: 0.85rem;
   color: #fff;
-  background: rgba(195, 51, 255, 0.15); 
+  background: rgba(195, 51, 255, 0.15); /* Roxo fraco */
   border: 1px solid rgba(195, 51, 255, 0.3);
   padding: 3px 8px;
   border-radius: 6px;
@@ -132,150 +136,65 @@
   letter-spacing: 0.5px;
 }
 
-.status-paid { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-.status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-.status-expired { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-
-/* --- MODAL DE EDIÇÃO --- */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(5px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+.status-paid { 
+  background: rgba(16, 185, 129, 0.1); 
+  color: #10b981; 
+  border: 1px solid rgba(16, 185, 129, 0.3); 
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
 }
 
-.modal-content {
-  background: #111;
-  border: 1px solid #333;
-  padding: 30px;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 500px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-  max-height: 90vh;
-  overflow-y: auto;
+.status-pending { 
+  background: rgba(245, 158, 11, 0.1); 
+  color: #f59e0b; 
+  border: 1px solid rgba(245, 158, 11, 0.3); 
 }
 
-.modal-content h2 { margin-bottom: 5px; color: #fff; }
-
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; margin-bottom: 8px; color: #aaa; font-size: 0.9rem; }
-
-.input-field {
-  width: 100%;
-  padding: 12px;
-  background: #0a0a0a;
-  border: 1px solid #333;
-  color: #fff;
-  border-radius: 8px;
-  font-size: 1rem;
+.status-expired { 
+  background: rgba(239, 68, 68, 0.1); 
+  color: #ef4444; 
+  border: 1px solid rgba(239, 68, 68, 0.3); 
 }
 
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-  margin-top: 30px;
-  border-top: 1px solid #222;
-  padding-top: 20px;
-}
-
-.btn-cancel {
-  background: transparent;
-  color: #aaa;
-  border: 1px solid #444;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.btn-save {
-  background: #c333ff;
-  color: #fff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-/* BOTÕES PEQUENOS */
-.btn-resend {
-  background: transparent;
-  border: 1px solid #00e676;
-  color: #00e676;
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-resend:hover { background: rgba(0, 230, 118, 0.1); }
-
-.btn-small {
-  padding: 5px 10px;
-  background: #222;
-  border: 1px solid #444;
-  color: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-.btn-small.danger { color: #ef4444; border-color: #550000; background: #330000; }
-
-/* QUICK SEND BOX */
-.quick-send-box {
-  background: #1a1a1a;
-  padding: 15px;
-  border-radius: 10px;
-  border: 1px solid #333;
-  margin-bottom: 25px;
-}
-
-.mini-history-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #252525;
-}
-
-.btn-mini-send {
-  background: #c333ff;
-  border: none;
-  color: #fff;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-/* RESPONSIVIDADE TABELA (Table to Card) */
+/* --- RESPONSIVIDADE AVANÇADA (TABELA VIRA CARDS) --- */
 @media (max-width: 768px) {
-  .contacts-container { padding: 15px; margin-left: 0; }
-  .table-container { background: transparent; border: none; box-shadow: none; overflow: visible; }
-  .custom-table thead { display: none; }
-  .custom-table, .custom-table tbody, .custom-table tr, .custom-table td { display: block; width: 100%; }
-  
+  .contacts-container {
+    padding: 15px;
+    margin-left: 0;
+  }
+
+  /* Remove o fundo do container da tabela para os cards flutuarem */
+  .table-container {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    overflow: visible; 
+  }
+
+  /* Esconde o cabeçalho da tabela */
+  .custom-table thead {
+    display: none;
+  }
+
+  /* Transforma elementos em blocos */
+  .custom-table, .custom-table tbody, .custom-table tr, .custom-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* Estilo do CARD (cada linha da tabela vira um card) */
   .custom-table tr {
     background: var(--card);
     border: 1px solid var(--card-border);
     border-radius: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Espaço entre os cards */
     padding: 15px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
   }
 
+  /* Ajuste das Células */
   .custom-table td {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Rótulo na esquerda, Valor na direita */
     align-items: center;
     text-align: right;
     padding: 12px 0;
@@ -283,10 +202,14 @@
     min-height: 40px;
   }
 
-  .custom-table td:last-child { border-bottom: none; }
+  /* Remove a borda da última célula do card */
+  .custom-table td:last-child {
+    border-bottom: none;
+  }
 
+  /* O TRUQUE: Usa o atributo data-label para criar o título da linha */
   .custom-table td::before {
-    content: attr(data-label);
+    content: attr(data-label); /* Pega o texto do JSX */
     font-weight: 700;
     font-size: 0.75rem;
     color: var(--muted-foreground);

@@ -5,67 +5,148 @@ const API_URL = 'https://zenyx-gbs-production.up.railway.app';
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Interceptador para debug de erros 422
+// --- INTERCEPTOR DE ERROS ---
 api.interceptors.response.use(
-  r => r,
-  e => {
-    if (e.response?.status === 422) console.error("❌ ERRO 422:", e.response.data);
-    return Promise.reject(e);
+  response => response,
+  error => {
+    if (error.response && error.response.status === 422) {
+      console.error("❌ ERRO 422 (Dados Inválidos):", error.response.data);
+    }
+    return Promise.reject(error);
   }
 );
 
-// --- BOTS ---
+// --- SERVIÇO DE BOTS ---
 export const botService = {
-  createBot: async (d) => (await api.post('/api/admin/bots', d)).data,
-  listBots: async () => (await api.get('/api/admin/bots')).data,
-  getBot: async (id) => (await api.get(`/api/admin/bots/${id}`)).data,
-  updateBot: async (id, d) => (await api.put(`/api/admin/bots/${id}`, d)).data,
-  toggleBot: async (id) => (await api.post(`/api/admin/bots/${id}/toggle`)).data,
-  deleteBot: async (id) => (await api.delete(`/api/admin/bots/${id}`)).data
-};
-
-// --- FLUXO ---
-export const flowService = {
-  getFlow: async (id) => (await api.get(`/api/admin/bots/${id}/flow`)).data,
-  saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data
-};
-
-// --- PLANOS ---
-export const planService = {
-  listPlans: async (id) => (await api.get(`/api/admin/plans/${id}`)).data,
-  savePlan: async (p) => (await api.post('/api/admin/plans', p)).data,
-  deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
-};
-
-// --- REMARKETING ---
-export const remarketingService = {
-  send: async (d) => (await api.post('/api/admin/remarketing/send', d)).data,
-  getHistory: async (id) => {
-    try { return (await api.get(`/api/admin/remarketing/history/${id}`)).data; } 
-    catch { return []; }
-  }
-};
-
-// --- CRM (ANTIGO) ---
-export const crmService = {
-  getContacts: async (botId, filter = 'todos', page = 1) => {
-    const response = await api.get(`/api/admin/contacts?bot_id=${botId}&status=${filter}&page=${page}`);
+  createBot: async (dados) => {
+    const response = await api.post('/api/admin/bots', dados);
+    return response.data;
+  },
+  listBots: async () => {
+    const response = await api.get('/api/admin/bots');
+    return response.data;
+  },
+  getBot: async (botId) => {
+    const response = await api.get(`/api/admin/bots/${botId}`);
+    return response.data;
+  },
+  updateBot: async (botId, dados) => {
+    const response = await api.put(`/api/admin/bots/${botId}`, dados);
+    return response.data;
+  },
+  toggleBot: async (botId) => {
+    const response = await api.post(`/api/admin/bots/${botId}/toggle`);
+    return response.data;
+  },
+  deleteBot: async (botId) => {
+    const response = await api.delete(`/api/admin/bots/${botId}`);
     return response.data;
   }
 };
 
-// --- ADMIN (NOVO - CORREÇÃO DO ERRO VERCEL) ---
-export const admin = {
-  getUsers: async (botId, filter, page) => {
-    return (await api.get(`/api/admin/contacts?bot_id=${botId}&status=${filter}&page=${page}`)).data;
+// --- SERVIÇO DE ADMINISTRADORES ---
+export const adminService = {
+  listAdmins: async (botId) => {
+    const response = await api.get(`/api/admin/bots/${botId}/admins`);
+    return response.data;
   },
-  updateUser: async (userId, data) => {
-    return (await api.put(`/api/admin/users/${userId}`, data)).data;
+  addAdmin: async (botId, dados) => {
+    const response = await api.post(`/api/admin/bots/${botId}/admins`, dados);
+    return response.data;
   },
-  resendAccess: async (userId) => {
-    return (await api.post(`/api/admin/users/${userId}/resend-access`)).data;
+  removeAdmin: async (botId, telegramId) => {
+    const response = await api.delete(`/api/admin/bots/${botId}/admins/${telegramId}`);
+    return response.data;
   }
 };
+
+// --- SERVIÇO DE PLANOS ---
+export const planService = {
+  createPlan: async (dados) => {
+    const response = await api.post('/api/admin/plans', dados);
+    return response.data;
+  },
+  listPlans: async (botId) => {
+    const response = await api.get(`/api/admin/plans/${botId}`);
+    return response.data;
+  },
+  deletePlan: async (planId) => {
+    const response = await api.delete(`/api/admin/plans/${planId}`);
+    return response.data;
+  }
+};
+
+// --- SERVIÇO DE INTEGRAÇÕES ---
+export const integrationService = {
+  getPushinStatus: async () => {
+    const response = await api.get('/api/admin/integrations/pushinpay');
+    return response.data;
+  },
+  savePushinToken: async (token) => {
+    const response = await api.post('/api/admin/integrations/pushinpay', { token });
+    return response.data;
+  }
+};
+
+// --- SERVIÇO DE REMARKETING (ATUALIZADO) ---
+export const remarketingService = {
+  send: async (dados, isTest = false, specificUserId = null) => {
+    // Adicionei specific_user_id ao payload
+    const payload = { ...dados, is_test: isTest, specific_user_id: specificUserId };
+    const response = await api.post('/api/admin/remarketing/send', payload);
+    return response.data;
+  },
+  getHistory: async (botId) => {
+    const response = await api.get(`/api/admin/remarketing/history/${botId}`);
+    return response.data;
+  },
+  getStatus: async () => {
+    const response = await api.get('/api/admin/remarketing/status');
+    return response.data;
+  }
+};
+
+// --- SERVIÇO DE FLUXO ---
+export const flowService = {
+  getFlow: async (botId) => {
+    const response = await api.get(`/api/admin/bots/${botId}/flow`);
+    return response.data;
+  },
+  saveFlow: async (botId, dados) => {
+    const response = await api.post(`/api/admin/bots/${botId}/flow`, dados);
+    return response.data;
+  }
+};
+
+// --- SERVIÇO DE CRM (ATUALIZADO) ---
+export const crmService = {
+  getContacts: async (filtro = 'todos') => {
+    const response = await api.get(`/api/admin/contacts?status=${filtro}`);
+    return response.data;
+  },
+  // NOVOS MÉTODOS:
+  updateUser: async (userId, data) => {
+    const response = await api.put(`/api/admin/users/${userId}`, data);
+    return response.data;
+  },
+  resendAccess: async (userId) => {
+    const response = await api.post(`/api/admin/users/${userId}/resend-access`);
+    return response.data;
+  }
+};
+
+// --- SERVIÇO DE DASHBOARD ---
+export const dashboardService = {
+  getStats: async (botId = null) => {
+    const url = botId ? `/api/admin/dashboard/stats?bot_id=${botId}` : '/api/admin/dashboard/stats';
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+export default api;
