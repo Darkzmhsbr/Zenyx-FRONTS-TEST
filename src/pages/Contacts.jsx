@@ -1,23 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { crmService, remarketingService } from '../services/api'; 
 import { useBot } from '../context/BotContext';
-import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Send } from 'lucide-react';
 import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Contacts.css';
 
 export function Contacts() {
   const { selectedBot } = useBot();
-  const [contactsData, setContactsData] = useState([]); // Dados da tabela
+  const [allContacts, setAllContacts] = useState([]);
+  const [filteredContacts, setFilteredContacts] = useState([]);
+  const [filter, setFilter] = useState('todos');
   const [loading, setLoading] = useState(false);
   
-  // Filtros e Paginação
-  const [filter, setFilter] = useState('todos');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
-  
-  // Modal e Histórico
+  // --- ESTADOS DO MODAL DE EDIÇÃO ---
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [rmktHistory, setRmktHistory] = useState([]);
@@ -25,30 +21,36 @@ export function Contacts() {
   useEffect(() => {
     if (selectedBot) {
       carregarContatos();
-      // Carrega histórico para o modal de envio rápido
+      // Carrega histórico de remarketing em background para o "Envio Rápido"
       remarketingService.getHistory(selectedBot.id).then(setRmktHistory).catch(() => {});
     }
-  }, [selectedBot, filter, page]); // Recarrega ao mudar filtro ou página
+  }, [selectedBot]);
+
+  useEffect(() => {
+    aplicarFiltro();
+  }, [filter, allContacts]);
 
   const carregarContatos = async () => {
     setLoading(true);
     try {
-      // Chama a API com paginação
-      const response = await crmService.getContacts(filter, page, 100); 
-      
-      // O backend agora retorna { users: [], total: X, pages: Y }
-      if (response && response.users) {
-          setContactsData(response.users);
-          setTotalPages(response.pages);
-          setTotalRecords(response.total);
-      } else {
-          // Fallback se a API ainda for antiga
-          setContactsData(Array.isArray(response) ? response : []);
-      }
+      const data = await crmService.getContacts('todos'); 
+      setAllContacts(data);
     } catch (error) {
       console.error("Erro ao listar contatos", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const aplicarFiltro = () => {
+    if (filter === 'todos') {
+      setFilteredContacts(allContacts);
+    } else if (filter === 'pagantes') {
+      setFilteredContacts(allContacts.filter(c => c.status === 'paid'));
+    } else if (filter === 'pendentes') {
+      setFilteredContacts(allContacts.filter(c => c.status === 'pending'));
+    } else if (filter === 'expirados') {
+      setFilteredContacts(allContacts.filter(c => c.status === 'expired'));
     }
   };
 
@@ -60,7 +62,7 @@ export function Contacts() {
         telegram_id: user.telegram_id,
         role: user.role || 'user',
         status: user.status,
-        custom_expiration: user.custom_expiration ? user.custom_expiration.split('T')[0] : ''
+        custom_expiration: '' // Inicialmente vazio, preencher se tiver
     });
     setShowUserModal(true);
   };
@@ -76,28 +78,20 @@ export function Contacts() {
         };
         
         await crmService.updateUser(editingUser.id, payload);
-        
         Swal.fire({
             title: 'Sucesso', 
-            text: 'Usuário atualizado com sucesso!', 
+            text: 'Usuário atualizado!', 
             icon: 'success', 
             background:'#151515', color:'#fff'
         });
-        
         setShowUserModal(false);
-        carregarContatos(); // Atualiza a tabela
+        carregarContatos(); // Recarrega lista
     } catch (error) {
         Swal.fire('Erro', 'Falha ao atualizar usuário.', 'error');
     }
   };
 
   const handleResendAccess = async () => {
-    // Validação local: Só pode reenviar se estiver pago
-    if (editingUser.status !== 'paid') {
-        Swal.fire('Atenção', 'Salve o status como "Ativo/Pago" antes de reenviar o acesso.', 'warning');
-        return;
-    }
-
     try {
         await crmService.resendAccess(editingUser.id);
         Swal.fire({
@@ -107,13 +101,12 @@ export function Contacts() {
             background:'#151515', color:'#fff'
         });
     } catch (error) {
-        Swal.fire('Erro', 'Falha ao reenviar acesso. Verifique se o bot é admin do canal.', 'error');
+        Swal.fire('Erro', 'Falha ao reenviar acesso.', 'error');
     }
   };
 
   const handleReuseForUser = async (campaign) => {
-    let config = {};
-    try { config = JSON.parse(campaign.config); } catch(e) {}
+    const config = JSON.parse(campaign.config || '{}');
     
     const result = await Swal.fire({
         title: `Enviar para ${editingUser.name}?`,
@@ -127,21 +120,23 @@ export function Contacts() {
     });
 
     if (result.isConfirmed) {
+        // Reconstrói o payload para envio individual
         const payload = {
             bot_id: selectedBot.id,
-            target: 'todos', // O backend vai ignorar isso pq tem specificUserId
+            target: 'individual', 
             mensagem: config.msg,
             media_url: config.media || null,
             incluir_oferta: config.offer,
+            // Tenta recuperar ID do plano e preço (se disponível no histórico novo)
             plano_oferta_id: campaign.plano_id, 
             price_mode: 'custom', 
             custom_price: campaign.promo_price,
-            expiration_mode: 'days',
+            expiration_mode: 'days', // Padrão 1 dia para recuperação
             expiration_value: 1
         };
 
         try {
-            // Passa o ID específico para envio individual
+            // Usa o specificUserId para direcionar
             await remarketingService.send(payload, false, editingUser.telegram_id);
             Swal.fire('Sucesso!', 'Disparo individual realizado!', 'success');
         } catch (e) {
@@ -176,13 +171,12 @@ export function Contacts() {
         </Button>
       </div>
 
-      {/* ABAS DE FILTRO */}
       <div className="tabs-container">
         <div className="filters-bar">
           {['todos', 'pagantes', 'pendentes', 'expirados'].map(t => (
             <button 
                 key={t}
-                onClick={() => { setFilter(t); setPage(1); }} 
+                onClick={() => setFilter(t)} 
                 className={`filter-tab ${filter === t ? 'active' : ''}`}
             >
                 {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -191,12 +185,11 @@ export function Contacts() {
         </div>
       </div>
 
-      {/* TABELA DE CONTATOS */}
       <div className="table-container">
         {loading ? (
           <div style={{ padding: '60px', textAlign: 'center', color: '#888' }}>
             <RefreshCw className="spin" size={30} style={{marginBottom:'10px'}}/>
-            <p>Carregando...</p>
+            <p>Sincronizando...</p>
           </div>
         ) : (
           <table className="custom-table">
@@ -211,7 +204,7 @@ export function Contacts() {
               </tr>
             </thead>
             <tbody>
-              {contactsData.length > 0 ? contactsData.map((c) => (
+              {filteredContacts.length > 0 ? filteredContacts.map((c) => (
                 <tr 
                     key={c.id} 
                     onClick={() => openUserEdit(c)} 
@@ -236,27 +229,7 @@ export function Contacts() {
         )}
       </div>
 
-      {/* PAGINAÇÃO */}
-      <div className="pagination-bar" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'20px', padding:'10px', background:'rgba(255,255,255,0.03)', borderRadius:'8px'}}>
-        <span style={{color:'#888', fontSize:'0.9rem'}}>Total: {totalRecords} registros</span>
-        <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
-            <button 
-                disabled={page === 1} 
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="btn-page"
-            >
-                <ChevronLeft size={16} /> Anterior
-            </button>
-            <span style={{color:'#fff', fontWeight:'bold'}}>Página {page} de {totalPages || 1}</span>
-            <button 
-                disabled={page >= totalPages} 
-                onClick={() => setPage(p => p + 1)}
-                className="btn-page"
-            >
-                Próxima <ChevronRight size={16} />
-            </button>
-        </div>
-      </div>
+      <div style={{marginTop:'20px', color:'#666', fontSize:'0.8rem', textAlign:'right'}}>Total: {filteredContacts.length}</div>
 
       {/* --- MODAL DE EDIÇÃO --- */}
       {showUserModal && editingUser && (
@@ -272,6 +245,7 @@ export function Contacts() {
                     <h4 style={{margin:'0 0 10px 0', color:'#c333ff', display:'flex', alignItems:'center', gap:'8px'}}>
                         <Send size={16}/> Enviar Campanha Rápida
                     </h4>
+                    
                     {rmktHistory.length > 0 ? (
                         <div className="history-mini-list">
                             {rmktHistory.slice(0, 3).map((h, i) => (
@@ -312,18 +286,16 @@ export function Contacts() {
                         </select>
                     </div>
 
-                    {/* Botão de Reenvio: Aparece se já estiver salvo como PAGO ou se acabamos de mudar para PAGO */}
                     {editingUser.status === 'paid' && (
                         <div style={{marginBottom:'20px'}}>
                             <button type="button" className="btn-resend" onClick={handleResendAccess}>
                                 🔄 Reenviar Acesso
                             </button>
-                            <small style={{display:'block', color:'#666', marginTop:'5px'}}>*Certifique-se de salvar as alterações antes de reenviar se você acabou de mudar o status.</small>
                         </div>
                     )}
 
                     <div className="form-group">
-                        <label>Data Personalizada (Expiração)</label>
+                        <label>Data Personalizada</label>
                         <input 
                             type="date" 
                             className="input-field"
@@ -338,7 +310,7 @@ export function Contacts() {
 
                     <div className="modal-actions">
                         <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Fechar</button>
-                        <button type="submit" className="btn-save">Salvar Alterações</button>
+                        <button type="submit" className="btn-save">Salvar</button>
                     </div>
                 </form>
             </div>
