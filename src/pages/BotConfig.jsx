@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft, MessageSquare, Clock, Shield, Key } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
-import { botService } from '../services/api';
+import { botService } from '../services/api'; 
 import Swal from 'sweetalert2';
 import './Bots.css';
 
@@ -17,10 +17,10 @@ export function BotConfig() {
     nome: '',
     token: '',
     id_canal_vip: '',
-    admin_principal_id: '' // NOVO CAMPO INSERIDO
+    admin_principal_id: '' // NOVO CAMPO INSERIDO NA ESTRUTURA ANTIGA
   });
 
-  // Estados visuais (Mantidos)
+  // Estados visuais (Mantidos da versão antiga)
   const [welcomeMsg, setWelcomeMsg] = useState("Olá! Seja bem-vindo ao nosso atendimento.");
   const [fallbackMsg, setFallbackMsg] = useState("Não entendi. Digite /ajuda para ver as opções.");
 
@@ -50,14 +50,14 @@ export function BotConfig() {
     }
   };
 
-  // Função de Salvar Atualizada (Salva tudo, incluindo o Admin ID)
+  // Função Unificada de Salvar (Conexão + Admin)
   const handleSaveConnection = async () => {
     try {
       await botService.updateBot(id, {
         nome: config.nome,
         token: config.token,
         id_canal_vip: config.id_canal_vip,
-        admin_principal_id: config.admin_principal_id // Envia o novo campo
+        admin_principal_id: config.admin_principal_id // Envia o novo campo para a API
       });
       
       Swal.fire({
@@ -75,6 +75,7 @@ export function BotConfig() {
 
   return (
     <div className="bots-container">
+      
       <div className="bots-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <Button variant="ghost" size="icon" onClick={() => navigate('/bots')}>
@@ -82,7 +83,7 @@ export function BotConfig() {
           </Button>
           <div>
             <h1>Configurar: {config.nome || `Bot #${id}`}</h1>
-            <p style={{ color: 'var(--muted-foreground)' }}>Gerencie conexão, admins e respostas.</p>
+            <p style={{ color: 'var(--muted-foreground)' }}>Gerencie conexão, administradores e respostas.</p>
           </div>
         </div>
       </div>
@@ -101,7 +102,7 @@ export function BotConfig() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                 <div className="form-group">
                   <label style={{display:'flex', alignItems:'center', gap:'5px', marginBottom:'5px', color:'#ccc'}}>
-                    Token do Bot (Telegram)
+                     Token do Bot (Telegram)
                   </label>
                   <input 
                     className="input-field"
@@ -111,6 +112,7 @@ export function BotConfig() {
                     placeholder="123456:ABC-def..."
                     style={{width: '100%', padding: '10px', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '6px'}}
                   />
+                  <small style={{color:'#aaa', fontSize:'0.8rem'}}>Alterar isso reconecta o bot imediatamente.</small>
                 </div>
 
                 <div className="form-group">
@@ -128,7 +130,7 @@ export function BotConfig() {
             </CardContent>
           </Card>
 
-           {/* --- CARD 2: ADMINISTRAÇÃO (NOVO - Inserido aqui) --- */}
+           {/* --- CARD 2: ADMINISTRAÇÃO (NOVO - Inserido aqui com estilo azul) --- */}
            <Card style={{ border: '1px solid #3b82f6', background: 'rgba(59, 130, 246, 0.05)' }}>
             <CardContent>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#3b82f6' }}>
@@ -139,7 +141,7 @@ export function BotConfig() {
               <div className="form-group">
                 <label style={{marginBottom:'5px', color:'#ccc'}}>ID do Admin Principal (Telegram)</label>
                 <p style={{fontSize:'0.8rem', color:'#888', marginBottom:'8px'}}>
-                    Receberá avisos de vendas aprovadas e alertas do sistema.
+                    Receberá avisos de vendas aprovadas e alertas do sistema. Use o comando <code>/id</code> no seu bot.
                 </p>
                 <input 
                   className="input-field" 
@@ -154,7 +156,7 @@ export function BotConfig() {
                   <p style={{margin:'0 0 5px 0', fontWeight:'bold', color:'#60a5fa'}}>🔔 Você será notificado quando:</p>
                   <ul style={{margin:0, paddingLeft:'20px', color:'#ccc'}}>
                       <li>Uma venda for aprovada (PIX pago).</li>
-                      <li>O bot for pausado ou ativado.</li>
+                      <li>O bot for pausado ou ativado via painel.</li>
                   </ul>
               </div>
             </CardContent>
@@ -167,7 +169,7 @@ export function BotConfig() {
             </Button>
           </div>
 
-          {/* --- ÁREA DE MENSAGENS (Mantida Visualmente apenas, pois é editada no Flow) --- */}
+          {/* --- ÁREA DE MENSAGENS (Mantida visualmente, edição via Flow) --- */}
           <div className="bots-grid" style={{ gridTemplateColumns: '1fr 1fr', marginTop:'10px' }}>
             <Card>
               <CardContent>

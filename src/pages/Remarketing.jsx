@@ -38,7 +38,7 @@ export function Remarketing() {
     remarketingService.getHistory(selectedBot.id).then(setHistory).catch(console.error);
   };
 
-  // --- NOVA FUNÇÃO: REUTILIZAR CAMPANHA (Do pedido anterior) ---
+  // --- NOVA FUNÇÃO: REUTILIZAR CAMPANHA (Baseada nos seus arquivos de referência) ---
   const handleReuse = (campaign) => {
     try {
         // Blinda o parse: se já for objeto, usa direto; se for string, parseia
@@ -49,26 +49,28 @@ export function Remarketing() {
             try { config = JSON.parse(campaign.config); } catch (e) { config = {}; }
         }
 
+        // Popula o formulário com os dados antigos
         setFormData({
             target: campaign.target || 'todos',
             mensagem: config.msg || '',
             media_url: config.media || '',
             incluir_oferta: config.offer || false,
             plano_oferta_id: campaign.plano_id || '',
-            price_mode: 'custom', // Ao reutilizar, forçamos custom para manter o preço histórico
+            // Ao reutilizar, forçamos 'custom' se houver preço salvo para garantir que o valor se mantenha
+            price_mode: campaign.promo_price ? 'custom' : 'original', 
             custom_price: campaign.promo_price || '',
-            expiration_mode: 'none', // Resetamos validade por segurança
+            expiration_mode: 'none', // Resetamos validade por segurança (datas passadas)
             expiration_value: ''
         });
 
-        setStep(1); // Volta para o inicio
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setStep(1); // Volta para o passo 1
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Rola para o topo
         
         Swal.fire({
             title: 'Dados Carregados!',
-            text: 'Configure a validade novamente se necessário.',
+            text: 'As configurações da campanha antiga foram copiadas. Configure a validade novamente se necessário.',
             icon: 'info',
-            timer: 2000,
+            timer: 2500,
             showConfirmButton: false,
             background: '#151515', color: '#fff'
         });
@@ -122,7 +124,7 @@ export function Remarketing() {
     }
   };
 
-  if (!selectedBot) return <div className="remarketing-container empty-state"><h2>Selecione um bot.</h2></div>;
+  if (!selectedBot) return <div className="remarketing-container empty-state"><h2>Selecione um bot no topo.</h2></div>;
 
   return (
     <div className="remarketing-container">
@@ -261,13 +263,13 @@ export function Remarketing() {
         </CardContent>
       </Card>
 
-      {/* Histórico CORRIGIDO (Proteção JSON) */}
+      {/* Histórico COM BOTÃO REUTILIZAR e Proteção JSON */}
       <div className="history-section">
         <h3>Histórico Recente</h3>
         <div className="history-list">
             {history.length === 0 ? <p style={{color:'#666'}}>Nenhuma campanha recente.</p> : (
                 history.map(h => {
-                    // Lógica de Parse Segura para evitar o erro [object Object]
+                    // Proteção contra erro de JSON
                     let parsedConfig = {};
                     try {
                         if (typeof h.config === 'object') {
@@ -293,12 +295,13 @@ export function Remarketing() {
                                     <span className="sent">✅ {h.sent}</span>
                                     <span className="blocked">🚫 {h.blocked}</span>
                                 </div>
-                                {/* BOTÃO REUTILIZAR NOVO */}
+                                {/* BOTÃO REUTILIZAR INSERIDO AQUI */}
                                 <Button 
                                     onClick={() => handleReuse(h)} 
                                     style={{padding:'5px 10px', fontSize:'0.8rem', height:'auto', background:'#333', border:'1px solid #555'}}
+                                    title="Reutilizar Campanha"
                                 >
-                                    <Repeat size={14} />
+                                    <Repeat size={14} /> Reutilizar
                                 </Button>
                             </div>
                         </div>
