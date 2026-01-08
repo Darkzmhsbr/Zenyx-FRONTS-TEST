@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, MessageSquare, Clock, Shield } from 'lucide-react';
+import { Save, ArrowLeft, MessageSquare, Clock, Shield, Key } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
-import { botService } from '../services/api'; 
+import { botService } from '../services/api';
 import Swal from 'sweetalert2';
 import './Bots.css';
 
@@ -12,15 +12,15 @@ export function BotConfig() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   
-  // Estado para configurações do Bot
+  // Estado para configurações (Fundido: Antigo + Novo Campo Admin)
   const [config, setConfig] = useState({
     nome: '',
     token: '',
     id_canal_vip: '',
-    admin_principal_id: '' // NOVO CAMPO
+    admin_principal_id: '' // NOVO CAMPO INSERIDO
   });
 
-  // Estados visuais para mensagens (Mantidos da sua versão original)
+  // Estados visuais (Mantidos)
   const [welcomeMsg, setWelcomeMsg] = useState("Olá! Seja bem-vindo ao nosso atendimento.");
   const [fallbackMsg, setFallbackMsg] = useState("Não entendi. Digite /ajuda para ver as opções.");
 
@@ -32,164 +32,181 @@ export function BotConfig() {
     try {
       setLoading(true);
       const bots = await botService.listBots();
-      // Converte id da URL para número para comparar
-      const botAtual = bots.find(b => b.id === parseInt(id));
+      const currentBot = bots.find(b => b.id === parseInt(id));
       
-      if (botAtual) {
+      if (currentBot) {
         setConfig({
-          nome: botAtual.nome || '',
-          token: botAtual.token || '',
-          id_canal_vip: botAtual.id_canal_vip || '',
-          admin_principal_id: botAtual.admin_principal_id || '' // Carrega do banco
+          nome: currentBot.nome || '',
+          token: currentBot.token || '',
+          id_canal_vip: currentBot.id_canal_vip || '',
+          admin_principal_id: currentBot.admin_principal_id || '' // Carrega do banco
         });
-        
-        // Se a API retornar flow, poderíamos setar welcomeMsg aqui também
-        // Por enquanto mantemos o estado local visual
       }
     } catch (error) {
+      console.error("Erro ao carregar bot", error);
       Swal.fire('Erro', 'Falha ao carregar dados do bot', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
+  // Função de Salvar Atualizada (Salva tudo, incluindo o Admin ID)
+  const handleSaveConnection = async () => {
     try {
-      await botService.updateBot(id, config);
-      Swal.fire('Sucesso', 'Configurações salvas com sucesso!', 'success');
+      await botService.updateBot(id, {
+        nome: config.nome,
+        token: config.token,
+        id_canal_vip: config.id_canal_vip,
+        admin_principal_id: config.admin_principal_id // Envia o novo campo
+      });
+      
+      Swal.fire({
+        title: 'Atualizado!',
+        text: 'Configurações salvas com sucesso.',
+        icon: 'success',
+        background: '#151515',
+        color: '#fff'
+      });
     } catch (error) {
-      Swal.fire('Erro', 'Falha ao salvar as configurações.', 'error');
+      console.error(error);
+      Swal.fire('Erro', 'Falha ao atualizar configurações.', 'error');
     }
   };
 
   return (
-    <div className="bot-config-container">
-      <div className="config-header">
-        <Button variant="outline" onClick={() => navigate('/bots')}>
-          <ArrowLeft size={18} /> Voltar
-        </Button>
-        <h1>Configurar Bot</h1>
+    <div className="bots-container">
+      <div className="bots-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/bots')}>
+            <ArrowLeft size={24} />
+          </Button>
+          <div>
+            <h1>Configurar: {config.nome || `Bot #${id}`}</h1>
+            <p style={{ color: 'var(--muted-foreground)' }}>Gerencie conexão, admins e respostas.</p>
+          </div>
+        </div>
       </div>
 
-      <div className="config-grid">
-        {/* Card de Conexão */}
-        <Card>
-          <CardContent>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#c333ff' }}>
-              <MessageSquare size={24} />
-              <h3 style={{ margin: 0, color: 'var(--foreground)' }}>Conexão com Telegram</h3>
-            </div>
+      {loading ? <p style={{color:'#888', marginLeft:'20px'}}>Carregando configurações...</p> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* --- CARD 1: CREDENCIAIS (Estrutura Antiga Preservada) --- */}
+          <Card style={{ border: '1px solid #c333ff', background: 'rgba(195, 51, 255, 0.05)' }}>
+            <CardContent>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#c333ff' }}>
+                <Key size={24} />
+                <h3 style={{ margin: 0, color: '#fff' }}>Credenciais de Conexão</h3>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                <div className="form-group">
+                  <label style={{display:'flex', alignItems:'center', gap:'5px', marginBottom:'5px', color:'#ccc'}}>
+                    Token do Bot (Telegram)
+                  </label>
+                  <input 
+                    className="input-field"
+                    type="text"
+                    value={config.token}
+                    onChange={e => setConfig({...config, token: e.target.value})}
+                    placeholder="123456:ABC-def..."
+                    style={{width: '100%', padding: '10px', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '6px'}}
+                  />
+                </div>
 
-            <div className="form-group">
-              <label>Nome do Bot (Interno)</label>
-              <input 
-                className="input-field" 
-                value={config.nome}
-                onChange={e => setConfig({...config, nome: e.target.value})}
-              />
-            </div>
+                <div className="form-group">
+                  <label style={{marginBottom:'5px', color:'#ccc'}}>ID do Canal VIP</label>
+                  <input 
+                    className="input-field"
+                    type="text"
+                    value={config.id_canal_vip}
+                    onChange={e => setConfig({...config, id_canal_vip: e.target.value})}
+                    placeholder="-100..."
+                    style={{width: '100%', padding: '10px', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '6px'}}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="form-group">
-              <label>Token do Bot (BotFather)</label>
-              <input 
-                className="input-field" 
-                value={config.token}
-                onChange={e => setConfig({...config, token: e.target.value})}
-              />
-            </div>
+           {/* --- CARD 2: ADMINISTRAÇÃO (NOVO - Inserido aqui) --- */}
+           <Card style={{ border: '1px solid #3b82f6', background: 'rgba(59, 130, 246, 0.05)' }}>
+            <CardContent>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#3b82f6' }}>
+                <Shield size={24} />
+                <h3 style={{ margin: 0, color: '#fff' }}>Notificações ao Admin</h3>
+              </div>
+              
+              <div className="form-group">
+                <label style={{marginBottom:'5px', color:'#ccc'}}>ID do Admin Principal (Telegram)</label>
+                <p style={{fontSize:'0.8rem', color:'#888', marginBottom:'8px'}}>
+                    Receberá avisos de vendas aprovadas e alertas do sistema.
+                </p>
+                <input 
+                  className="input-field" 
+                  placeholder="Ex: 123456789"
+                  value={config.admin_principal_id}
+                  onChange={e => setConfig({...config, admin_principal_id: e.target.value})}
+                  style={{width: '100%', padding: '10px', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '6px'}}
+                />
+              </div>
+              
+              <div style={{marginTop:'15px', padding:'10px', background:'rgba(59, 130, 246, 0.1)', borderRadius:'8px', fontSize:'0.85rem', border:'1px solid rgba(59, 130, 246, 0.2)'}}>
+                  <p style={{margin:'0 0 5px 0', fontWeight:'bold', color:'#60a5fa'}}>🔔 Você será notificado quando:</p>
+                  <ul style={{margin:0, paddingLeft:'20px', color:'#ccc'}}>
+                      <li>Uma venda for aprovada (PIX pago).</li>
+                      <li>O bot for pausado ou ativado.</li>
+                  </ul>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="form-group">
-              <label>ID do Canal VIP (Ex: -100...)</label>
-              <input 
-                className="input-field" 
-                value={config.id_canal_vip}
-                onChange={e => setConfig({...config, id_canal_vip: e.target.value})}
-              />
-            </div>
-          </CardContent>
-        </Card>
+          {/* Botão de Salvar Global */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button onClick={handleSaveConnection} style={{background: '#10b981', color:'#fff', width:'100%', padding:'12px'}}>
+              <Save size={18} /> Salvar Todas as Configurações
+            </Button>
+          </div>
 
-        {/* Card de Boas Vindas (Mantido da sua versão) */}
-        <Card>
-          <CardContent>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', color: '#10b981' }}>
-              <MessageSquare size={24} />
-              <h3 style={{ margin: 0, color: 'var(--foreground)' }}>Mensagem de Boas-vindas</h3>
-            </div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)', marginBottom: '15px' }}>
-              Esta mensagem será enviada quando o usuário clicar em "Começar" (/start).
-            </p>
-            <textarea 
-              className="input-field" 
-              style={{ minHeight: '120px', resize: 'vertical', fontFamily: 'inherit', width: '100%', padding:'10px', background:'#0a0a0a', border:'1px solid #333', color:'#fff', borderRadius:'6px' }}
-              value={welcomeMsg}
-              onChange={(e) => setWelcomeMsg(e.target.value)}
-              placeholder="Edite no menu Flow Chat..."
-              disabled // Desabilitado visualmente para focar na conexão neste menu
-            />
-            <small style={{color:'#666', marginTop:'5px', display:'block'}}>*Para editar o fluxo completo, vá no menu "Flow Chat".</small>
-          </CardContent>
-        </Card>
+          {/* --- ÁREA DE MENSAGENS (Mantida Visualmente apenas, pois é editada no Flow) --- */}
+          <div className="bots-grid" style={{ gridTemplateColumns: '1fr 1fr', marginTop:'10px' }}>
+            <Card>
+              <CardContent>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', color: '#10b981' }}>
+                  <MessageSquare size={24} />
+                  <h3 style={{ margin: 0, color: 'var(--foreground)' }}>Boas-vindas</h3>
+                </div>
+                <textarea 
+                  className="input-field" 
+                  style={{ minHeight: '100px', resize: 'vertical', fontFamily: 'inherit', width: '100%', padding:'10px', background:'#0a0a0a', border:'1px solid #333', color:'#fff', borderRadius:'6px' }}
+                  value={welcomeMsg}
+                  onChange={(e) => setWelcomeMsg(e.target.value)}
+                  placeholder="Edite no menu Flow Chat..."
+                  disabled 
+                />
+                <small style={{color:'#666'}}>*Edite no menu Flow Chat</small>
+              </CardContent>
+            </Card>
 
-        {/* Card de Resposta Padrão (Mantido da sua versão) */}
-        <Card>
-          <CardContent>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', color: '#f59e0b' }}>
-              <Clock size={24} />
-              <h3 style={{ margin: 0, color: 'var(--foreground)' }}>Mensagem de Erro/Padrão</h3>
-            </div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)', marginBottom: '15px' }}>
-              Enviada quando o bot não entende o comando do usuário.
-            </p>
-            <textarea 
-              className="input-field" 
-              style={{ minHeight: '120px', resize: 'vertical', fontFamily: 'inherit', width: '100%', padding:'10px', background:'#0a0a0a', border:'1px solid #333', color:'#fff', borderRadius:'6px' }}
-              value={fallbackMsg}
-              onChange={(e) => setFallbackMsg(e.target.value)}
-              placeholder="Edite no menu Flow Chat..."
-              disabled
-            />
-          </CardContent>
-        </Card>
-
-        {/* Card de Administração e Notificações (NOVO - ADICIONADO AQUI) */}
-        <Card>
-          <CardContent>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#3b82f6' }}>
-              <Shield size={24} />
-              <h3 style={{ margin: 0, color: 'var(--foreground)' }}>Notificações ao Admin</h3>
-            </div>
-
-            <div className="form-group">
-              <label>ID do Admin Principal (Telegram)</label>
-              <p style={{fontSize:'0.8rem', color:'#888', marginBottom:'8px'}}>
-                Cole aqui o seu ID numérico do Telegram. O bot enviará avisos de vendas aprovadas e status para este ID.
-              </p>
-              <input 
-                className="input-field" 
-                placeholder="Ex: 123456789"
-                value={config.admin_principal_id}
-                onChange={e => setConfig({...config, admin_principal_id: e.target.value})}
-              />
-            </div>
-            
-            <div style={{marginTop:'15px', padding:'10px', background:'rgba(59, 130, 246, 0.1)', borderRadius:'8px', fontSize:'0.85rem', border:'1px solid rgba(59, 130, 246, 0.2)'}}>
-                <p style={{margin:'0 0 5px 0', fontWeight:'bold', color:'#60a5fa'}}>🔔 Você será notificado quando:</p>
-                <ul style={{margin:0, paddingLeft:'20px', color:'#ccc'}}>
-                    <li>Uma venda for aprovada (PIX pago).</li>
-                    <li>O bot for pausado ou ativado pelo painel.</li>
-                </ul>
-            </div>
-
-            <div style={{ marginTop: '30px', textAlign: 'right' }}>
-              <Button onClick={handleSave} style={{ width: '100%', background: '#10b981', color: '#fff', padding:'12px' }}>
-                <Save size={18} /> Salvar Todas as Configurações
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-      </div>
+            <Card>
+              <CardContent>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', color: '#f59e0b' }}>
+                  <Clock size={24} />
+                  <h3 style={{ margin: 0, color: 'var(--foreground)' }}>Mensagem de Erro</h3>
+                </div>
+                <textarea 
+                  className="input-field" 
+                  style={{ minHeight: '100px', resize: 'vertical', fontFamily: 'inherit', width: '100%', padding:'10px', background:'#0a0a0a', border:'1px solid #333', color:'#fff', borderRadius:'6px' }}
+                  value={fallbackMsg}
+                  onChange={(e) => setFallbackMsg(e.target.value)}
+                  placeholder="Edite no menu Flow Chat..."
+                  disabled 
+                />
+                 <small style={{color:'#666'}}>*Edite no menu Flow Chat</small>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
