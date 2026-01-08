@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { crmService, remarketingService, admin } from '../services/api'; 
 import { useBot } from '../context/BotContext';
-import { Users, CheckCircle, Clock, XCircle, RefreshCw, Send, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
+import { Users, CheckCircle, Clock, XCircle, RefreshCw, Send, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Contacts.css';
@@ -10,11 +10,14 @@ export function Contacts() {
   const { selectedBot } = useBot();
   const [contactsData, setContactsData] = useState([]); 
   const [loading, setLoading] = useState(false);
+  
+  // Filtros
   const [filter, setFilter] = useState('todos');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   
+  // Modal
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [rmktHistory, setRmktHistory] = useState([]);
@@ -50,6 +53,7 @@ export function Contacts() {
           telegram_id: user.telegram_id,
           role: user.role || 'user', 
           status: user.status,
+          // Garante formato YYYY-MM-DD para o input date
           custom_expiration: user.expiration_date ? user.expiration_date.split('T')[0] : ''
       });
       setShowUserModal(true);
@@ -64,20 +68,20 @@ export function Contacts() {
               custom_expiration: editingUser.custom_expiration || null
           };
           await admin.updateUser(editingUser.id, payload); 
-          Swal.fire('Sucesso', 'Usuário atualizado!', 'success');
+          Swal.fire('Sucesso', 'Atualizado!', 'success');
           setShowUserModal(false);
           carregarContatos(); 
       } catch (error) {
-          Swal.fire('Erro', 'Falha ao atualizar usuário.', 'error');
+          Swal.fire('Erro', 'Falha ao atualizar.', 'error');
       }
   };
 
   const handleResendAccess = async () => {
       try {
           await admin.resendAccess(editingUser.id);
-          Swal.fire('Enviado!', 'Links de acesso reenviados!', 'success');
+          Swal.fire('Enviado!', 'Acesso reenviado!', 'success');
       } catch (error) {
-          Swal.fire('Erro', 'Falha ao reenviar acesso.', 'error');
+          Swal.fire('Erro', 'Falha ao enviar.', 'error');
       }
   };
 
@@ -90,11 +94,12 @@ export function Contacts() {
           text: `Enviar campanha "${config.msg?.substring(0,15)}..." apenas para este usuário?`,
           icon: 'question',
           showCancelButton: true,
-          confirmButtonText: '🚀 Sim, Enviar',
+          confirmButtonText: '🚀 Sim',
           background: '#151515', color: '#fff'
       });
 
       if (confirm.isConfirmed) {
+          // Sanitização para envio individual
           const payload = {
               bot_id: selectedBot.id,
               tipo_envio: 'individual',
@@ -102,15 +107,15 @@ export function Contacts() {
               mensagem: config.msg,
               media_url: config.media || null,
               incluir_oferta: config.offer,
-              plano_oferta_id: config.plano_id || null,
-              valor_oferta: config.promo_price || 0,
+              plano_oferta_id: config.plano_id ? String(config.plano_id) : null,
+              valor_oferta: config.promo_price ? parseFloat(config.promo_price) : 0,
               expire_timestamp: 0 
           };
 
           Swal.fire({ title: 'Enviando...', background: '#151515', color:'#fff', didOpen: () => Swal.showLoading() });
           try {
               await remarketingService.send(payload);
-              Swal.fire({title:'Sucesso!', text:'Enviado individualmente.', icon:'success', background:'#151515', color:'#fff'});
+              Swal.fire({title:'Sucesso!', text:'Enviado.', icon:'success', background:'#151515', color:'#fff'});
           } catch (e) {
               Swal.fire('Erro', 'Falha ao enviar.', 'error');
           }
@@ -120,7 +125,7 @@ export function Contacts() {
   return (
     <div className="contacts-container">
       <div className="contacts-header">
-        <h1>Gerenciador de Contatos</h1>
+        <h1>Contatos</h1>
         <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
             <span style={{color:'#888', fontSize:'0.9rem'}}>Total: {totalRecords}</span>
             <Button onClick={carregarContatos} variant="outline"><RefreshCw size={16}/></Button>
@@ -135,7 +140,7 @@ export function Contacts() {
           ))}
       </div>
 
-      {loading ? <p className="loading-text">Carregando contatos...</p> : (
+      {loading ? <p className="loading-text">Carregando...</p> : (
         <>
             <div className="table-responsive">
                 <table className="custom-table">
@@ -144,7 +149,7 @@ export function Contacts() {
                             <th>Usuário</th>
                             <th>Status</th>
                             <th>Entrada</th>
-                            <th>Expiração</th>
+                            <th>Expiração</th> {/* COLUNA */}
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -159,13 +164,13 @@ export function Contacts() {
                                     {u.status === 'expired' && <span className="badge danger">Expirado</span>}
                                 </td>
                                 <td>{new Date(u.created_at).toLocaleDateString()}</td>
-                                {/* COLUNA EXPIRAÇÃO RENDERIZADA AQUI */}
+                                {/* DADO EXPIRAÇÃO */}
                                 <td>
                                     {(u.status === 'active' || u.status === 'paid')
                                         ? (u.expiration_date ? new Date(u.expiration_date).toLocaleDateString() : <span style={{color:'#10b981'}}>Vitalício</span>) 
                                         : '-'}
                                 </td>
-                                <td><Button size="sm" onClick={() => openUserEdit(u)}><Edit size={14}/> Gerenciar</Button></td>
+                                <td><Button size="sm" onClick={() => openUserEdit(u)}><Edit size={14}/></Button></td>
                             </tr>
                         )) : (
                             <tr><td colSpan="5" style={{textAlign:'center', padding:'20px'}}>Nenhum contato.</td></tr>
@@ -174,9 +179,9 @@ export function Contacts() {
                 </table>
             </div>
             <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', marginTop:'20px'}}>
-                <Button disabled={page === 1} onClick={handlePrevPage}>Anterior</Button>
+                <Button disabled={page === 1} onClick={handlePrevPage}><ChevronLeft size={16}/></Button>
                 <span>Pag {page} de {totalPages}</span>
-                <Button disabled={page >= totalPages} onClick={handleNextPage}>Próximo</Button>
+                <Button disabled={page >= totalPages} onClick={handleNextPage}><ChevronRight size={16}/></Button>
             </div>
         </>
       )}
@@ -184,7 +189,7 @@ export function Contacts() {
       {showUserModal && editingUser && (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>Gerenciar: {editingUser.name}</h2>
+                <h2>{editingUser.name}</h2>
                 <form onSubmit={handleSaveUser}>
                     <div className="form-group">
                         <label>Status</label>
@@ -198,19 +203,18 @@ export function Contacts() {
                         <label>Expiração</label>
                         <input type="date" className="input-field" value={editingUser.custom_expiration} onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})} />
                         <div style={{marginTop:'10px', display:'flex', gap:'10px'}}>
-                            <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>Vitalício</button>
+                            <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>♾️ Vitalício</button>
                             <button type="button" className="btn-small primary" onClick={handleResendAccess}>Reenviar Acesso</button>
                         </div>
                     </div>
                     
-                    {/* DISPARO INDIVIDUAL NO MODAL */}
                     <div style={{marginTop:'15px', borderTop:'1px solid #333', paddingTop:'10px'}}>
                         <h4>Envio Rápido</h4>
                         <div style={{maxHeight:'100px', overflowY:'auto'}}>
                             {rmktHistory.map((h,i) => (
                                 <div key={i} style={{display:'flex', justifyContent:'space-between', padding:'5px', borderBottom:'1px solid #222'}}>
                                     <small>{h.data}</small>
-                                    <button type="button" onClick={() => handleReuseForUser(h)}>Enviar</button>
+                                    <button type="button" className="btn-mini-send" onClick={() => handleReuseForUser(h)}>Enviar</button>
                                 </div>
                             ))}
                         </div>

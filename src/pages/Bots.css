@@ -90,8 +90,8 @@
 
 .dropdown-menu.glass-menu {
   position: absolute;
-  top: 45px;
-  right: 10px;
+  top: 40px;
+  right: 0;
   background: rgba(20, 20, 20, 0.95); /* Fundo quase opaco */
   backdrop-filter: blur(10px); /* Efeito vidro */
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -201,34 +201,3 @@
 
 .status-indicator.offline { color: #ef4444; }
 .status-indicator.offline .dot { background-color: #ef4444; }
-
-.bots-container { padding: 30px; margin-left: 250px; }
-.bots-header { display: flex; justify-content: space-between; margin-bottom: 30px; }
-.bots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
-.bot-card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 20px; position: relative; }
-.bot-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.bot-identity { display: flex; align-items: center; gap: 15px; }
-.bot-icon { width: 50px; height: 50px; background: #2aabee; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; }
-.bot-stats { display: grid; grid-template-columns: 1fr 1fr; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-.stat-item { display: flex; flex-direction: column; }
-.stat-label { font-size: 0.8rem; color: #888; }
-.stat-value { font-size: 1.2rem; font-weight: bold; color: #fff; }
-.stat-value.highlight { color: #10b981; }
-.bot-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 15px; }
-.status-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; }
-.status-indicator.online { color: #10b981; } .status-indicator.offline { color: #ef4444; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-
-/* MENU MODERNO */
-.icon-btn { background: transparent; border: none; color: #ccc; cursor: pointer; padding: 5px; }
-.dropdown-menu.glass-menu {
-    position: absolute; top: 40px; right: 0; 
-    background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
-    width: 150px; z-index: 100; overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-.menu-item { padding: 12px 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #eee; transition: 0.2s; }
-.menu-item:hover { background: rgba(255,255,255,0.1); }
-.menu-item.danger { color: #ff5555; }
-.menu-item.danger:hover { background: rgba(255, 85, 85, 0.1); }
