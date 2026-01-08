@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 🔗 SEU DOMÍNIO DO RAILWAY (Backend Python)
+// 🔗 SEU DOMÍNIO DO RAILWAY
 const API_URL = 'https://zenyx-gbs-production.up.railway.app';
 
 const api = axios.create({
@@ -10,91 +10,43 @@ const api = axios.create({
   },
 });
 
-// --- INTERCEPTOR DE ERROS ---
 api.interceptors.response.use(
   response => response,
   error => {
-    if (error.response && error.response.status === 422) {
-      console.error("❌ ERRO 422 (Dados Inválidos):", error.response.data);
-    }
+    console.error("API Error:", error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
 
 // --- SERVIÇO DE BOTS ---
 export const botService = {
-  createBot: async (dados) => {
-    const response = await api.post('/api/admin/bots', dados);
-    return response.data;
-  },
-  listBots: async () => {
-    const response = await api.get('/api/admin/bots');
-    return response.data;
-  },
-  getBot: async (botId) => {
-    const response = await api.get(`/api/admin/bots/${botId}`);
-    return response.data;
-  },
-  updateBot: async (botId, dados) => {
-    const response = await api.put(`/api/admin/bots/${botId}`, dados);
-    return response.data;
-  },
-  toggleBot: async (botId) => {
-    const response = await api.post(`/api/admin/bots/${botId}/toggle`);
-    return response.data;
-  },
-  deleteBot: async (botId) => {
-    const response = await api.delete(`/api/admin/bots/${botId}`);
-    return response.data;
-  }
+  createBot: async (d) => (await api.post('/api/admin/bots', d)).data,
+  listBots: async () => (await api.get('/api/admin/bots')).data,
+  getBot: async (id) => (await api.get(`/api/admin/bots/${id}`)).data,
+  updateBot: async (id, d) => (await api.put(`/api/admin/bots/${id}`, d)).data,
+  toggleBot: async (id) => (await api.post(`/api/admin/bots/${id}/toggle`)).data,
+  deleteBot: async (id) => (await api.delete(`/api/admin/bots/${id}`)).data
+};
+
+// --- SERVIÇO DE FLUXO ---
+export const flowService = {
+  getFlow: async (id) => (await api.get(`/api/admin/bots/${id}/flow`)).data,
+  saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data
 };
 
 // --- SERVIÇO DE PLANOS ---
 export const planService = {
-  listPlans: async (botId) => {
-    const response = await api.get(`/api/admin/plans/${botId}`);
-    return response.data;
-  },
-  savePlan: async (plan) => {
-    const response = await api.post('/api/admin/plans', plan);
-    return response.data;
-  },
-  deletePlan: async (planId) => {
-    const response = await api.delete(`/api/admin/plans/${planId}`);
-    return response.data;
-  }
+  listPlans: async (id) => (await api.get(`/api/admin/plans/${id}`)).data,
+  savePlan: async (p) => (await api.post('/api/admin/plans', p)).data,
+  deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
 };
 
 // --- SERVIÇO DE REMARKETING ---
 export const remarketingService = {
-  send: async (dados) => {
-    const response = await api.post('/api/admin/remarketing/send', dados);
-    return response.data;
-  },
-  getHistory: async (botId) => {
-    try {
-        const response = await api.get(`/api/admin/remarketing/history/${botId}`);
-        return response.data;
-    } catch (error) {
-        return [];
-    }
-  }
-};
-
-// --- SERVIÇO DE CRM (CORRIGIDO PARA RECEBER BOT_ID) ---
-export const crmService = {
-  getContacts: async (botId, filter = 'todos', page = 1) => {
-    // Agora passamos o bot_id na URL
-    const response = await api.get(`/api/admin/contacts?bot_id=${botId}&status=${filter}&page=${page}`);
-    return response.data;
-  },
-  updateUser: async (userId, data) => {
-    const response = await api.put(`/api/admin/users/${userId}`, data);
-    return response.data;
-  },
-  resendAccess: async (userId) => {
-    const response = await api.post(`/api/admin/users/${userId}/resend-access`);
-    return response.data;
+  send: async (d) => (await api.post('/api/admin/remarketing/send', d)).data,
+  getHistory: async (id) => {
+    try { return (await api.get(`/api/admin/remarketing/history/${id}`)).data; } 
+    catch { return []; }
   }
 };
 
@@ -106,19 +58,24 @@ export const dashboardService = {
   }
 };
 
-// --- SERVIÇO DE INTEGRAÇÕES (Corrigido erro atual) ---
+// --- SERVIÇO DE INTEGRAÇÕES ---
 export const integrationService = {
-  getConfig: async () => {
-    const response = await api.get('/api/admin/config');
-    return response.data;
-  },
-  saveConfig: async (data) => {
-    const response = await api.post('/api/admin/config', data);
-    return response.data;
-  }
+  getConfig: async () => (await api.get('/api/admin/config')).data,
+  saveConfig: async (d) => (await api.post('/api/admin/config', d)).data
 };
 
-// --- ADMIN (ALIAS PARA COMPATIBILIDADE) ---
+// --- SERVIÇO DE CRM (CORRIGIDO) ---
+export const crmService = {
+  // Agora aceita botId explicitamente
+  getContacts: async (botId, filter = 'todos', page = 1) => {
+    const response = await api.get(`/api/admin/contacts?bot_id=${botId}&status=${filter}&page=${page}`);
+    return response.data;
+  },
+  updateUser: async (userId, data) => (await api.put(`/api/admin/users/${userId}`, data)).data,
+  resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
+};
+
+// --- ADMIN (Alias) ---
 export const admin = crmService;
 
 export default api;

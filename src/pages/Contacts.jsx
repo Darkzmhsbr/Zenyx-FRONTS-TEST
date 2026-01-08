@@ -8,14 +8,16 @@ import './Contacts.css';
 
 export function Contacts() {
   const { selectedBot } = useBot();
-  const [contactsData, setContactsData] = useState([]); // Array final de usuários
+  const [contactsData, setContactsData] = useState([]); // Dados da tabela
   const [loading, setLoading] = useState(false);
   
+  // Filtros e Paginação
   const [filter, setFilter] = useState('todos');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   
+  // Modal e Histórico
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [rmktHistory, setRmktHistory] = useState([]);
@@ -28,18 +30,19 @@ export function Contacts() {
   }, [selectedBot, filter, page]);
 
   const carregarContatos = async () => {
+    if (!selectedBot) return;
     setLoading(true);
     try {
-      // Passa o ID do bot selecionado
+      // CORREÇÃO: Passa o ID do bot, o filtro e a página
       const data = await crmService.getContacts(selectedBot.id, filter, page);
       
-      // CORREÇÃO: O backend retorna { users: [...], total: ... }
+      // CORREÇÃO: Lê a propriedade .users do objeto retornado
       if (data && data.users) {
           setContactsData(data.users);
-          setTotalPages(data.pages || 1);
-          setTotalRecords(data.total || 0);
+          setTotalPages(data.pages || data.total_pages || 1);
+          setTotalRecords(data.total || data.total_records || 0);
       } else if (Array.isArray(data)) {
-          setContactsData(data); // Fallback caso a API mude
+          setContactsData(data);
       } else {
           setContactsData([]);
       }
@@ -61,8 +64,7 @@ export function Contacts() {
           telegram_id: user.telegram_id,
           role: user.role || 'user',
           status: user.status,
-          // Formata a data para o input HTML YYYY-MM-DD
-          custom_expiration: user.custom_expiration ? new Date(user.custom_expiration).toISOString().split('T')[0] : ''
+          custom_expiration: user.custom_expiration || user.expiration_date ? new Date(user.custom_expiration || user.expiration_date).toISOString().split('T')[0] : ''
       });
       setShowUserModal(true);
   };
@@ -98,6 +100,14 @@ export function Contacts() {
       return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const getStatusBadge = (status) => {
+    if (status === 'paid' || status === 'active') return <span className="status-badge status-paid"><CheckCircle size={12}/> Ativo</span>;
+    if (status === 'expired') return <span className="status-badge status-expired"><XCircle size={12}/> Expirado</span>;
+    return <span className="status-badge status-pending"><Clock size={12}/> Pendente</span>;
+  };
+
+  if (!selectedBot) return <div className="contacts-container"><div style={{textAlign:'center', marginTop:'100px', color:'#666'}}>Selecione um bot.</div></div>;
+
   return (
     <div className="contacts-container">
       <div className="contacts-header">
@@ -123,7 +133,7 @@ export function Contacts() {
                             <th>Plano / Valor</th>
                             <th>Status</th>
                             <th>Entrada</th>
-                            <th>Expiração</th> {/* COLUNA NOVA */}
+                            <th>Expiração</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -138,20 +148,13 @@ export function Contacts() {
                                     <div style={{fontSize:'0.85rem'}}>{u.plano_nome || '-'}</div>
                                     <div style={{fontWeight:'bold'}}>R$ {u.valor ? u.valor.toFixed(2) : '0.00'}</div>
                                 </td>
-                                <td>
-                                    {['active','paid'].includes(u.status) && <span className="badge success">Ativo</span>}
-                                    {u.status === 'pending' && <span className="badge warning">Pendente</span>}
-                                    {u.status === 'expired' && <span className="badge danger">Expirado</span>}
-                                </td>
+                                <td>{getStatusBadge(u.status)}</td>
                                 <td>{formatDate(u.created_at)}</td>
-                                
-                                {/* LÓGICA DE EXIBIÇÃO DA EXPIRAÇÃO */}
                                 <td>
                                     {['active','paid'].includes(u.status) 
-                                        ? (u.custom_expiration ? formatDate(u.custom_expiration) : <span style={{color:'#10b981'}}>Vitalício</span>) 
+                                        ? (u.custom_expiration || u.expiration_date ? formatDate(u.custom_expiration || u.expiration_date) : <span style={{color:'#10b981'}}>Vitalício</span>) 
                                         : '-'}
                                 </td>
-                                
                                 <td>
                                     <Button size="sm" onClick={() => openUserEdit(u)} style={{background:'#252525', border:'1px solid #333'}}>
                                         <Edit size={14}/>
@@ -165,7 +168,6 @@ export function Contacts() {
                 </table>
             </div>
 
-            {/* Paginação */}
             {totalPages > 1 && (
                 <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', marginTop:'20px'}}>
                     <Button disabled={page === 1} onClick={handlePrevPage}><ChevronLeft size={16}/> Anterior</Button>
@@ -176,7 +178,6 @@ export function Contacts() {
         </>
       )}
 
-      {/* MODAL DE EDIÇÃO */}
       {showUserModal && editingUser && (
         <div className="modal-overlay">
             <div className="modal-content">
@@ -190,21 +191,14 @@ export function Contacts() {
                             <option value="expired">Expirado</option>
                         </select>
                     </div>
-
                     <div className="form-group">
-                        <label>Data de Expiração</label>
-                        <input 
-                            type="date" 
-                            className="input-field" 
-                            value={editingUser.custom_expiration} 
-                            onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})} 
-                        />
+                        <label>Expiração</label>
+                        <input type="date" className="input-field" value={editingUser.custom_expiration} onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})} />
                         <div style={{marginTop:'10px', display:'flex', gap:'10px'}}>
                             <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>♾️ Vitalício</button>
-                            <button type="button" className="btn-small primary" onClick={handleResendAccess}>📧 Reenviar Acesso</button>
+                            <button type="button" className="btn-small primary" onClick={handleResendAccess}>Reenviar Acesso</button>
                         </div>
                     </div>
-
                     <div className="modal-actions" style={{marginTop:'20px'}}>
                         <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Fechar</button>
                         <button type="submit" className="btn-save">Salvar</button>
