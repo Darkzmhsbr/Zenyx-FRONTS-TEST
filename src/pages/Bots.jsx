@@ -90,31 +90,59 @@ export function Bots() {
 
   return (
     <div className="bots-container">
+      
       <div className="bots-header">
-        <h1>Meus Bots</h1>
-        <Button onClick={() => navigate('/bots/new')}><Plus size={20} /> Novo Bot</Button>
+        <div>
+            <h1>Meus Bots</h1>
+            <p style={{color: 'var(--muted-foreground)'}}>Gerencie seus assistentes de venda.</p>
+        </div>
+        <Button onClick={() => navigate('/bots/new')}>
+          <Plus size={20} /> Criar Novo Bot
+        </Button>
       </div>
 
-      {loading ? <p>Carregando...</p> : (
+      {loading ? (
+        <div style={{textAlign: 'center', padding: '50px', color: '#666'}}>
+            <RefreshCcw className="spin" /> Carregando bots...
+        </div>
+      ) : bots.length === 0 ? (
+        <div className="empty-state" style={{textAlign:'center', marginTop:'50px', color:'#555'}}>
+            <h2>Você ainda não tem bots.</h2>
+            <p>Clique em "Criar Novo Bot" para começar.</p>
+        </div>
+      ) : (
         <div className="bots-grid">
           {bots.map((bot) => (
             <Card key={bot.id} className="bot-card">
               <CardContent>
+                
                 <div className="bot-header-row">
                     <div className="bot-identity">
-                        <div className="bot-icon"><Send size={24} /></div>
+                        <div className="bot-icon">
+                            <Send size={24} />
+                        </div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            {/* CORREÇÃO DO ARROBA */}
-                            <p style={{color:'#888'}}>@{bot.username ? bot.username.replace('@','') : '...'}</p>
+                            {/* CORREÇÃO DO @@: Se já vier com @ do backend, não adiciona outro */}
+                            <p style={{color:'#888', fontSize:'0.9rem'}}>
+                                {bot.username ? (bot.username.startsWith('@') ? bot.username : `@${bot.username}`) : '...'}
+                            </p>
                         </div>
                     </div>
+                    
+                    {/* MENU DE OPÇÕES (3 Pontinhos Moderno) */}
                     <div style={{position: 'relative'}} onClick={(e) => e.stopPropagation()}>
-                        <button className="icon-btn" onClick={() => setActiveMenu(activeMenu === bot.id ? null : bot.id)}><MoreVertical size={20}/></button>
+                        <button className="icon-btn" onClick={() => setActiveMenu(activeMenu === bot.id ? null : bot.id)}>
+                            <MoreVertical size={20} color="#888" />
+                        </button>
                         {activeMenu === bot.id && (
                             <div className="dropdown-menu glass-menu">
-                                <div className="menu-item" onClick={() => navigate(`/bots/config/${bot.id}`)}>⚙️ Configurar</div>
-                                <div className="menu-item danger" onClick={(e) => handleDeleteBot(e, bot)}>🗑️ Excluir</div>
+                                <div className="menu-item" onClick={() => navigate(`/bots/config/${bot.id}`)}>
+                                    <Settings size={14}/> Configurar
+                                </div>
+                                <div className="menu-item danger" onClick={(e) => handleDeleteBot(e, bot)}>
+                                    <Trash2 size={14}/> Excluir
+                                </div>
                             </div>
                         )}
                     </div>
