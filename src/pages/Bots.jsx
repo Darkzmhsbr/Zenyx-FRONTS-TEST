@@ -123,9 +123,9 @@ export function Bots() {
                         </div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            {/* CORREÇÃO DO @@: Se já vier com @ do backend, não adiciona outro */}
+                            {/* [CORREÇÃO] Garante visualmente apenas um @ usando RegEx */}
                             <p style={{color:'#888', fontSize:'0.9rem'}}>
-                                {bot.username ? (bot.username.startsWith('@') ? bot.username : `@${bot.username}`) : '...'}
+                                {bot.username ? `@${bot.username.replace(/^@+/, '')}` : '...'}
                             </p>
                         </div>
                     </div>
