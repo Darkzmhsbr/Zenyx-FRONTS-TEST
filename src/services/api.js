@@ -15,15 +15,33 @@ api.interceptors.response.use(
   e => Promise.reject(e)
 );
 
-// --- BOTS ---
-export const botService = {
-  createBot: async (d) => (await api.post('/api/admin/bots', d)).data,
-  listBots: async () => (await api.get('/api/admin/bots')).data,
-  getBot: async (id) => (await api.get(`/api/admin/bots/${id}`)).data,
-  updateBot: async (id, d) => (await api.put(`/api/admin/bots/${id}`, d)).data,
-  toggleBot: async (id) => (await api.post(`/api/admin/bots/${id}/toggle`)).data,
-  deleteBot: async (id) => (await api.delete(`/api/admin/bots/${id}`)).data
-};
+// --- SERVIÇO DE BOTS ---
+export const botService = {  
+  criarBot : async ( dados ) => {    
+    const response = await api.post ( '/api/admin/ bots ' , dados ) ; 
+    retornar resposta.dados ;​​
+  } ,
+  listBots : async ( ) => {    
+    const response = await api.get ( '/api/admin/ bots ' ) ; 
+    retornar resposta.dados ;​​
+  } ,
+  getBot : async ( botId ) => {    
+    const response = await api.get ( ` / api/ admin /bots/ ${ botId } ` ) ; 
+    retornar resposta.dados ;​​
+  } ,
+  updateBot : assíncrono ( botId , dados ) => {    
+    const response = await api.put ( ` /api/ admin /bots/ $ { botId } ` , dados ) ; 
+    retornar resposta.dados ;​​
+  } ,
+  toggleBot : assíncrono ( botId ) => {    
+    const response = await api.post ( ` /api/admin/bots / $ { botId } / toggle` ) ; 
+    retornar resposta.dados ;​​
+  } ,
+  deleteBot : assíncrono ( botId ) => {    
+    const response = await api.delete ( ` /api/admin/bots / $ { botId } ` ) ; 
+    retornar resposta.dados ;​​
+  }
+} ;
 
 // --- PLANOS ---
 export const planService = {
