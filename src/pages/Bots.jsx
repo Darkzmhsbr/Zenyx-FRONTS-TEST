@@ -123,9 +123,9 @@ export function Bots() {
                         </div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            {/* [CORREÇÃO] Garante visualmente apenas um @ usando RegEx */}
+                            {/* CORREÇÃO DEFINITIVA: Remove todos os @ e adiciona apenas um limpo */}
                             <p style={{color:'#888', fontSize:'0.9rem'}}>
-                                {bot.username ? `@${bot.username.replace(/^@+/, '')}` : '...'}
+                                {bot.username ? `@${bot.username.toString().replace(/@/g, '')}` : '...'}
                             </p>
                         </div>
                     </div>
