@@ -123,9 +123,12 @@ export function Bots() {
                         </div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            {/* CORREÇÃO DEFINITIVA: Remove todos os @ e adiciona apenas um limpo */}
+                            {/* --- CORREÇÃO DO MESTRE (LÓGICA DA VERSÃO ANTIGA) --- */}
+                            {/* Verifica se JÁ TEM @. Se tiver, mostra. Se não, adiciona. */}
                             <p style={{color:'#888', fontSize:'0.9rem'}}>
-                                {bot.username ? `@${bot.username.toString().replace(/@/g, '')}` : '...'}
+                                {bot.username 
+                                  ? (bot.username.toString().startsWith('@') ? bot.username : `@${bot.username}`) 
+                                  : '...'}
                             </p>
                         </div>
                     </div>
