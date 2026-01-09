@@ -1,71 +1,68 @@
 import React, { useEffect, useState } from 'react';
 import { crmService, remarketingService } from '../services/api'; 
 import { useBot } from '../context/BotContext';
-import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Send, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
+import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Edit, Send } from 'lucide-react';
 import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
-import './Contacts.css';
+import './Contacts.css'; // Usa o CSS da V1
 
 export function Contacts() {
   const { selectedBot } = useBot();
-  const [contactsData, setContactsData] = useState([]); 
-  const [loading, setLoading] = useState(false);
-  
-  // Filtros
+  const [allContacts, setAllContacts] = useState([]); 
+  const [filteredContacts, setFilteredContacts] = useState([]); 
   const [filter, setFilter] = useState('todos');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
-  
-  // Modal
+  const [loading, setLoading] = useState(false);
+
+  // Estados do Modal (Igual V1)
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [rmktHistory, setRmktHistory] = useState([]);
 
   useEffect(() => {
     if (selectedBot) {
-      carregarContatos();
-      remarketingService.getHistory(selectedBot.id).then(setRmktHistory).catch(() => {});
+        carregarContatos();
     }
-  }, [selectedBot, filter, page]);
+  }, [selectedBot]); // Recarrega quando muda o bot
+
+  useEffect(() => {
+    aplicarFiltro();
+  }, [filter, allContacts]);
 
   const carregarContatos = async () => {
     if (!selectedBot) return;
     setLoading(true);
     try {
-      // Passa o ID do bot selecionado e a paginação
-      const data = await crmService.getContacts(selectedBot.id, filter, page);
+      // CORREÇÃO: Passa selectedBot.id para filtrar no backend
+      const data = await crmService.getContacts(selectedBot.id, 'todos'); 
       
-      // Lógica Híbrida: Suporta retorno novo { users: [] } ou antigo []
-      if (data && data.users) {
-          setContactsData(data.users);
-          setTotalPages(data.total_pages || data.pages || 1);
-          setTotalRecords(data.total_records || data.total || 0);
-      } else if (Array.isArray(data)) {
-          setContactsData(data);
-      } else {
-          setContactsData([]);
-      }
+      // O backend V1 retorna array direto, então usamos direto
+      setAllContacts(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(error);
-      setContactsData([]);
+      console.error("Erro ao listar contatos", error);
+      setAllContacts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleNextPage = () => { if (page < totalPages) setPage(page + 1); };
-  const handlePrevPage = () => { if (page > 1) setPage(page - 1); };
+  const aplicarFiltro = () => {
+    if (filter === 'todos') {
+        setFilteredContacts(allContacts);
+    } else if (filter === 'pagantes') {
+        // Filtra localmente quem é paid ou active
+        setFilteredContacts(allContacts.filter(c => c.status === 'paid' || c.status === 'active'));
+    } else {
+        setFilteredContacts(allContacts.filter(c => c.status === filter)); // pending, expired
+    }
+  };
 
+  // --- MODAL & EDIÇÃO ---
   const openUserEdit = (user) => {
       setEditingUser({
           id: user.id,
-          name: user.first_name || user.telegram_id,
-          telegram_id: user.telegram_id,
-          role: user.role || 'user',
+          name: user.first_name || 'Sem nome',
           status: user.status,
-          // Formata data YYYY-MM-DD para o input
-          custom_expiration: user.expiration_date ? new Date(user.expiration_date).toISOString().split('T')[0] : ''
+          // Pega a custom_expiration do banco se existir
+          custom_expiration: user.custom_expiration ? new Date(user.custom_expiration).toISOString().split('T')[0] : ''
       });
       setShowUserModal(true);
   };
@@ -75,12 +72,11 @@ export function Contacts() {
       try {
           await crmService.updateUser(editingUser.id, {
               status: editingUser.status,
-              role: editingUser.role,
               custom_expiration: editingUser.custom_expiration || 'remover'
           });
-          Swal.fire('Sucesso', 'Salvo!', 'success');
+          Swal.fire('Sucesso', 'Atualizado!', 'success');
           setShowUserModal(false);
-          carregarContatos(); 
+          carregarContatos();
       } catch (error) { Swal.fire('Erro', 'Falha ao salvar.', 'error'); }
   };
 
@@ -91,7 +87,7 @@ export function Contacts() {
       } catch (error) { Swal.fire('Erro', 'Falha ao enviar.', 'error'); }
   };
 
-  // Funções Visuais
+  // Helpers Visuais
   const formatDate = (dateString) => {
       if (!dateString) return '-';
       return new Date(dateString).toLocaleDateString('pt-BR');
@@ -103,69 +99,75 @@ export function Contacts() {
     return <span className="status-badge status-pending"><Clock size={12}/> Pendente</span>;
   };
 
+  if (!selectedBot) return <div className="contacts-container"><p style={{textAlign:'center', marginTop:50, color:'#666'}}>Selecione um bot.</p></div>;
+
   return (
     <div className="contacts-container">
       <div className="contacts-header">
-        <h1>Contatos <span style={{fontSize:'0.9rem', color:'#666'}}>({totalRecords})</span></h1>
+        <h1>Contatos <span style={{fontSize:'0.9rem', color:'#666'}}>({allContacts.length})</span></h1>
         <Button onClick={carregarContatos} variant="outline"><RefreshCw size={16}/></Button>
       </div>
 
       <div className="tabs-container">
+        <div className="filters-bar">
           {['todos', 'pagantes', 'pendentes', 'expirados'].map(f => (
-              <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => {setFilter(f); setPage(1);}}>
-                  {f.toUpperCase()}
-              </button>
+            <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
+              {f.toUpperCase()}
+            </button>
           ))}
+        </div>
       </div>
 
-      {loading ? <div style={{textAlign:'center', padding:'40px', color:'#666'}}>Carregando...</div> : (
-        <>
-            <div className="table-responsive">
-                <table className="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Usuário</th>
-                            <th>Status</th>
-                            <th>Entrada</th>
-                            <th>Expiração</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {contactsData.length > 0 ? contactsData.map(u => (
-                            <tr key={u.id}>
-                                <td>
-                                    <div style={{fontWeight:'bold'}}>{u.first_name || u.telegram_id}</div>
-                                    <div style={{fontSize:'0.8rem', color:'#666'}}>@{u.username || '...'}</div>
-                                </td>
-                                <td>{getStatusBadge(u.status)}</td>
-                                <td>{formatDate(u.created_at)}</td>
-                                <td>
-                                    {['active','paid'].includes(u.status) 
-                                        ? (u.expiration_date ? formatDate(u.expiration_date) : <span style={{color:'#10b981'}}>Vitalício</span>) 
-                                        : '-'}
-                                </td>
-                                <td><Button size="sm" onClick={() => openUserEdit(u)}><Edit size={14}/></Button></td>
-                            </tr>
-                        )) : (
-                            <tr><td colSpan="5" style={{textAlign:'center', padding:'30px', color:'#666'}}>Nenhum contato.</td></tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-            
-            <div className="pagination-controls" style={{display:'flex', justifyContent:'space-between', marginTop:'20px'}}>
-                <Button disabled={page === 1} onClick={handlePrevPage}><ChevronLeft size={16}/></Button>
-                <span style={{color:'#888'}}>Pag {page} de {totalPages}</span>
-                <Button disabled={page >= totalPages} onClick={handleNextPage}><ChevronRight size={16}/></Button>
-            </div>
-        </>
-      )}
+      <div className="table-container">
+        {loading ? <p style={{padding:20, textAlign:'center'}}>Carregando...</p> : (
+          <table className="custom-table">
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Plano / Valor</th>
+                <th>Status</th>
+                <th>Entrada</th>
+                <th>Expiração</th> {/* COLUNA NOVA */}
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredContacts.length > 0 ? filteredContacts.map((c) => (
+                <tr key={c.id}>
+                  <td>
+                    <div style={{ fontWeight: '600', color: '#fff' }}>{c.first_name || 'Sem nome'}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>@{c.username || '...'}</div>
+                  </td>
+                  <td>
+                    <div style={{fontSize:'0.85rem'}}>{c.plano_nome || '-'}</div>
+                    <div style={{fontWeight:'bold'}}>R$ {c.valor ? c.valor.toFixed(2) : '0.00'}</div>
+                  </td>
+                  <td>{getStatusBadge(c.status)}</td>
+                  <td>{formatDate(c.created_at)}</td>
+                  
+                  {/* DADO DA EXPIRAÇÃO */}
+                  <td>
+                    {['paid','active'].includes(c.status) 
+                        ? (c.custom_expiration ? formatDate(c.custom_expiration) : <span style={{color:'#10b981'}}>Vitalício</span>) 
+                        : '-'}
+                  </td>
+                  
+                  <td>
+                    <Button size="sm" onClick={() => openUserEdit(c)}><Edit size={14}/></Button>
+                  </td>
+                </tr>
+              )) : (
+                <tr><td colSpan="6" style={{textAlign:'center', padding:'30px', color:'#666'}}>Vazio.</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
 
       {showUserModal && editingUser && (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>{editingUser.name}</h2>
+                <h2>Gerenciar: {editingUser.name}</h2>
                 <form onSubmit={handleSaveUser}>
                     <div className="form-group">
                         <label>Status</label>
@@ -176,14 +178,14 @@ export function Contacts() {
                         </select>
                     </div>
                     <div className="form-group">
-                        <label>Expiração</label>
-                        <input type="date" className="input-field" value={editingUser.custom_expiration} onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})} />
-                        <div style={{marginTop:'10px', display:'flex', gap:'10px'}}>
+                        <label>Data de Expiração</label>
+                        <input type="date" className="input-field" value={editingUser.custom_expiration} onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})}/>
+                        <div style={{marginTop:10, display:'flex', gap:10}}>
                             <button type="button" className="btn-small" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>Vitalício</button>
                             <button type="button" className="btn-small primary" onClick={handleResendAccess}>Reenviar Acesso</button>
                         </div>
                     </div>
-                    <div className="modal-actions" style={{marginTop:'20px'}}>
+                    <div className="modal-actions">
                         <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Cancelar</button>
                         <button type="submit" className="btn-save">Salvar</button>
                     </div>

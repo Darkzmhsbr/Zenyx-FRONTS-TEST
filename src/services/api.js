@@ -10,18 +10,12 @@ const api = axios.create({
   },
 });
 
-// Interceptor para debug
 api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 422) {
-      console.error("❌ ERRO 422 (Dados Inválidos):", error.response.data);
-    }
-    return Promise.reject(error);
-  }
+  r => r,
+  e => Promise.reject(e)
 );
 
-// --- SERVIÇO DE BOTS ---
+// --- BOTS ---
 export const botService = {
   createBot: async (d) => (await api.post('/api/admin/bots', d)).data,
   listBots: async () => (await api.get('/api/admin/bots')).data,
@@ -31,59 +25,34 @@ export const botService = {
   deleteBot: async (id) => (await api.delete(`/api/admin/bots/${id}`)).data
 };
 
-// --- SERVIÇO DE ADMINISTRADORES (Recuperado para o BotConfig) ---
-export const adminService = {
-  listAdmins: async (botId) => {
-    try { return (await api.get(`/api/admin/bots/${botId}/admins`)).data; } 
-    catch { return []; }
-  },
-  addAdmin: async (botId, d) => (await api.post(`/api/admin/bots/${botId}/admins`, d)).data,
-  removeAdmin: async (botId, tId) => (await api.delete(`/api/admin/bots/${botId}/admins/${tId}`)).data
-};
-
-// --- SERVIÇO DE FLUXO (Recuperado para o ChatFlow) ---
-export const flowService = {
-  getFlow: async (id) => (await api.get(`/api/admin/bots/${id}/flow`)).data,
-  saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data
-};
-
-// --- SERVIÇO DE PLANOS ---
+// --- PLANOS ---
 export const planService = {
   listPlans: async (id) => (await api.get(`/api/admin/plans/${id}`)).data,
   savePlan: async (p) => (await api.post('/api/admin/plans', p)).data,
   deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
 };
 
-// --- SERVIÇO DE REMARKETING ---
+// --- REMARKETING ---
 export const remarketingService = {
   send: async (d) => (await api.post('/api/admin/remarketing/send', d)).data,
   getHistory: async (id) => {
-    try { return (await api.get(`/api/admin/remarketing/history/${id}`)).data; } 
-    catch { return []; }
+    try { return (await api.get(`/api/admin/remarketing/history/${id}`)).data; } catch { return []; }
   }
 };
 
-// --- SERVIÇO DE INTEGRAÇÕES (Recuperado para Integrations) ---
-export const integrationService = {
-  getConfig: async () => (await api.get('/api/admin/config')).data,
-  saveConfig: async (d) => (await api.post('/api/admin/config', d)).data,
-  getPushinStatus: async () => { try { return (await api.get('/api/admin/integrations/pushinpay')).data; } catch { return { status: 'disconnected'}; } },
-  savePushinToken: async (t) => (await api.post('/api/admin/integrations/pushinpay', { token: t })).data
+// --- FLUXO ---
+export const flowService = {
+  getFlow: async (id) => (await api.get(`/api/admin/bots/${id}/flow`)).data,
+  saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data
 };
 
-// --- SERVIÇO DE DASHBOARD ---
-export const dashboardService = {
-  getStats: async (botId) => {
-    const url = botId ? `/api/admin/dashboard/stats?bot_id=${botId}` : '/api/admin/dashboard/stats';
-    return (await api.get(url)).data;
-  }
-};
-
-// --- SERVIÇO DE CRM (CONTATOS) ---
+// --- CRM / CONTATOS (ATUALIZADO) ---
 export const crmService = {
-  getContacts: async (botId, filter = 'todos', page = 1) => {
-    // URL Híbrida: Aceita tanto o formato novo (com bot_id) quanto evita quebrar se faltar
-    const url = `/api/admin/contacts?bot_id=${botId}&status=${filter}&page=${page}`;
+  getContacts: async (botId, filter = 'todos') => {
+    // Agora enviamos o bot_id na URL para filtrar corretamente
+    const url = botId 
+        ? `/api/admin/contacts?bot_id=${botId}&status=${filter}` 
+        : `/api/admin/contacts?status=${filter}`;
     const response = await api.get(url);
     return response.data;
   },
@@ -91,7 +60,17 @@ export const crmService = {
   resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
 };
 
-// --- ADMIN (Alias para compatibilidade) ---
-export const admin = crmService;
+// --- ADMIN & DASHBOARD & INTEGRATION (Para evitar erro de Build) ---
+export const admin = crmService; // Alias
+export const adminService = { // Alias para admins do bot
+    listAdmins: async (id) => { try { return (await api.get(`/api/admin/bots/${id}/admins`)).data } catch { return [] } },
+    addAdmin: async (id, d) => (await api.post(`/api/admin/bots/${id}/admins`, d)).data,
+    removeAdmin: async (id, tId) => (await api.delete(`/api/admin/bots/${id}/admins/${tId}`)).data
+};
+export const dashboardService = { getStats: async (id) => (await api.get(`/api/admin/dashboard/stats?bot_id=${id}`)).data };
+export const integrationService = { 
+    getConfig: async () => (await api.get('/api/admin/config')).data,
+    saveConfig: async (d) => (await api.post('/api/admin/config', d)).data 
+};
 
 export default api;
