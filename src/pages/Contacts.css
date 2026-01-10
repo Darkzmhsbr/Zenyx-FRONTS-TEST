@@ -118,9 +118,9 @@
 .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
 .status-expired { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
 
-/* --- MODAL POP-UP (A PARTE QUE FALTAVA) --- */
+/* --- MODAL POP-UP --- */
 .modal-overlay {
-    position: fixed; /* OBRIGATÓRIO PARA SER POPUP */
+    position: fixed; 
     top: 0;
     left: 0;
     width: 100vw;
@@ -130,7 +130,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    
+    /* Z-Index alto, mas MENOR que o do SweetAlert (que colocamos como 20000) */
+    z-index: 9999; 
     animation: fadeIn 0.2s ease-in-out;
 }
 
@@ -153,12 +155,13 @@
 
 .btn-small { padding: 6px 12px; border-radius: 4px; border: 1px solid #444; background: transparent; color: #ccc; cursor: pointer; }
 .btn-small.primary { border-color: #c333ff; color: #c333ff; }
+.btn-small.danger { border-color: #ef4444; color: #ef4444; }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .btn-cancel { padding: 10px 20px; background: transparent; border: none; color: #888; cursor: pointer; }
 .btn-save { padding: 10px 20px; background: #c333ff; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
 
-/* RESPONSIVIDADE */
+/* --- RESPONSIVIDADE --- */
 @media (max-width: 768px) {
   .contacts-container { padding: 15px; margin-left: 0; }
   .table-container { background: transparent; border: none; box-shadow: none; }
@@ -166,4 +169,13 @@
   .custom-table, .custom-table tbody, .custom-table tr, .custom-table td { display: block; width: 100%; }
   .custom-table tr { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 20px; padding: 15px; }
   .custom-table td { display: flex; justify-content: space-between; text-align: right; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+}
+
+/* =========================================================
+   🚨 CORREÇÃO DE Z-INDEX (SUPER ALERTA)
+   Garante que o aviso de "Sucesso" fique NA FRENTE do Modal de Edição.
+   O Modal tem z-index 9999, então colocamos o alerta em 20000.
+   ========================================================= */
+div:where(.swal2-container) {
+  z-index: 20000 !important;
 }
