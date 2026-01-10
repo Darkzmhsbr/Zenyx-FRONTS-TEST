@@ -50,7 +50,7 @@ export const planService = {
   deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
 };
 
-// --- REMARKETING (ATUALIZADO COM DISPARO INDIVIDUAL) ---
+// --- REMARKETING ---
 export const remarketingService = {
   send: async (d) => (await api.post('/api/admin/remarketing/send', d)).data,
   
@@ -58,7 +58,6 @@ export const remarketingService = {
     try { return (await api.get(`/api/admin/remarketing/history/${id}`)).data; } catch { return []; }
   },
 
-  // [FUNÇÃO CRÍTICA PARA O MODAL DE CONTATOS]
   sendIndividual: async (botId, telegramId, historyId) => {
     return (await api.post('/api/admin/remarketing/send-individual', {
         bot_id: botId,
@@ -68,10 +67,16 @@ export const remarketingService = {
   }
 };
 
-// --- FLUXO ---
+// --- FLUXO (ATUALIZADO V2) ---
 export const flowService = {
+  // Configurações Fixas (Boas Vindas / Oferta Final)
   getFlow: async (id) => (await api.get(`/api/admin/bots/${id}/flow`)).data,
-  saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data
+  saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data,
+
+  // [NOVO] Passos Dinâmicos (Meio do Funil)
+  getSteps: async (botId) => (await api.get(`/api/admin/bots/${botId}/flow/steps`)).data,
+  addStep: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/flow/steps`, data)).data,
+  deleteStep: async (botId, stepId) => (await api.delete(`/api/admin/bots/${botId}/flow/steps/${stepId}`)).data
 };
 
 // --- CRM / CONTATOS ---
