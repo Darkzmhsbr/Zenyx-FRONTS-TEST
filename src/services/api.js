@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 🔗 SEU DOMÍNIO DO RAILWAY (Ajuste se necessário)
+// 🔗 SEU DOMÍNIO DO RAILWAY (Certifique-se que está sem a barra no final)
 const API_URL = 'https://zenyx-gbs-production.up.railway.app';
 
 const api = axios.create({
@@ -58,7 +58,7 @@ export const remarketingService = {
     try { return (await api.get(`/api/admin/remarketing/history/${id}`)).data; } catch { return []; }
   },
 
-  // [NOVA FUNÇÃO] Envia uma campanha do histórico para um usuário específico
+  // [FUNÇÃO CRÍTICA PARA O MODAL DE CONTATOS]
   sendIndividual: async (botId, telegramId, historyId) => {
     return (await api.post('/api/admin/remarketing/send-individual', {
         bot_id: botId,
@@ -77,7 +77,6 @@ export const flowService = {
 // --- CRM / CONTATOS ---
 export const crmService = {
   getContacts: async (botId, filter = 'todos') => {
-    // Agora enviamos o bot_id na URL para filtrar corretamente
     const url = botId 
         ? `/api/admin/contacts?bot_id=${botId}&status=${filter}` 
         : `/api/admin/contacts?status=${filter}`;
@@ -88,32 +87,30 @@ export const crmService = {
   resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
 };
 
-// --- ADMIN & DASHBOARD & INTEGRATION (Para evitar erro de Build) ---
+// --- ADMIN & DASHBOARD ---
 export const admin = crmService; // Alias
-export const adminService = { // Alias para admins do bot
+export const adminService = { 
     listAdmins: async (id) => { try { return (await api.get(`/api/admin/bots/${id}/admins`)).data } catch { return [] } },
     addAdmin: async (id, d) => (await api.post(`/api/admin/bots/${id}/admins`, d)).data,
     removeAdmin: async (id, tId) => (await api.delete(`/api/admin/bots/${id}/admins/${tId}`)).data
 };
-export const dashboardService = { getStats: async (id) => (await api.get(`/api/admin/dashboard/stats?bot_id=${id}`)).data };
+export const dashboardService = { getStats: async (id) => (await api.get(`/api/admin/dashboard/stats?bot_id=${id || ''}`)).data };
 
-// [CORREÇÃO AQUI] Adicionadas as rotas da Pushin Pay que faltavam
+// --- INTEGRAÇÕES (PUSHIN PAY) ---
 export const integrationService = { 
     getConfig: async () => (await api.get('/api/admin/config')).data,
     saveConfig: async (d) => (await api.post('/api/admin/config', d)).data,
 
-    // --- MÉTODOS PUSHIN PAY ---
     getPushinStatus: async () => {
         try {
             const response = await api.get('/api/admin/integrations/pushinpay');
             return response.data;
         } catch (error) {
-            console.error("Erro ao buscar status PushinPay", error);
+            console.error("Erro status PushinPay", error);
             return { status: 'desconectado' };
         }
     },
     savePushinToken: async (token) => {
-        // Envia o objeto JSON { token: "..." } para o backend
         const response = await api.post('/api/admin/integrations/pushinpay', { token });
         return response.data;
     }
