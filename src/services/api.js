@@ -43,14 +43,23 @@ export const botService = {
   }
 } ;
 
-// --- PLANOS ---
+// --- SERVIÇO DE PLANOS ---
 export const planService = {
-  listPlans: async (id) => (await api.get(`/api/admin/plans/${id}`)).data,
-  savePlan: async (p) => (await api.post('/api/admin/plans', p)).data,
-  deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
+  createPlan: async (dados) => {
+    const response = await api.post('/api/admin/plans', dados);
+    return response.data;
+  },
+  listPlans: async (botId) => {
+    const response = await api.get(`/api/admin/plans/${botId}`);
+    return response.data;
+  },
+  deletePlan: async (planId) => {
+    const response = await api.delete(`/api/admin/plans/${planId}`);
+    return response.data;
+  }
 };
 
-// --- REMARKETING ---
+// --- REMARKETING (ATUALIZADO COM DISPARO INDIVIDUAL) ---
 export const remarketingService = {
   send: async (d) => (await api.post('/api/admin/remarketing/send', d)).data,
   
@@ -58,6 +67,7 @@ export const remarketingService = {
     try { return (await api.get(`/api/admin/remarketing/history/${id}`)).data; } catch { return []; }
   },
 
+  // [FUNÇÃO CRÍTICA PARA O MODAL DE CONTATOS]
   sendIndividual: async (botId, telegramId, historyId) => {
     return (await api.post('/api/admin/remarketing/send-individual', {
         bot_id: botId,
@@ -67,16 +77,10 @@ export const remarketingService = {
   }
 };
 
-// --- FLUXO (ATUALIZADO V2) ---
+// --- FLUXO ---
 export const flowService = {
-  // Configurações Fixas (Boas Vindas / Oferta Final)
   getFlow: async (id) => (await api.get(`/api/admin/bots/${id}/flow`)).data,
-  saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data,
-
-  // [NOVO] Passos Dinâmicos (Meio do Funil)
-  getSteps: async (botId) => (await api.get(`/api/admin/bots/${botId}/flow/steps`)).data,
-  addStep: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/flow/steps`, data)).data,
-  deleteStep: async (botId, stepId) => (await api.delete(`/api/admin/bots/${botId}/flow/steps/${stepId}`)).data
+  saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data
 };
 
 // --- CRM / CONTATOS ---
