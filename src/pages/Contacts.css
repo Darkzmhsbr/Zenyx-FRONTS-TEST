@@ -131,7 +131,7 @@
     justify-content: center;
     align-items: center;
     
-    /* Z-Index alto, mas MENOR que o do SweetAlert (que colocamos como 20000) */
+    /* Z-Index alto, mas MENOR que o do SweetAlert */
     z-index: 9999; 
     animation: fadeIn 0.2s ease-in-out;
 }
@@ -172,10 +172,10 @@
 }
 
 /* =========================================================
-   🚨 CORREÇÃO DE Z-INDEX (SUPER ALERTA)
-   Garante que o aviso de "Sucesso" fique NA FRENTE do Modal de Edição.
-   O Modal tem z-index 9999, então colocamos o alerta em 20000.
+   🚨 CORREÇÃO DEFINITIVA DE Z-INDEX (SUPER ALERTA)
+   Removemos o :where para aumentar a especificidade e 
+   usamos o valor máximo de inteiro para garantir topo absoluto.
    ========================================================= */
-div:where(.swal2-container) {
-  z-index: 20000 !important;
+.swal2-container {
+  z-index: 2147483647 !important; /* Valor máximo permitido pelo navegador */
 }
