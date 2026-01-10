@@ -123,8 +123,7 @@ export function Bots() {
                         </div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            {/* --- CORREÇÃO DO MESTRE (LÓGICA DA VERSÃO ANTIGA) --- */}
-                            {/* Verifica se JÁ TEM @. Se tiver, mostra. Se não, adiciona. */}
+                            {/* Lógica do @ corrigida (Versão Antiga que funciona) */}
                             <p style={{color:'#888', fontSize:'0.9rem'}}>
                                 {bot.username 
                                   ? (bot.username.toString().startsWith('@') ? bot.username : `@${bot.username}`) 
@@ -154,12 +153,14 @@ export function Bots() {
                 <div className="bot-stats">
                   <div className="stat-item">
                     <span className="stat-label">Leads Total</span>
-                    <span className="stat-value">{bot.leads_count || 0}</span>
+                    {/* [CORREÇÃO 1] Mudado de leads_count para leads */}
+                    <span className="stat-value">{bot.leads || 0}</span>
                   </div>
                   <div className="stat-item">
                     <span className="stat-label">Receita Total</span>
+                    {/* [CORREÇÃO 2] Mudado de vendas_total para revenue */}
                     <span className="stat-value highlight">
-                        R$ {bot.vendas_total?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                        R$ {bot.revenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                     </span>
                   </div>
                 </div>
