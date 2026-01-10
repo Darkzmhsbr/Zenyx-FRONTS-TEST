@@ -1,35 +1,35 @@
 :root {
-  /* --- PALETA DE CORES (Baseada no seu projeto original) --- */
-  --background: #0f0b14;       /* Fundo quase preto */
-  --foreground: #f2f2f2;       /* Texto principal */
+  /* --- PALETA DE CORES (Baseada no Zenyx Gbot) --- */
+  --background: #0f0b14;       /* Fundo Profundo */
+  --foreground: #f2f2f2;       /* Texto Principal */
   
-  --card: #1b1730;             /* Fundo dos cards */
-  --card-border: #2d2647;      /* Bordas sutis */
+  --card: #1b1730;             /* Fundo dos Cards/Modais */
+  --card-border: #2d2647;      /* Bordas Sutis */
   
-  --primary: #d65ad1;          /* Magenta vibrante (Botões/Destaques) */
-  --primary-hover: #b942b4;    /* Magenta mais escuro (Hover) */
+  --primary: #d65ad1;          /* Magenta Vibrante */
+  --primary-hover: #b942b4;    /* Hover Magenta */
   --primary-foreground: #ffffff;
   
-  --secondary: #221d3a;        /* Roxo escuro secundário */
+  --secondary: #221d3a;        /* Roxo Escuro Secundário */
   --secondary-foreground: #f2f2f2;
   
-  --muted: #1f1a2e;            /* Cinza/Roxo apagado */
-  --muted-foreground: #b9b6c9; /* Texto secundário */
+  --muted: #1f1a2e;            /* Elementos Apagados */
+  --muted-foreground: #b9b6c9; /* Texto Secundário */
   
-  --success: #10b981;          /* Verde (Status Ativo) */
-  --danger: #ef4444;           /* Vermelho (Excluir/Erro) */
+  --success: #10b981;          /* Verde Neon */
+  --danger: #ef4444;           /* Vermelho Neon */
+  --warning: #f59e0b;          /* Laranja Aviso */
   
   /* --- MEDIDAS --- */
-  --radius: 12px;              /* Arredondamento moderno */
-  --sidebar-width: 260px;      /* Largura do menu */
-  --header-height: 70px;       /* Altura do topo */
+  --radius: 12px;              
+  --sidebar-width: 260px;      
+  --header-height: 70px;       
 
   /* --- ESPAÇAMENTOS --- */
-  --spacing-xs: 0.25rem; /* 4px */
-  --spacing-sm: 0.5rem;  /* 8px */
-  --spacing-md: 1rem;    /* 16px */
-  --spacing-lg: 1.5rem;  /* 24px */
-  --spacing-xl: 2rem;    /* 32px */
+  --spacing-sm: 0.5rem;  
+  --spacing-md: 1rem;    
+  --spacing-lg: 1.5rem;  
+  --spacing-xl: 2rem;    
 }
 
 * {
@@ -48,11 +48,17 @@ body {
 a {
   text-decoration: none;
   color: inherit;
+  transition: color 0.2s;
 }
 
-/* Scrollbar personalizada */
+a:hover {
+  color: var(--primary);
+}
+
+/* --- SCROLLBAR PERSONALIZADA (ESTILO MODERNO) --- */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: var(--background);
@@ -62,33 +68,64 @@ a {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: var(--primary); /* Brilha ao passar o mouse */
 }
 
-/* --- RESPONSIVIDADE GLOBAL (MÁGICA AQUI) --- */
+/* --- RESPONSIVIDADE GLOBAL --- */
 @media (max-width: 768px) {
   :root {
-    /* No celular, a margem reservada para o menu vira ZERO */
-    /* Isso faz o conteúdo das páginas ocupar a tela toda automaticamente */
     --sidebar-width: 0px; 
     --header-height: 60px;
   }
-
-  /* Ajuste fino para os containers das páginas não ficarem colados na borda */
-  [class*="-container"] {
-    padding: var(--spacing-md) !important; /* Menos padding que no desktop */
-  }
 }
 
-/* Fundo escuro quando o menu mobile abre */
-.mobile-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(3px);
-  z-index: 99; /* Fica abaixo do menu (100) mas acima de tudo */
-  animation: fadeIn 0.3s ease;
+/* --- CLASSES UTILITÁRIAS --- */
+.fade-in {
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================================
+   🚨 OVERRIDE SWEETALERT2 (TEMA DARK FORÇADO)
+   Isso garante que os pop-ups não fiquem brancos
+   ========================================================= */
+div:where(.swal2-container) div:where(.swal2-popup) {
+  background: #1a1a1a !important;
+  border: 1px solid #333 !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+}
+
+div:where(.swal2-container) .swal2-title {
+  color: #fff !important;
+}
+
+div:where(.swal2-container) .swal2-html-container {
+  color: #b9b6c9 !important;
+}
+
+div:where(.swal2-icon).swal2-success {
+  border-color: var(--success) !important;
+  color: var(--success) !important;
+}
+
+div:where(.swal2-icon).swal2-error {
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+}
+
+div:where(.swal2-container) button.swal2-confirm {
+  background-color: var(--primary) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+div:where(.swal2-container) button.swal2-cancel {
+  background-color: transparent !important;
+  border: 1px solid #444 !important;
+  color: #aaa !important;
 }
