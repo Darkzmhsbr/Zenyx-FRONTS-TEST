@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 🔗 SEU DOMÍNIO DO RAILWAY
+// 🔗 SEU DOMÍNIO DO RAILWAY (Ajuste se necessário)
 const API_URL = 'https://zenyx-gbs-production.up.railway.app';
 
 const api = axios.create({
@@ -50,11 +50,21 @@ export const planService = {
   deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
 };
 
-// --- REMARKETING ---
+// --- REMARKETING (ATUALIZADO COM DISPARO INDIVIDUAL) ---
 export const remarketingService = {
   send: async (d) => (await api.post('/api/admin/remarketing/send', d)).data,
+  
   getHistory: async (id) => {
     try { return (await api.get(`/api/admin/remarketing/history/${id}`)).data; } catch { return []; }
+  },
+
+  // [NOVA FUNÇÃO] Envia uma campanha do histórico para um usuário específico
+  sendIndividual: async (botId, telegramId, historyId) => {
+    return (await api.post('/api/admin/remarketing/send-individual', {
+        bot_id: botId,
+        user_telegram_id: telegramId,
+        campaign_history_id: historyId
+    })).data;
   }
 };
 
@@ -64,7 +74,7 @@ export const flowService = {
   saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data
 };
 
-// --- CRM / CONTATOS (ATUALIZADO) ---
+// --- CRM / CONTATOS ---
 export const crmService = {
   getContacts: async (botId, filter = 'todos') => {
     // Agora enviamos o bot_id na URL para filtrar corretamente
