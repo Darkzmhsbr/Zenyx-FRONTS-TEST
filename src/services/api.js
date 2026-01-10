@@ -83,17 +83,21 @@ export const flowService = {
   saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data
 };
 
-// --- CRM / CONTATOS ---
+// --- SERVIÇO DE CRM (ATUALIZADO) ---
 export const crmService = {
-  getContacts: async (botId, filter = 'todos') => {
-    const url = botId 
-        ? `/api/admin/contacts?bot_id=${botId}&status=${filter}` 
-        : `/api/admin/contacts?status=${filter}`;
-    const response = await api.get(url);
+  getContacts: async (filtro = 'todos') => {
+    const response = await api.get(`/api/admin/contacts?status=${filtro}`);
     return response.data;
   },
-  updateUser: async (userId, data) => (await api.put(`/api/admin/users/${userId}`, data)).data,
-  resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
+  // NOVOS MÉTODOS:
+  updateUser: async (userId, data) => {
+    const response = await api.put(`/api/admin/users/${userId}`, data);
+    return response.data;
+  },
+  resendAccess: async (userId) => {
+    const response = await api.post(`/api/admin/users/${userId}/resend-access`);
+    return response.data;
+  }
 };
 
 // --- ADMIN & DASHBOARD ---
