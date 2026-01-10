@@ -112,10 +112,24 @@ export const remarketingService = {
   }
 };
 
-// --- FLUXO ---
+// --- FLOW V2 (Passos Dinâmicos) ---
 export const flowService = {
-  getFlow: async (id) => (await api.get(`/api/admin/bots/${id}/flow`)).data,
-  saveFlow: async (id, d) => (await api.post(`/api/admin/bots/${id}/flow`, d)).data
+  getFlow: async (botId) => {
+    try { return (await api.get(`/api/admin/bots/${botId}/flow`)).data; } catch { return null; }
+  },
+  saveFlow: async (botId, data) => {
+    return (await api.post(`/api/admin/bots/${botId}/flow`, data)).data;
+  },
+  // NOVAS FUNÇÕES PARA OS PASSOS
+  getSteps: async (botId) => {
+    try { return (await api.get(`/api/admin/bots/${botId}/flow/steps`)).data; } catch { return []; }
+  },
+  addStep: async (botId, stepData) => {
+    return (await api.post(`/api/admin/bots/${botId}/flow/steps`, stepData)).data;
+  },
+  deleteStep: async (botId, stepId) => {
+    return (await api.delete(`/api/admin/bots/${botId}/flow/steps/${stepId}`)).data;
+  }
 };
 
 // --- CRM / CONTATOS ---
