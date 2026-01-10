@@ -21,17 +21,25 @@
   align-items: center;
   max-width: 800px;
   margin: 0 auto;
+  position: relative;
 }
 
-/* --- CORREÇÃO DO CARD PARA O BADGE --- */
+/* --- LINHA CONECTORA (Timeline) --- */
+.connector-line {
+  width: 2px;
+  height: 30px;
+  background: linear-gradient(to bottom, var(--card-border), var(--primary));
+  margin: 5px auto;
+  opacity: 0.5;
+}
+
+/* --- CARD PADRÃO (Passo 1 e Final) --- */
 .step-card {
   width: 100%;
   position: relative;
-  /* Importante: permite que o badge saia da área do card */
   overflow: visible !important; 
   border: 1px solid var(--card-border);
   transition: transform 0.2s, box-shadow 0.2s;
-  /* Espaço extra em cima para o badge não bater em nada */
   margin-top: 15px; 
 }
 
@@ -41,35 +49,79 @@
   z-index: 10;
 }
 
-/* --- BADGE DE PASSO (ALINHADO) --- */
+/* --- BADGE DE PASSO --- */
 .step-badge {
   position: absolute;
-  top: -14px; /* Sobe para ficar metade dentro, metade fora */
-  left: 20px; /* Alinhamento à esquerda */
-  background: var(--primary);
-  color: #fff;
-  padding: 6px 16px;
+  top: -14px;
+  left: 20px;
+  background: var(--card);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3); /* Sombra para destacar */
-  z-index: 20;
+  text-transform: uppercase;
+  z-index: 5;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-.badge-green {
-  background: #10b981;
+.step-badge.final {
+  border-color: #10b981;
+  color: #10b981;
 }
 
-.step-header {
+/* --- CARD DINÂMICO (PASSOS INTERMEDIÁRIOS) --- */
+.step-card-dynamic {
+  border: 1px dashed var(--primary); /* Borda pontilhada roxa */
+  background: rgba(195, 51, 255, 0.03);
+}
+
+.dynamic-badge {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* --- BOTÃO DE ADICIONAR NOVO BLOCO --- */
+.add-step-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.btn-add-step {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  background: transparent;
+  border: 2px dashed #444;
+  color: #888;
+  padding: 15px 30px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-add-step:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(195, 51, 255, 0.05);
+}
+
+/* --- ESTILOS DO CONTEÚDO --- */
+.step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
-  padding-bottom: 15px;
   border-bottom: 1px solid var(--card-border);
   color: var(--foreground);
-  padding-top: 10px; /* Espaço interno para compensar o badge */
+  padding-top: 10px; 
 }
 
 .step-header h3 {
@@ -81,13 +133,6 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-}
-
-.row-inputs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  align-items: start;
 }
 
 /* --- TOGGLE CUSTOMIZADO --- */
@@ -120,29 +165,19 @@
 }
 
 .custom-toggle.active {
-  background: rgba(239, 68, 68, 0.15); /* Vermelho suave */
-  border-color: var(--danger);
+  background: rgba(239, 68, 68, 0.15); 
+  border-color: #ef4444;
 }
-.custom-toggle.active .toggle-label { color: var(--danger); }
+.custom-toggle.active .toggle-label { color: #ef4444; }
 
 .custom-toggle.active-green {
-  background: rgba(16, 185, 129, 0.15); /* Verde suave */
+  background: rgba(16, 185, 129, 0.15); 
   border-color: #10b981;
 }
 .custom-toggle.active-green .toggle-label { color: #10b981; }
 
-.flow-connector {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted-foreground);
-  opacity: 0.5;
-}
-
 .empty-state {
   text-align: center;
-  color: var(--muted-foreground);
   margin-top: 50px;
-  font-style: italic;
+  color: #666;
 }
