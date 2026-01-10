@@ -96,9 +96,27 @@ export const adminService = { // Alias para admins do bot
     removeAdmin: async (id, tId) => (await api.delete(`/api/admin/bots/${id}/admins/${tId}`)).data
 };
 export const dashboardService = { getStats: async (id) => (await api.get(`/api/admin/dashboard/stats?bot_id=${id}`)).data };
+
+// [CORREÇÃO AQUI] Adicionadas as rotas da Pushin Pay que faltavam
 export const integrationService = { 
     getConfig: async () => (await api.get('/api/admin/config')).data,
-    saveConfig: async (d) => (await api.post('/api/admin/config', d)).data 
+    saveConfig: async (d) => (await api.post('/api/admin/config', d)).data,
+
+    // --- MÉTODOS PUSHIN PAY ---
+    getPushinStatus: async () => {
+        try {
+            const response = await api.get('/api/admin/integrations/pushinpay');
+            return response.data;
+        } catch (error) {
+            console.error("Erro ao buscar status PushinPay", error);
+            return { status: 'desconectado' };
+        }
+    },
+    savePushinToken: async (token) => {
+        // Envia o objeto JSON { token: "..." } para o backend
+        const response = await api.post('/api/admin/integrations/pushinpay', { token });
+        return response.data;
+    }
 };
 
 export default api;
