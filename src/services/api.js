@@ -56,15 +56,53 @@ export const planService = {
   deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
 };
 
-// --- REMARKETING (ATUALIZADO COM DISPARO INDIVIDUAL) ---
+
+
+// ============================================================
+// 📢 SERVIÇO DE REMARKETING (MASSA + INDIVIDUAL + HISTÓRICO)
+// ============================================================
 export const remarketingService = {
-  send: async (d) => (await api.post('/api/admin/remarketing/send', d)).data,
   
+  // [ATUALIZADO] Envio em Massa / Teste (Trata os dados antes de enviar)
+  send: async (botId, data, isTest = false, specificUserId = null) => {
+    
+    // Monta o payload garantindo que números sejam números (para o Python não rejeitar)
+    const payload = {
+      bot_id: botId,
+      target: data.target || 'todos', // Garante que nunca vá vazio
+      mensagem: data.mensagem,
+      media_url: data.media_url,
+
+      // Dados da Oferta
+      incluir_oferta: data.incluir_oferta,
+      plano_oferta_id: data.plano_oferta_id,
+
+      // Conversão de Tipos (String -> Float/Int)
+      price_mode: data.price_mode || 'original',
+      custom_price: data.custom_price ? parseFloat(data.custom_price) : 0.0,
+      
+      expiration_mode: data.expiration_mode || 'none',
+      expiration_value: data.expiration_value ? parseInt(data.expiration_value) : 0,
+
+      // Controle de Teste
+      is_test: isTest,
+      specific_user_id: specificUserId
+    };
+
+    // Envia para o backend
+    return (await api.post('/api/admin/remarketing/send', payload)).data;
+  },
+  
+  // Histórico de Campanhas
   getHistory: async (id) => {
-    try { return (await api.get(`/api/admin/remarketing/history/${id}`)).data; } catch { return []; }
+    try { 
+        return (await api.get(`/api/admin/remarketing/history/${id}`)).data; 
+    } catch { 
+        return []; 
+    }
   },
 
-  // [NOVA FUNÇÃO] Envia uma campanha do histórico para um usuário específico
+  // [MANTIDO] Envia uma campanha do histórico para um usuário específico (CRM)
   sendIndividual: async (botId, telegramId, historyId) => {
     return (await api.post('/api/admin/remarketing/send-individual', {
         bot_id: botId,
