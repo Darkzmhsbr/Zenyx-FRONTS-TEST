@@ -43,54 +43,38 @@ export function Remarketing() {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
 
-  // --- FUNÇÃO DE ENVIAR (TESTE OU REAL) ---
+  // --- FUNÇÃO DE ENVIAR (CORRIGIDA PARA A NOVA API) ---
   const handleSend = async (isTest = false) => {
     if (!formData.mensagem) return Swal.fire('Erro', 'Escreva uma mensagem!', 'error');
     
-    // Se for teste e não tiver Admin configurado, pede ID
+    // Se for teste e não tiver Admin configurado
     let testId = null;
     if (isTest) {
-        // Tenta pegar o ID do admin principal do bot (se disponível no contexto ou teria que pedir)
-        // Por simplificação, vamos assumir que o backend resolve ou pedimos aqui:
-        // Obs: No backend ajustado, se não mandar ID, ele tenta achar um admin.
+        // Aqui você poderia colocar lógica para pedir um ID específico se quiser
+        // Por enquanto enviamos null, e o backend pega o admin principal
     }
 
     setLoading(true);
     try {
-      const payload = {
-        bot_id: selectedBot.id,
-        tipo_envio: formData.target,
-        mensagem: formData.mensagem,
-        media_url: formData.media_url || null,
-        
-        incluir_oferta: formData.incluir_oferta,
-        plano_oferta_id: formData.plano_oferta_id || null,
-        
-        // Dados Financeiros
-        price_mode: formData.price_mode,
-        custom_price: formData.custom_price ? parseFloat(formData.custom_price) : 0.0,
-        
-        // Dados Expiração
-        expiration_mode: formData.expiration_mode,
-        expiration_value: formData.expiration_value ? parseInt(formData.expiration_value) : 0,
-        
-        // Controle
-        is_test: isTest,
-        specific_user_id: testId 
-      };
-      
-      await remarketingService.send(payload);
+      // 🚨 AQUI ESTÁ A MUDANÇA PRINCIPAL:
+      // Passamos os parâmetros na ordem que o api.js espera:
+      // 1. ID do Bot
+      // 2. Os dados do formulário (formData direto)
+      // 3. Flag de teste
+      // 4. ID específico (se houver)
+      await remarketingService.send(selectedBot.id, formData, isTest, testId);
       
       if (isTest) {
           Swal.fire({ title: 'Teste Enviado!', text: 'Verifique no seu Telegram.', icon: 'info', background: '#151515', color: '#fff' });
       } else {
           Swal.fire({ title: 'Sucesso!', text: 'Campanha iniciada.', icon: 'success', background: '#151515', color: '#fff' });
-          setStep(1);
+          setStep(1); // Volta para o passo 1
           setTimeout(carregarHistorico, 2000); // Atualiza histórico
       }
       
     } catch (error) {
-      Swal.fire('Erro', 'Falha ao enviar.', 'error');
+      console.error(error);
+      Swal.fire('Erro', 'Falha ao enviar. Verifique o console.', 'error');
     } finally {
       setLoading(false);
     }
