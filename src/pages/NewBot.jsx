@@ -24,15 +24,15 @@ export function NewBot() {
     setStatus('connecting');
 
     try {
-      // 🔧 CORREÇÃO AQUI: Os nomes dos campos devem ser IGUAIS ao main.py (BotCreate)
       const dados = {
-        nome: botName || "Bot Zenyx",     // Antes era 'name', agora é 'nome'
-        token: token.trim(),              // 'token' continua igual
-        id_canal_vip: channelId.trim()    // Antes era 'channel_id', agora é 'id_canal_vip'
+        nome: botName || "Bot Zenyx",
+        token: token.trim(),
+        id_canal_vip: channelId.trim()
       };
 
-      console.log("📤 Enviando payload correto:", dados);
+      console.log("📤 Enviando payload:", dados);
 
+      // [CORRIGIDO] Chamada correta da função
       await botService.createBot(dados);
       
       setStatus('success');
@@ -50,7 +50,6 @@ export function NewBot() {
       console.error(error);
       setStatus('error');
       
-      // Mensagem de erro amigável
       let msg = 'Erro desconhecido.';
       if (error.response?.status === 422) {
          msg = 'Erro de Validação: O backend rejeitou os dados. Verifique o console.';
