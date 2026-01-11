@@ -11,11 +11,10 @@ export function Bots() {
   const navigate = useNavigate();
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeMenu, setActiveMenu] = useState(null); // Controla qual menu está aberto
+  const [activeMenu, setActiveMenu] = useState(null);
 
   useEffect(() => {
     carregarBots();
-    // Fecha o menu se clicar fora
     const handleClickOutside = () => setActiveMenu(null);
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
@@ -33,13 +32,11 @@ export function Bots() {
     }
   };
 
-  // --- LIGA / DESLIGA BOT ---
   const toggleBotStatus = async (e, id) => {
-    e.stopPropagation(); // Evita abrir o menu se clicar no botão
+    e.stopPropagation();
     try {
       const updatedBot = await botService.toggleBot(id);
       
-      // Atualiza visualmente
       setBots(bots.map(bot => {
         if (bot.id === id) {
           return { ...bot, status: updatedBot.status };
@@ -63,7 +60,6 @@ export function Bots() {
     }
   };
 
-  // --- EXCLUIR BOT ---
   const handleDeleteBot = async (e, bot) => {
       e.stopPropagation();
       const result = await Swal.fire({
@@ -123,7 +119,6 @@ export function Bots() {
                         </div>
                         <div className="bot-info">
                             <h3>{bot.nome}</h3>
-                            {/* Lógica do @ corrigida (Versão Antiga que funciona) */}
                             <p style={{color:'#888', fontSize:'0.9rem'}}>
                                 {bot.username 
                                   ? (bot.username.toString().startsWith('@') ? bot.username : `@${bot.username}`) 
@@ -132,7 +127,6 @@ export function Bots() {
                         </div>
                     </div>
                     
-                    {/* MENU DE OPÇÕES (3 Pontinhos Moderno) */}
                     <div style={{position: 'relative'}} onClick={(e) => e.stopPropagation()}>
                         <button className="icon-btn" onClick={() => setActiveMenu(activeMenu === bot.id ? null : bot.id)}>
                             <MoreVertical size={20} color="#888" />
@@ -153,27 +147,27 @@ export function Bots() {
                 <div className="bot-stats">
                   <div className="stat-item">
                     <span className="stat-label">Leads Total</span>
-                    {/* [CORREÇÃO 1] Mudado de leads_count para leads */}
+                    {/* [CORRIGIDO] Fallback para 0 se undefined */}
                     <span className="stat-value">{bot.leads || 0}</span>
                   </div>
                   <div className="stat-item">
                     <span className="stat-label">Receita Total</span>
-                    {/* [CORREÇÃO 2] Mudado de vendas_total para revenue */}
+                    {/* [CORRIGIDO] Fallback para 0,00 se undefined */}
                     <span className="stat-value highlight">
-                        R$ {bot.revenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                        R$ {typeof bot.revenue === 'number' 
+                            ? bot.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) 
+                            : '0,00'}
                     </span>
                   </div>
                 </div>
 
                 <div className="bot-footer">
-                  {/* Status Visual: Online = Verde / Pausado = Vermelho */}
                   <div className={`status-indicator ${bot.status === 'ativo' ? 'online' : 'offline'}`}>
                     <span className="dot"></span>
                     {bot.status === 'ativo' ? 'Online' : 'Parado'}
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {/* BOTÃO LIGA/DESLIGA */}
                     <Button 
                       variant="outline" 
                       size="sm" 
