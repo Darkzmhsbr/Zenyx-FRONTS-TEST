@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { Save, MessageSquare, ArrowDown, Zap, Image as ImageIcon, Video, Plus, Trash2, Edit } from 'lucide-react';
+import { Save, MessageSquare, ArrowDown, Zap, Image as ImageIcon, Video, Plus, Trash2, Edit, Clock } from 'lucide-react';
 import { flowService } from '../services/api'; 
 import { useBot } from '../context/BotContext'; 
 import { Button } from '../components/Button';
@@ -34,8 +34,9 @@ export function ChatFlow() {
     msg_texto: '',
     msg_media: '',
     btn_texto: 'Próximo ▶️',
-    autodestruir: false,      // [NOVO V3]
-    mostrar_botao: true       // [NOVO V3]
+    autodestruir: false,
+    mostrar_botao: true,
+    delay_seconds: 0  // [NOVO V4]
   });
 
   // Carrega tudo ao mudar o bot
@@ -94,7 +95,8 @@ export function ChatFlow() {
       msg_media: '',
       btn_texto: 'Próximo ▶️',
       autodestruir: false,
-      mostrar_botao: true
+      mostrar_botao: true,
+      delay_seconds: 0  // [NOVO V4]
     });
     setShowModal(true);
   };
@@ -107,7 +109,8 @@ export function ChatFlow() {
       msg_media: step.msg_media || '',
       btn_texto: step.btn_texto || 'Próximo ▶️',
       autodestruir: step.autodestruir || false,
-      mostrar_botao: step.mostrar_botao !== false // Default true
+      mostrar_botao: step.mostrar_botao !== false,
+      delay_seconds: step.delay_seconds || 0  // [NOVO V4]
     });
     setShowModal(true);
   };
@@ -184,7 +187,7 @@ export function ChatFlow() {
       
       <div className="page-header">
         <div>
-          <h1>Flow Chat V3.0</h1>
+          <h1>Flow Chat V4.0</h1>
           <p style={{color: 'var(--muted-foreground)'}}>Configure a sequência de mensagens do seu bot.</p>
         </div>
         <Button onClick={handleSaveFixed} disabled={loading}>
@@ -258,7 +261,7 @@ export function ChatFlow() {
                                 <h3>Mensagem Intermediária</h3>
                             </div>
                             <div style={{display:'flex', gap:'10px'}}>
-                                {/* [NOVO V3] Botão de Editar */}
+                                {/* Botão de Editar */}
                                 <button 
                                     className="icon-btn edit" 
                                     onClick={() => handleOpenEditModal(step)}
@@ -290,6 +293,14 @@ export function ChatFlow() {
                                 
                                 {step.autodestruir && (
                                     <span className="badge red">💣 Auto-destruir</span>
+                                )}
+
+                                {/* [NOVO V4] Badge de delay */}
+                                {step.delay_seconds > 0 && (
+                                    <span className="badge blue">
+                                        <Clock size={12} style={{marginRight: '4px'}} />
+                                        {step.delay_seconds}s
+                                    </span>
                                 )}
                             </div>
                         </div>
@@ -360,7 +371,7 @@ export function ChatFlow() {
       )}
 
       {/* ============================================================ */}
-      {/* 🔥 [ATUALIZADO V3] MODAL PARA CRIAR/EDITAR PASSO */}
+      {/* 🔥 [ATUALIZADO V4] MODAL PARA CRIAR/EDITAR PASSO */}
       {/* ============================================================ */}
       {showModal && (
         <div className="modal-overlay">
@@ -381,7 +392,7 @@ export function ChatFlow() {
                         onChange={e => setModalData({...modalData, msg_texto: e.target.value})}
                     />
                     
-                    {/* [NOVO V3] Toggle: Mostrar Botão */}
+                    {/* Toggle: Mostrar Botão */}
                     <div className="toggle-wrapper">
                         <label>Mostrar botão para próximo passo?</label>
                         <div 
@@ -402,7 +413,7 @@ export function ChatFlow() {
                         />
                     )}
 
-                    {/* [NOVO V3] Toggle: Auto-destruir */}
+                    {/* Toggle: Auto-destruir */}
                     <div className="toggle-wrapper">
                         <label>Auto-destruir após clicar no botão?</label>
                         <div 
@@ -413,6 +424,29 @@ export function ChatFlow() {
                             <span className="toggle-label">{modalData.autodestruir ? 'SIM' : 'NÃO'}</span>
                         </div>
                     </div>
+
+                    {/* [NOVO V4] Input: Delay em segundos */}
+                    {!modalData.mostrar_botao && (
+                        <div className="delay-input-wrapper">
+                            <Input 
+                                label="Intervalo para próxima mensagem (segundos)"
+                                type="number"
+                                min="0"
+                                max="30"
+                                placeholder="Ex: 3"
+                                value={modalData.delay_seconds}
+                                onChange={e => setModalData({
+                                    ...modalData, 
+                                    delay_seconds: parseInt(e.target.value) || 0
+                                })}
+                                icon={<Clock size={16}/>}
+                            />
+                            <p style={{fontSize: '0.8rem', color: '#888', marginTop: '-10px'}}>
+                                ⏱️ Se não houver botão, aguarda esse tempo antes de enviar a próxima mensagem. 
+                                (0 = vai direto pro checkout)
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="modal-actions">
