@@ -17,7 +17,8 @@ api.interceptors.response.use(
 
 // --- SERVIÇO DE BOTS ---
 export const botService = {  
-  criarBot : async ( dados ) => {    
+  // [CORRIGIDO] Padronizado para inglês
+  createBot : async ( dados ) => {    
     const response = await api.post ( '/api/admin/bots' , dados ) ; 
     return response.data ;
   } ,
