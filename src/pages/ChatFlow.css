@@ -167,7 +167,7 @@
 }
 
 /* ============================================================ */
-/* 🔥 [NOVO V3] BADGES DE STATUS */
+/* 🔥 [ATUALIZADO V4] BADGES DE STATUS */
 /* ============================================================ */
 .badge {
   display: inline-block;
@@ -190,6 +190,15 @@
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
   border-color: #ef4444;
+}
+
+/* [NOVO V4] Badge azul para temporizador */
+.badge.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border-color: #3b82f6;
+  display: inline-flex;
+  align-items: center;
 }
 
 .form-grid {
@@ -356,4 +365,13 @@
   background: #a03fcc;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(195, 51, 255, 0.4);
+}
+
+/* ============================================================ */
+/* 🔥 [NOVO V4] ESTILO PARA INPUT DE DELAY */
+/* ============================================================ */
+.delay-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
