@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { Save, MessageSquare, ArrowDown, Zap, Image as ImageIcon, Video, Plus, Trash2, X } from 'lucide-react';
+import { Save, MessageSquare, ArrowDown, Zap, Image as ImageIcon, Video, Plus, Trash2, Edit } from 'lucide-react';
 import { flowService } from '../services/api'; 
 import { useBot } from '../context/BotContext'; 
 import { Button } from '../components/Button';
@@ -27,12 +27,15 @@ export function ChatFlow() {
   // Estado dos Passos Dinâmicos (Lista)
   const [steps, setSteps] = useState([]);
   
-  // Estado do Modal de Novo Passo
+  // Estado do Modal
   const [showModal, setShowModal] = useState(false);
-  const [newStep, setNewStep] = useState({
+  const [editingStep, setEditingStep] = useState(null); // null = criando novo, número = editando
+  const [modalData, setModalData] = useState({
     msg_texto: '',
     msg_media: '',
-    btn_texto: 'Próximo ▶️'
+    btn_texto: 'Próximo ▶️',
+    autodestruir: false,      // [NOVO V3]
+    mostrar_botao: true       // [NOVO V3]
   });
 
   // Carrega tudo ao mudar o bot
@@ -54,7 +57,7 @@ export function ChatFlow() {
             autodestruir_1: flowData.autodestruir_1 || false,
             msg_2_texto: flowData.msg_2_texto || '',
             msg_2_media: flowData.msg_2_media || '',
-            mostrar_planos_2: flowData.mostrar_planos_2 !== false // Default true
+            mostrar_planos_2: flowData.mostrar_planos_2 !== false
         });
 
         // 2. Carrega Passos Dinâmicos
@@ -83,21 +86,72 @@ export function ChatFlow() {
     }
   };
 
-  // Adiciona novo passo dinâmico
-  const handleAddStep = async () => {
-    if (!newStep.msg_texto) return Swal.fire('Atenção', 'Escreva uma mensagem!', 'warning');
+  // Abre modal para CRIAR novo passo
+  const handleOpenCreateModal = () => {
+    setEditingStep(null);
+    setModalData({
+      msg_texto: '',
+      msg_media: '',
+      btn_texto: 'Próximo ▶️',
+      autodestruir: false,
+      mostrar_botao: true
+    });
+    setShowModal(true);
+  };
+
+  // Abre modal para EDITAR passo existente
+  const handleOpenEditModal = (step) => {
+    setEditingStep(step.id);
+    setModalData({
+      msg_texto: step.msg_texto || '',
+      msg_media: step.msg_media || '',
+      btn_texto: step.btn_texto || 'Próximo ▶️',
+      autodestruir: step.autodestruir || false,
+      mostrar_botao: step.mostrar_botao !== false // Default true
+    });
+    setShowModal(true);
+  };
+
+  // Salva o passo (Criar OU Editar)
+  const handleSaveStep = async () => {
+    if (!modalData.msg_texto) {
+      return Swal.fire('Atenção', 'Escreva uma mensagem!', 'warning');
+    }
     
     try {
-        await flowService.addStep(selectedBot.id, {
-            ...newStep,
-            step_order: steps.length + 1 // Ordem sequencial
-        });
+        if (editingStep) {
+            // EDITANDO passo existente
+            await flowService.updateStep(selectedBot.id, editingStep, modalData);
+            Swal.fire({ 
+                icon: 'success', 
+                title: 'Passo Atualizado!', 
+                timer: 1500, 
+                showConfirmButton: false, 
+                background: '#151515', 
+                color: '#fff' 
+            });
+        } else {
+            // CRIANDO passo novo
+            await flowService.addStep(selectedBot.id, {
+                ...modalData,
+                step_order: steps.length + 1
+            });
+            Swal.fire({ 
+                icon: 'success', 
+                title: 'Passo Adicionado!', 
+                timer: 1500, 
+                showConfirmButton: false, 
+                background: '#151515', 
+                color: '#fff' 
+            });
+        }
+        
         setShowModal(false);
-        setNewStep({ msg_texto: '', msg_media: '', btn_texto: 'Próximo ▶️' }); // Reseta
+        setEditingStep(null);
         carregarTudo(); // Recarrega lista
-        Swal.fire({ icon: 'success', title: 'Passo Adicionado!', timer: 1500, showConfirmButton: false, background: '#151515', color: '#fff' });
+        
     } catch (error) {
-        Swal.fire('Erro', 'Falha ao adicionar passo.', 'error');
+        Swal.fire('Erro', 'Falha ao salvar passo.', 'error');
     }
   };
 
@@ -111,7 +165,8 @@ export function ChatFlow() {
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Sim, excluir',
-        background: '#151515', color: '#fff'
+        background: '#151515', 
+        color: '#fff'
     });
 
     if (result.isConfirmed) {
@@ -129,7 +184,7 @@ export function ChatFlow() {
       
       <div className="page-header">
         <div>
-          <h1>Flow Chat V2.0</h1>
+          <h1>Flow Chat V3.0</h1>
           <p style={{color: 'var(--muted-foreground)'}}>Configure a sequência de mensagens do seu bot.</p>
         </div>
         <Button onClick={handleSaveFixed} disabled={loading}>
@@ -202,9 +257,23 @@ export function ChatFlow() {
                                 <Zap size={20} color="#fff"/>
                                 <h3>Mensagem Intermediária</h3>
                             </div>
-                            <button className="icon-btn danger" onClick={() => handleDeleteStep(step.id)}>
-                                <Trash2 size={18} color="#ef4444"/>
-                            </button>
+                            <div style={{display:'flex', gap:'10px'}}>
+                                {/* [NOVO V3] Botão de Editar */}
+                                <button 
+                                    className="icon-btn edit" 
+                                    onClick={() => handleOpenEditModal(step)}
+                                    title="Editar mensagem"
+                                >
+                                    <Edit size={18} color="#3b82f6"/>
+                                </button>
+                                <button 
+                                    className="icon-btn danger" 
+                                    onClick={() => handleDeleteStep(step.id)}
+                                    title="Excluir mensagem"
+                                >
+                                    <Trash2 size={18} color="#ef4444"/>
+                                </button>
+                            </div>
                         </div>
                         
                         <div style={{color: '#ccc', fontSize: '0.9rem', marginBottom: '10px'}}>
@@ -212,8 +281,16 @@ export function ChatFlow() {
                             <div style={{background: '#111', padding: '10px', borderRadius: '6px', border: '1px solid #333'}}>
                                 "{step.msg_texto}"
                             </div>
-                            <div style={{marginTop: '10px', textAlign: 'right'}}>
-                                <span className="badge">Botão: {step.btn_texto}</span>
+                            <div style={{marginTop: '10px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'10px'}}>
+                                {step.mostrar_botao ? (
+                                    <span className="badge">🔘 Botão: {step.btn_texto}</span>
+                                ) : (
+                                    <span className="badge gray">🚫 Sem botão</span>
+                                )}
+                                
+                                {step.autodestruir && (
+                                    <span className="badge red">💣 Auto-destruir</span>
+                                )}
                             </div>
                         </div>
                     </CardContent>
@@ -226,7 +303,7 @@ export function ChatFlow() {
 
           {/* --- BOTÃO ADICIONAR NOVO PASSO --- */}
           <div className="add-step-wrapper">
-            <button className="btn-add-step" onClick={() => setShowModal(true)}>
+            <button className="btn-add-step" onClick={handleOpenCreateModal}>
                 <Plus size={20} /> Adicionar Nova Mensagem
             </button>
           </div>
@@ -282,35 +359,67 @@ export function ChatFlow() {
         </div>
       )}
 
-      {/* --- MODAL PARA ADICIONAR PASSO --- */}
+      {/* ============================================================ */}
+      {/* 🔥 [ATUALIZADO V3] MODAL PARA CRIAR/EDITAR PASSO */}
+      {/* ============================================================ */}
       {showModal && (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>Nova Mensagem Intermediária</h2>
+                <h2>{editingStep ? 'Editar Mensagem' : 'Nova Mensagem Intermediária'}</h2>
                 
                 <div className="form-grid">
                     <Input 
                         label="Link da Mídia (Opcional)" 
                         placeholder="URL da imagem ou vídeo"
-                        value={newStep.msg_media}
-                        onChange={e => setNewStep({...newStep, msg_media: e.target.value})}
+                        value={modalData.msg_media}
+                        onChange={e => setModalData({...modalData, msg_media: e.target.value})}
                     />
                     <TextArea 
                         label="Texto da Mensagem" 
                         placeholder="Digite o conteúdo aqui..."
-                        value={newStep.msg_texto}
-                        onChange={e => setNewStep({...newStep, msg_texto: e.target.value})}
+                        value={modalData.msg_texto}
+                        onChange={e => setModalData({...modalData, msg_texto: e.target.value})}
                     />
-                    <Input 
-                        label="Texto do Botão (Para ir ao próximo)" 
-                        value={newStep.btn_texto}
-                        onChange={e => setNewStep({...newStep, btn_texto: e.target.value})}
-                    />
+                    
+                    {/* [NOVO V3] Toggle: Mostrar Botão */}
+                    <div className="toggle-wrapper">
+                        <label>Mostrar botão para próximo passo?</label>
+                        <div 
+                            className={`custom-toggle ${modalData.mostrar_botao ? 'active-green' : ''}`}
+                            onClick={() => setModalData({...modalData, mostrar_botao: !modalData.mostrar_botao})}
+                        >
+                            <div className="toggle-handle"></div>
+                            <span className="toggle-label">{modalData.mostrar_botao ? 'SIM' : 'NÃO'}</span>
+                        </div>
+                    </div>
+
+                    {/* Campo de texto do botão (só aparece se mostrar_botao = true) */}
+                    {modalData.mostrar_botao && (
+                        <Input 
+                            label="Texto do Botão" 
+                            value={modalData.btn_texto}
+                            onChange={e => setModalData({...modalData, btn_texto: e.target.value})}
+                        />
+                    )}
+
+                    {/* [NOVO V3] Toggle: Auto-destruir */}
+                    <div className="toggle-wrapper">
+                        <label>Auto-destruir após clicar no botão?</label>
+                        <div 
+                            className={`custom-toggle ${modalData.autodestruir ? 'active' : ''}`}
+                            onClick={() => setModalData({...modalData, autodestruir: !modalData.autodestruir})}
+                        >
+                            <div className="toggle-handle"></div>
+                            <span className="toggle-label">{modalData.autodestruir ? 'SIM' : 'NÃO'}</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="modal-actions">
                     <button className="btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button>
-                    <button className="btn-save" onClick={handleAddStep}>Adicionar ao Fluxo</button>
+                    <button className="btn-save" onClick={handleSaveStep}>
+                        {editingStep ? 'Salvar Alterações' : 'Adicionar ao Fluxo'}
+                    </button>
                 </div>
             </div>
         </div>
