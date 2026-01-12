@@ -6,10 +6,12 @@ import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import { Input } from '../components/Input';
 import { botService } from '../services/api';
+import { useBot } from '../context/BotContext';  // [NOVO]
 import './Bots.css';
 
 export function NewBot() {
   const navigate = useNavigate();
+  const { refreshBots } = useBot();  // [NOVO] Pega a função de refresh
   
   const [token, setToken] = useState('');
   const [channelId, setChannelId] = useState('');
@@ -32,8 +34,8 @@ export function NewBot() {
 
       console.log("📤 Enviando payload:", dados);
 
-      // [CORRIGIDO] Chamada correta da função
       await botService.createBot(dados);
+      await refreshBots();  // [NOVO] Atualiza contexto global imediatamente
       
       setStatus('success');
       Swal.fire({
