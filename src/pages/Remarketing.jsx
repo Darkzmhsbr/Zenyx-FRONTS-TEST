@@ -14,11 +14,11 @@ export function Remarketing() {
   const [plans, setPlans] = useState([]);
   const [history, setHistory] = useState([]);
   
-  // [NOVO] Estados de paginação
+  // Estados de paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [perPage] = useState(10); // Fixo em 10 por página
+  const [perPage] = useState(10);
   
   // Estado do Formulário
   const [formData, setFormData] = useState({
@@ -38,14 +38,11 @@ export function Remarketing() {
       planService.listPlans(selectedBot.id).then(setPlans).catch(console.error);
       carregarHistorico();
     }
-  }, [selectedBot, currentPage]); // [MODIFICADO] Recarrega ao mudar página
+  }, [selectedBot, currentPage]);
 
   const carregarHistorico = async () => {
     try {
-      // [MODIFICADO] Agora passa page e perPage
       const response = await remarketingService.getHistory(selectedBot.id, currentPage, perPage);
-      
-      // [NOVO] Backend retorna objeto com metadados
       setHistory(Array.isArray(response.data) ? response.data : []);
       setTotalCount(response.total || 0);
       setTotalPages(response.total_pages || 1);
@@ -55,7 +52,6 @@ export function Remarketing() {
     }
   };
 
-  // [NOVO] Funções de navegação
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -65,7 +61,6 @@ export function Remarketing() {
   const nextPage = () => goToPage(currentPage + 1);
   const prevPage = () => goToPage(currentPage - 1);
 
-  // [NOVO] Função para deletar histórico
   const handleDelete = async (historyId) => {
     const result = await Swal.fire({
       title: 'Deletar campanha?',
@@ -91,296 +86,429 @@ export function Remarketing() {
           background: '#151515',
           color: '#fff'
         });
-        carregarHistorico(); // Recarrega lista
+        carregarHistorico();
       } catch (error) {
         Swal.fire('Erro', 'Falha ao deletar campanha.', 'error');
       }
     }
   };
 
-  const handleNext = () => setStep(step + 1);
-  const handleBack = () => setStep(step - 1);
+  const handleReusar = (item) => {
+    try {
+      const config = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
+      setFormData({
+        target: item.target || 'todos',
+        mensagem: config.mensagem || '',
+        media_url: config.media_url || '',
+        incluir_oferta: config.incluir_oferta || false,
+        plano_oferta_id: config.plano_oferta_id || '',
+        price_mode: config.price_mode || 'original',
+        custom_price: config.custom_price || '',
+        expiration_mode: config.expiration_mode || 'none',
+        expiration_value: config.expiration_value || ''
+      });
+      setStep(1);
+      window.scrollTo(0, 0);
+    } catch (error) {
+      console.error("Erro ao reusar campanha", error);
+      Swal.fire('Erro', 'Falha ao carregar configuração da campanha.', 'error');
+    }
+  };
 
-  const handleSend = async (isTest = false) => {
-    if (!formData.mensagem) return Swal.fire('Erro', 'Escreva uma mensagem!', 'error');
-    
-    let testId = null;
-    if (isTest) {
-        // Backend pega o admin principal automaticamente
+  const handleTestarIndividual = async (item) => {
+    const { value: telegramId } = await Swal.fire({
+      title: 'Testar Envio Individual',
+      input: 'text',
+      inputLabel: 'Digite o Telegram ID para receber o teste:',
+      inputPlaceholder: 'Ex: 123456789',
+      showCancelButton: true,
+      confirmButtonText: 'Enviar Teste',
+      cancelButtonText: 'Cancelar',
+      background: '#151515',
+      color: '#fff',
+      inputValidator: (value) => {
+        if (!value) return 'Por favor, digite um Telegram ID';
+        if (!/^\d+$/.test(value)) return 'Telegram ID deve conter apenas números';
+      }
+    });
+
+    if (telegramId) {
+      try {
+        setLoading(true);
+        await remarketingService.sendIndividual(selectedBot.id, telegramId, item.id);
+        Swal.fire({
+          title: 'Teste Enviado!',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false,
+          background: '#151515',
+          color: '#fff'
+        });
+      } catch (error) {
+        Swal.fire('Erro', 'Falha ao enviar teste.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleEnviar = async () => {
+    if (!formData.mensagem.trim()) {
+      Swal.fire('Atenção', 'Por favor, escreva uma mensagem.', 'warning');
+      return;
+    }
+
+    if (formData.incluir_oferta && !formData.plano_oferta_id) {
+      Swal.fire('Atenção', 'Selecione um plano para a oferta.', 'warning');
+      return;
     }
 
     setLoading(true);
     try {
-      await remarketingService.send(selectedBot.id, formData, isTest, testId);
+      const result = await remarketingService.send(selectedBot.id, formData, false, null);
       
-      if (isTest) {
-          Swal.fire({ title: 'Teste Enviado!', text: 'Verifique no seu Telegram.', icon: 'info', background: '#151515', color: '#fff' });
-      } else {
-          Swal.fire({ title: 'Sucesso!', text: 'Campanha iniciada.', icon: 'success', background: '#151515', color: '#fff' });
-          setStep(1);
-          setCurrentPage(1); // [NOVO] Volta para primeira página
-          setTimeout(carregarHistorico, 2000);
-      }
-      
+      Swal.fire({
+        title: 'Enviado com Sucesso!',
+        html: `
+          <div style="text-align: left; padding: 10px;">
+            <p><strong>✅ Enviados:</strong> ${result.sent_success || 0}</p>
+            <p><strong>❌ Bloqueados:</strong> ${result.blocked_count || 0}</p>
+            <p><strong>👥 Total:</strong> ${result.total_leads || 0}</p>
+          </div>
+        `,
+        icon: 'success',
+        confirmButtonText: 'OK',
+        background: '#151515',
+        color: '#fff'
+      });
+
+      // Reset form
+      setFormData({
+        target: 'todos',
+        mensagem: '',
+        media_url: '',
+        incluir_oferta: false,
+        plano_oferta_id: '',
+        price_mode: 'original',
+        custom_price: '',
+        expiration_mode: 'none',
+        expiration_value: ''
+      });
+      setStep(1);
+      carregarHistorico();
     } catch (error) {
-      console.error(error);
-      Swal.fire('Erro', 'Falha ao enviar. Verifique o console.', 'error');
+      console.error("Erro ao enviar", error);
+      Swal.fire('Erro', 'Falha ao enviar campanha.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReuse = (item, mode) => {
-      try {
-          const config = JSON.parse(item.config?.content_data || item.config);
-          
-          setFormData({
-              target: item.target || 'todos',
-              mensagem: config.msg || '',
-              media_url: config.media || '',
-              incluir_oferta: config.offer || false,
-              plano_oferta_id: '', 
-              price_mode: 'original',
-              custom_price: '',
-              expiration_mode: 'none',
-              expiration_value: ''
-          });
-
-          if (mode === 'edit') {
-              setStep(2);
-          } else {
-              setStep(3);
-          }
-          
-          window.scrollTo(0,0);
-          
-      } catch (e) {
-          console.error("Erro ao carregar histórico", e);
-      }
-  };
-
   const targetOptions = [
-      { id: 'todos', label: 'Todos os Leads', sub: 'Pagantes, Pendentes e Expirados', icon: <Users /> },
-      { id: 'pendentes', label: 'Pendentes', sub: 'Geraram PIX mas não pagaram', icon: <AlertTriangle color="#f59e0b"/> },
-      { id: 'pagantes', label: 'Clientes Ativos', sub: 'Já compraram acesso', icon: <CheckCircle color="#10b981"/> },
-      { id: 'expirados', label: 'Expirados', sub: 'Acesso vencido (Win-back)', icon: <History color="#ef4444"/> },
-  ];
+  { id: 'todos', icon: '👥', title: 'Todos', desc: 'Envia para todos os contatos' },
+  { id: 'topo', icon: '🎯', title: 'TOPO - Leads Frios', desc: 'Usuários que só deram /start' },
+  { id: 'meio', icon: '🔥', title: 'MEIO - Leads Quentes', desc: 'Usuários que geraram PIX' },
+  { id: 'fundo', icon: '✅', title: 'FUNDO - Clientes', desc: 'Usuários que pagaram' },
+  { id: 'expirado', icon: '⏰', title: 'Expirados', desc: 'PIX venceu sem pagamento' }
+];
+  // ============================================================
+  // RENDER - HISTÓRICO
+  // ============================================================
+  if (step === 0) {
+    return (
+      <div className="remarketing-container">
+        <div className="wizard-container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 className="wizard-title">
+              <History size={28} style={{ verticalAlign: 'middle', marginRight: '10px' }} />
+              Histórico de Campanhas
+            </h2>
+            <Button onClick={() => setStep(1)} variant="primary">
+              Nova Campanha
+            </Button>
+          </div>
 
-  if (!selectedBot) return <div className="empty-state"><h2>Selecione um bot.</h2></div>;
+          {history.length === 0 ? (
+            <Card>
+              <CardContent>
+                <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>
+                  <MessageSquare size={48} style={{ margin: '0 auto 20px', opacity: 0.5 }} />
+                  <p>Nenhuma campanha enviada ainda.</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="history-list">
+                {history.map((item) => (
+                  <div key={item.id} className="history-item">
+                    <div>
+                      <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                        {item.target === 'topo' && '🎯 TOPO'}
+                        {item.target === 'meio' && '🔥 MEIO'}
+                        {item.target === 'fundo' && '✅ FUNDO'}
+                        {item.target === 'expirado' && '⏰ EXPIRADOS'}
+                        {item.target === 'todos' && '👥 TODOS'}
+                        {!['topo', 'meio', 'fundo', 'expirado', 'todos'].includes(item.target) && item.target}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#888' }}>
+                        {new Date(item.data_envio).toLocaleString('pt-BR')}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#aaa', marginTop: '5px' }}>
+                        ✅ {item.sent_success || 0} enviados • ❌ {item.blocked_count || 0} bloqueados
+                      </div>
+                    </div>
+                    <div className="history-actions">
+                      <button className="btn-small primary" onClick={() => handleReusar(item)}>
+                        <RotateCcw size={14} /> Reusar
+                      </button>
+                      <button className="btn-small primary" onClick={() => handleTestarIndividual(item)}>
+                        <Play size={14} /> Testar
+                      </button>
+                      <button className="btn-small danger" onClick={() => handleDelete(item.id)}>
+                        <Trash2 size={14} /> Deletar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
+              {totalPages > 1 && (
+                <div className="pagination-controls-remarketing">
+                  <Button variant="ghost" onClick={prevPage} disabled={currentPage === 1}>
+                    <ChevronLeft size={18} /> Anterior
+                  </Button>
+                  <div className="page-info">
+                    Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+                    {' • '}
+                    <strong>{totalCount}</strong> {totalCount === 1 ? 'campanha' : 'campanhas'}
+                  </div>
+                  <Button variant="ghost" onClick={nextPage} disabled={currentPage === totalPages}>
+                    Próxima <ChevronRight size={18} />
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="wizard-actions">
+            <button className="btn-back" onClick={() => setStep(1)}>
+              Voltar para Nova Campanha
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // RENDER - WIZARD (STEPS 1-3)
+  // ============================================================
   return (
     <div className="remarketing-container">
       <div className="wizard-container">
-          <h1 className="wizard-title">Campanha de Remarketing</h1>
-          
-          <div className="wizard-step-indicator">
-             {step === 1 && "1. Público"} 
-             {step === 2 && "2. Conteúdo e Oferta"} 
-             {step === 3 && "3. Revisão e Teste"}
-          </div>
+        
+        <h2 className="wizard-title">
+          <Send size={28} style={{ verticalAlign: 'middle', marginRight: '10px' }} />
+          Campanha de Remarketing
+        </h2>
 
-          <Card style={{border: '1px solid #333', background: '#0f0f0f'}}>
-            <CardContent>
-              {/* PASSO 1: PÚBLICO */}
-              {step === 1 && (
-                <div className="fade-in">
-                  <h3 style={{marginBottom:'20px', color:'#fff'}}>Quem deve receber?</h3>
-                  <div className="wizard-options-grid">
-                    {targetOptions.map(opt => (
-                        <div 
-                            key={opt.id} 
-                            className={`option-card ${formData.target === opt.id ? 'selected' : ''}`} 
-                            onClick={() => setFormData({...formData, target: opt.id})}
-                        >
-                            <div className="option-icon">{opt.icon}</div>
-                            <div className="option-text">
-                                <strong>{opt.label}</strong>
-                                <span>{opt.sub}</span>
-                            </div>
-                        </div>
-                    ))}
-                  </div>
-                  <div className="wizard-actions" style={{justifyContent: 'flex-end'}}>
-                      <button className="btn-next" onClick={handleNext}>Próximo</button>
-                  </div>
+        <div className="wizard-step-indicator">
+          Passo {step} de 3
+        </div>
+
+        {/* STEP 1: PÚBLICO */}
+        {step === 1 && (
+          <>
+            <h3 style={{ marginBottom: '20px' }}>Quem vai receber esta campanha?</h3>
+            <div className="wizard-options-grid">
+              {targetOptions.map(opt => (
+                <div
+                  key={opt.id}
+                  className={`option-card ${formData.target === opt.id ? 'selected' : ''}`}
+                  onClick={() => setFormData({ ...formData, target: opt.id })}
+                >
+                  <div className="option-icon">{opt.icon}</div>
+                  <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{opt.title}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#aaa' }}>{opt.desc}</div>
                 </div>
-              )}
+              ))}
+            </div>
+            <div className="wizard-actions">
+              <button className="btn-back" onClick={() => setStep(0)}>
+                <History size={18} /> Ver Histórico
+              </button>
+              <button className="btn-next" onClick={() => setStep(2)}>
+                Próximo <Send size={18} />
+              </button>
+            </div>
+          </>
+        )}
 
-              {/* PASSO 2: CONTEÚDO AVANÇADO */}
-              {step === 2 && (
-                <div className="fade-in">
-                  <h3>Conteúdo da Mensagem</h3>
-                  
+        {/* STEP 2: MENSAGEM */}
+        {step === 2 && (
+          <>
+            <h3 style={{ marginBottom: '20px' }}>Monte sua mensagem</h3>
+            
+            <div className="form-group">
+              <label><MessageSquare size={16} style={{ verticalAlign: 'middle' }} /> Mensagem</label>
+              <textarea
+                className="input-field"
+                rows="6"
+                placeholder="Digite a mensagem aqui..."
+                value={formData.mensagem}
+                onChange={(e) => setFormData({ ...formData, mensagem: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Image size={16} style={{ verticalAlign: 'middle' }} /> URL da Mídia (Opcional)</label>
+              <input
+                className="input-field"
+                type="text"
+                placeholder="https://exemplo.com/imagem.jpg"
+                value={formData.media_url}
+                onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
+              />
+            </div>
+
+            {/* OFERTA ESPECIAL */}
+            <div className="offer-section">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.incluir_oferta}
+                  onChange={(e) => setFormData({ ...formData, incluir_oferta: e.target.checked })}
+                />
+                <Tag size={20} />
+                Incluir Oferta Especial
+              </label>
+
+              {formData.incluir_oferta && (
+                <div className="offer-details-box">
                   <div className="form-group">
-                    <label>Mensagem</label>
-                    <textarea 
-                        className="input-field" rows={4}
-                        placeholder="Olá! Temos uma oferta especial..."
-                        value={formData.mensagem} 
-                        onChange={e => setFormData({...formData, mensagem: e.target.value})}
-                    />
+                    <label>Plano da Oferta</label>
+                    <select
+                      className="input-field"
+                      value={formData.plano_oferta_id}
+                      onChange={(e) => setFormData({ ...formData, plano_oferta_id: e.target.value })}
+                    >
+                      <option value="">Selecione um plano</option>
+                      {plans.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.nome_exibicao} - R$ {p.preco_atual}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="form-group">
-                    <label>Mídia (URL Opcional)</label>
-                    <input className="input-field" placeholder="https://..." value={formData.media_url} onChange={e => setFormData({...formData, media_url: e.target.value})} />
-                  </div>
-                  
-                  {/* SESSÃO DE OFERTA AVANÇADA */}
-                  <div className="offer-section">
-                    <label className="checkbox-label">
-                      <input type="checkbox" checked={formData.incluir_oferta} onChange={e => setFormData({...formData, incluir_oferta: e.target.checked})} />
-                      <Tag size={18} color="#c333ff"/> Incluir Botão de Oferta?
-                    </label>
-
-                    {formData.incluir_oferta && (
-                        <div className="offer-details-box">
-                            <div className="form-group">
-                                <label>Qual plano ofertar?</label>
-                                <select className="input-field" value={formData.plano_oferta_id} onChange={e => setFormData({...formData, plano_oferta_id: e.target.value})}>
-                                    <option value="">Selecione...</option>
-                                    {plans.map(p => <option key={p.id} value={p.id}>{p.nome_exibicao} (R$ {p.preco_atual})</option>)}
-                                </select>
-                            </div>
-
-                            <div className="form-row">
-                                <div className="form-group half">
-                                    <label>Tipo de Preço</label>
-                                    <div className="toggle-buttons">
-                                        <button className={formData.price_mode === 'original' ? 'active' : ''} onClick={() => setFormData({...formData, price_mode: 'original'})}>Original</button>
-                                        <button className={formData.price_mode === 'custom' ? 'active' : ''} onClick={() => setFormData({...formData, price_mode: 'custom'})}>Com Desconto</button>
-                                    </div>
-                                </div>
-                                {formData.price_mode === 'custom' && (
-                                    <div className="form-group half">
-                                        <label>Valor da Oferta (R$)</label>
-                                        <input type="number" className="input-field" placeholder="Ex: 9.90" value={formData.custom_price} onChange={e => setFormData({...formData, custom_price: e.target.value})} />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="form-row">
-                                <div className="form-group half">
-                                    <label><Clock size={14}/> Validade da Oferta</label>
-                                    <select className="input-field" value={formData.expiration_mode} onChange={e => setFormData({...formData, expiration_mode: e.target.value})}>
-                                        <option value="none">Sem validade (Sempre ativo)</option>
-                                        <option value="minutes">Minutos</option>
-                                        <option value="hours">Horas</option>
-                                        <option value="days">Dias</option>
-                                    </select>
-                                </div>
-                                {formData.expiration_mode !== 'none' && (
-                                    <div className="form-group half">
-                                        <label>Duração ({formData.expiration_mode})</label>
-                                        <input type="number" className="input-field" placeholder="Ex: 3" value={formData.expiration_value} onChange={e => setFormData({...formData, expiration_value: e.target.value})} />
-                                    </div>
-                                )}
-                            </div>
-                            <small style={{color:'#666', display:'block', marginTop:'5px'}}>* Se o usuário clicar após o tempo, receberá aviso de "Esgotado".</small>
-                        </div>
+                    <label>Preço</label>
+                    <div className="toggle-buttons">
+                      <button
+                        className={formData.price_mode === 'original' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, price_mode: 'original' })}
+                      >
+                        Original
+                      </button>
+                      <button
+                        className={formData.price_mode === 'custom' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, price_mode: 'custom' })}
+                      >
+                        Personalizado
+                      </button>
+                    </div>
+                    {formData.price_mode === 'custom' && (
+                      <input
+                        className="input-field"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 9.90"
+                        value={formData.custom_price}
+                        onChange={(e) => setFormData({ ...formData, custom_price: e.target.value })}
+                        style={{ marginTop: '10px' }}
+                      />
                     )}
                   </div>
 
-                  <div className="wizard-actions">
-                    <button className="btn-back" onClick={handleBack}>Voltar</button>
-                    <button className="btn-next" onClick={handleNext}>Revisar</button>
+                  <div className="form-group">
+                    <label><Clock size={16} /> Expiração da Oferta</label>
+                    <div className="toggle-buttons">
+                      <button
+                        className={formData.expiration_mode === 'none' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, expiration_mode: 'none' })}
+                      >
+                        Sem Expiração
+                      </button>
+                      <button
+                        className={formData.expiration_mode === 'minutes' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, expiration_mode: 'minutes' })}
+                      >
+                        Minutos
+                      </button>
+                      <button
+                        className={formData.expiration_mode === 'hours' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, expiration_mode: 'hours' })}
+                      >
+                        Horas
+                      </button>
+                    </div>
+                    {formData.expiration_mode !== 'none' && (
+                      <input
+                        className="input-field"
+                        type="number"
+                        placeholder="Quantidade"
+                        value={formData.expiration_value}
+                        onChange={(e) => setFormData({ ...formData, expiration_value: e.target.value })}
+                        style={{ marginTop: '10px' }}
+                      />
+                    )}
                   </div>
                 </div>
               )}
+            </div>
 
-              {/* PASSO 3: REVISÃO E TESTE */}
-              {step === 3 && (
-                <div className="fade-in">
-                  <h3>Tudo pronto?</h3>
-                  <div className="review-box">
-                    <p><strong>Público:</strong> {formData.target.toUpperCase()}</p>
-                    <p><strong>Oferta:</strong> {formData.incluir_oferta ? (formData.price_mode === 'custom' ? `R$ ${formData.custom_price}` : 'Preço Original') : 'Não'}</p>
-                    <p><strong>Validade:</strong> {formData.expiration_mode === 'none' ? 'Infinita' : `${formData.expiration_value} ${formData.expiration_mode}`}</p>
-                    <div className="msg-quote">"{formData.mensagem}"</div>
-                  </div>
+            <div className="wizard-actions">
+              <button className="btn-back" onClick={() => setStep(1)}>
+                Voltar
+              </button>
+              <button className="btn-next" onClick={() => setStep(3)}>
+                Próximo
+              </button>
+            </div>
+          </>
+        )}
 
-                  <div className="wizard-actions">
-                    <button className="btn-back" onClick={handleBack}>Voltar</button>
-                    
-                    <div style={{display:'flex', gap:'10px'}}>
-                        <button className="btn-reuse" onClick={() => handleSend(true)} disabled={loading}>
-                            <Play size={16}/> Enviar Teste (Admin)
-                        </button>
-
-                        <button className="btn-next" onClick={() => handleSend(false)} disabled={loading} style={{background: loading ? '#555' : '#10b981'}}>
-                            {loading ? 'Enviando...' : 'ENVIAR PARA TODOS 🚀'}
-                        </button>
-                    </div>
-                  </div>
-                </div>
+        {/* STEP 3: REVISÃO */}
+        {step === 3 && (
+          <>
+            <h3 style={{ marginBottom: '20px' }}>Revisão Final</h3>
+            
+            <div className="review-box">
+              <p><strong>Público:</strong> {targetOptions.find(o => o.id === formData.target)?.title}</p>
+              {formData.media_url && <p><strong>Mídia:</strong> {formData.media_url}</p>}
+              {formData.incluir_oferta && (
+                <p><strong>Oferta:</strong> {plans.find(p => p.id === parseInt(formData.plano_oferta_id))?.nome_exibicao}</p>
               )}
-            </CardContent>
-          </Card>
+              <div className="msg-quote">{formData.mensagem}</div>
+            </div>
 
-          {/* --- HISTÓRICO DE DISPAROS COM PAGINAÇÃO --- */}
-          <div style={{marginTop:'40px'}}>
-              <h3 style={{color:'#fff', marginBottom:'15px', display:'flex', alignItems:'center', gap:'10px'}}>
-                <History /> Histórico de Campanhas ({totalCount})
-              </h3>
-              
-              {history.length === 0 ? (
-                <p style={{color:'#666'}}>Nenhum disparo recente.</p>
-              ) : (
-                <>
-                  <div className="history-list">
-                      {history.map(h => (
-                          <div key={h.id} className="history-item">
-                              <div>
-                                  <div style={{fontWeight:'bold', color:'#fff'}}>{h.data}</div>
-                                  <div style={{fontSize:'0.85rem', color:'#888'}}>
-                                      Enviado para: {h.total} leads • Bloqueados: {h.blocked}
-                                  </div>
-                              </div>
-                              <div className="history-actions">
-                                  <button className="btn-small" onClick={() => handleReuse(h, 'edit')}>
-                                    <Edit size={14}/> Editar
-                                  </button>
-                                  <button className="btn-small primary" onClick={() => handleReuse(h, 'direct')}>
-                                    <RotateCcw size={14}/> Reutilizar
-                                  </button>
-                                  {/* [NOVO] Botão Deletar */}
-                                  <button className="btn-small danger" onClick={() => handleDelete(h.id)}>
-                                    <Trash2 size={14}/> Deletar
-                                  </button>
-                              </div>
-                          </div>
-                      ))}
-                  </div>
+            <div className="wizard-actions">
+              <button className="btn-back" onClick={() => setStep(2)}>
+                Voltar
+              </button>
+              <button 
+                className="btn-next" 
+                onClick={handleEnviar}
+                disabled={loading}
+              >
+                {loading ? 'Enviando...' : 'Enviar Agora'}
+                <CheckCircle size={18} />
+              </button>
+            </div>
+          </>
+        )}
 
-                  {/* [NOVO] CONTROLES DE PAGINAÇÃO */}
-                  {totalPages > 1 && (
-                    <div className="pagination-controls-remarketing">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={prevPage} 
-                        disabled={currentPage === 1}
-                      >
-                        <ChevronLeft size={16} /> Anterior
-                      </Button>
-                      
-                      <div className="page-info">
-                        Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
-                      </div>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={nextPage} 
-                        disabled={currentPage === totalPages}
-                      >
-                        Próxima <ChevronRight size={16} />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-          </div>
       </div>
     </div>
   );
