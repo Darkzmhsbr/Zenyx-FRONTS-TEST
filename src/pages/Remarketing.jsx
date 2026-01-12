@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBot } from '../context/BotContext';
 import { remarketingService, planService } from '../services/api';
-import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, RotateCcw, Edit, Play } from 'lucide-react';
+import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, RotateCcw, Edit, Play, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import Swal from 'sweetalert2';
@@ -14,6 +14,12 @@ export function Remarketing() {
   const [plans, setPlans] = useState([]);
   const [history, setHistory] = useState([]);
   
+  // [NOVO] Estados de paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [perPage] = useState(10); // Fixo em 10 por página
+  
   // Estado do Formulário
   const [formData, setFormData] = useState({
     target: 'todos', 
@@ -21,11 +27,9 @@ export function Remarketing() {
     media_url: '',
     incluir_oferta: false,
     plano_oferta_id: '',
-    
-    // NOVOS CAMPOS
-    price_mode: 'original', // 'original' ou 'custom'
+    price_mode: 'original',
     custom_price: '',
-    expiration_mode: 'none', // 'none', 'minutes', 'hours', 'days'
+    expiration_mode: 'none',
     expiration_value: ''
   });
 
@@ -34,42 +38,88 @@ export function Remarketing() {
       planService.listPlans(selectedBot.id).then(setPlans).catch(console.error);
       carregarHistorico();
     }
-  }, [selectedBot]);
+  }, [selectedBot, currentPage]); // [MODIFICADO] Recarrega ao mudar página
 
-  const carregarHistorico = () => {
-    remarketingService.getHistory(selectedBot.id).then(setHistory).catch(console.error);
+  const carregarHistorico = async () => {
+    try {
+      // [MODIFICADO] Agora passa page e perPage
+      const response = await remarketingService.getHistory(selectedBot.id, currentPage, perPage);
+      
+      // [NOVO] Backend retorna objeto com metadados
+      setHistory(Array.isArray(response.data) ? response.data : []);
+      setTotalCount(response.total || 0);
+      setTotalPages(response.total_pages || 1);
+    } catch (error) {
+      console.error("Erro ao carregar histórico", error);
+      setHistory([]);
+    }
+  };
+
+  // [NOVO] Funções de navegação
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const nextPage = () => goToPage(currentPage + 1);
+  const prevPage = () => goToPage(currentPage - 1);
+
+  // [NOVO] Função para deletar histórico
+  const handleDelete = async (historyId) => {
+    const result = await Swal.fire({
+      title: 'Deletar campanha?',
+      text: "Esta ação não pode ser desfeita.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sim, deletar',
+      cancelButtonText: 'Cancelar',
+      background: '#151515',
+      color: '#fff'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await remarketingService.deleteHistory(historyId);
+        Swal.fire({
+          title: 'Deletado!',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+          background: '#151515',
+          color: '#fff'
+        });
+        carregarHistorico(); // Recarrega lista
+      } catch (error) {
+        Swal.fire('Erro', 'Falha ao deletar campanha.', 'error');
+      }
+    }
   };
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
 
-  // --- FUNÇÃO DE ENVIAR (CORRIGIDA PARA A NOVA API) ---
   const handleSend = async (isTest = false) => {
     if (!formData.mensagem) return Swal.fire('Erro', 'Escreva uma mensagem!', 'error');
     
-    // Se for teste e não tiver Admin configurado
     let testId = null;
     if (isTest) {
-        // Aqui você poderia colocar lógica para pedir um ID específico se quiser
-        // Por enquanto enviamos null, e o backend pega o admin principal
+        // Backend pega o admin principal automaticamente
     }
 
     setLoading(true);
     try {
-      // 🚨 AQUI ESTÁ A MUDANÇA PRINCIPAL:
-      // Passamos os parâmetros na ordem que o api.js espera:
-      // 1. ID do Bot
-      // 2. Os dados do formulário (formData direto)
-      // 3. Flag de teste
-      // 4. ID específico (se houver)
       await remarketingService.send(selectedBot.id, formData, isTest, testId);
       
       if (isTest) {
           Swal.fire({ title: 'Teste Enviado!', text: 'Verifique no seu Telegram.', icon: 'info', background: '#151515', color: '#fff' });
       } else {
           Swal.fire({ title: 'Sucesso!', text: 'Campanha iniciada.', icon: 'success', background: '#151515', color: '#fff' });
-          setStep(1); // Volta para o passo 1
-          setTimeout(carregarHistorico, 2000); // Atualiza histórico
+          setStep(1);
+          setCurrentPage(1); // [NOVO] Volta para primeira página
+          setTimeout(carregarHistorico, 2000);
       }
       
     } catch (error) {
@@ -80,9 +130,7 @@ export function Remarketing() {
     }
   };
 
-  // --- FUNÇÃO DE REUTILIZAR (HISTÓRICO) ---
   const handleReuse = (item, mode) => {
-      // Reconstrói o estado com base no histórico salvo (JSON)
       try {
           const config = JSON.parse(item.config?.content_data || item.config);
           
@@ -91,7 +139,6 @@ export function Remarketing() {
               mensagem: config.msg || '',
               media_url: config.media || '',
               incluir_oferta: config.offer || false,
-              // Tenta recuperar outros dados se salvou no JSON, senão reseta
               plano_oferta_id: '', 
               price_mode: 'original',
               custom_price: '',
@@ -100,12 +147,11 @@ export function Remarketing() {
           });
 
           if (mode === 'edit') {
-              setStep(2); // Vai para edição
+              setStep(2);
           } else {
-              setStep(3); // Vai para revisão direto
+              setStep(3);
           }
           
-          // Rola para o topo
           window.scrollTo(0,0);
           
       } catch (e) {
@@ -180,7 +226,7 @@ export function Remarketing() {
                     <input className="input-field" placeholder="https://..." value={formData.media_url} onChange={e => setFormData({...formData, media_url: e.target.value})} />
                   </div>
                   
-                  {/* --- SESSÃO DE OFERTA AVANÇADA --- */}
+                  {/* SESSÃO DE OFERTA AVANÇADA */}
                   <div className="offer-section">
                     <label className="checkbox-label">
                       <input type="checkbox" checked={formData.incluir_oferta} onChange={e => setFormData({...formData, incluir_oferta: e.target.checked})} />
@@ -189,7 +235,6 @@ export function Remarketing() {
 
                     {formData.incluir_oferta && (
                         <div className="offer-details-box">
-                            {/* Seleção do Plano */}
                             <div className="form-group">
                                 <label>Qual plano ofertar?</label>
                                 <select className="input-field" value={formData.plano_oferta_id} onChange={e => setFormData({...formData, plano_oferta_id: e.target.value})}>
@@ -198,7 +243,6 @@ export function Remarketing() {
                                 </select>
                             </div>
 
-                            {/* Preço Personalizado */}
                             <div className="form-row">
                                 <div className="form-group half">
                                     <label>Tipo de Preço</label>
@@ -215,7 +259,6 @@ export function Remarketing() {
                                 )}
                             </div>
 
-                            {/* Expiração / Escassez */}
                             <div className="form-row">
                                 <div className="form-group half">
                                     <label><Clock size={14}/> Validade da Oferta</label>
@@ -260,12 +303,10 @@ export function Remarketing() {
                     <button className="btn-back" onClick={handleBack}>Voltar</button>
                     
                     <div style={{display:'flex', gap:'10px'}}>
-                        {/* BOTÃO DE TESTE */}
                         <button className="btn-reuse" onClick={() => handleSend(true)} disabled={loading}>
                             <Play size={16}/> Enviar Teste (Admin)
                         </button>
 
-                        {/* BOTÃO DE ENVIO REAL */}
                         <button className="btn-next" onClick={() => handleSend(false)} disabled={loading} style={{background: loading ? '#555' : '#10b981'}}>
                             {loading ? 'Enviando...' : 'ENVIAR PARA TODOS 🚀'}
                         </button>
@@ -276,10 +317,16 @@ export function Remarketing() {
             </CardContent>
           </Card>
 
-          {/* --- HISTÓRICO DE DISPAROS --- */}
+          {/* --- HISTÓRICO DE DISPAROS COM PAGINAÇÃO --- */}
           <div style={{marginTop:'40px'}}>
-              <h3 style={{color:'#fff', marginBottom:'15px', display:'flex', alignItems:'center', gap:'10px'}}><History /> Histórico de Campanhas</h3>
-              {history.length === 0 ? <p style={{color:'#666'}}>Nenhum disparo recente.</p> : (
+              <h3 style={{color:'#fff', marginBottom:'15px', display:'flex', alignItems:'center', gap:'10px'}}>
+                <History /> Histórico de Campanhas ({totalCount})
+              </h3>
+              
+              {history.length === 0 ? (
+                <p style={{color:'#666'}}>Nenhum disparo recente.</p>
+              ) : (
+                <>
                   <div className="history-list">
                       {history.map(h => (
                           <div key={h.id} className="history-item">
@@ -290,12 +337,48 @@ export function Remarketing() {
                                   </div>
                               </div>
                               <div className="history-actions">
-                                  <button className="btn-small" onClick={() => handleReuse(h, 'edit')}><Edit size={14}/> Editar</button>
-                                  <button className="btn-small primary" onClick={() => handleReuse(h, 'direct')}><RotateCcw size={14}/> Reutilizar</button>
+                                  <button className="btn-small" onClick={() => handleReuse(h, 'edit')}>
+                                    <Edit size={14}/> Editar
+                                  </button>
+                                  <button className="btn-small primary" onClick={() => handleReuse(h, 'direct')}>
+                                    <RotateCcw size={14}/> Reutilizar
+                                  </button>
+                                  {/* [NOVO] Botão Deletar */}
+                                  <button className="btn-small danger" onClick={() => handleDelete(h.id)}>
+                                    <Trash2 size={14}/> Deletar
+                                  </button>
                               </div>
                           </div>
                       ))}
                   </div>
+
+                  {/* [NOVO] CONTROLES DE PAGINAÇÃO */}
+                  {totalPages > 1 && (
+                    <div className="pagination-controls-remarketing">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={prevPage} 
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft size={16} /> Anterior
+                      </Button>
+                      
+                      <div className="page-info">
+                        Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+                      </div>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={nextPage} 
+                        disabled={currentPage === totalPages}
+                      >
+                        Próxima <ChevronRight size={16} />
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
           </div>
       </div>
