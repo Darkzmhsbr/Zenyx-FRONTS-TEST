@@ -36,20 +36,16 @@ export function Funil() {
     try {
       const botId = selectedBot?.id || null;
       
-      // Carregar estatísticas
       const statsData = await crmService.getFunnelStats(botId);
       setStats(statsData);
       
       if (activeTab === 'todos') {
-        // 🔥 CORREÇÃO: Na aba TODOS, buscar apenas os pedidos
-        // Os leads que viraram pedidos já estarão aqui
         const pedidosData = await crmService.getContacts(botId, 'todos', currentPage, perPage);
         const leadsData = await crmService.getLeads(botId, currentPage, perPage);
         
         setLeads(leadsData.data || []);
         setContacts(pedidosData.data || []);
         
-        // Total = leads + pedidos
         const totalCombinado = (leadsData.total || 0) + (pedidosData.total || 0);
         setTotalContacts(totalCombinado);
         setTotalPages(Math.ceil(totalCombinado / perPage));
@@ -295,7 +291,8 @@ export function Funil() {
                           <span className={`funil-badge ${contact.status_funil}`}>
                             {contact.status_funil === 'fundo' ? '✅ CLIENTE' :
                              contact.status_funil === 'meio' ? '🔥 QUENTE' :
-                             '❄️ EXPIRADO'}
+                             contact.status_funil === 'expirado' ? '❄️ EXPIRADO' :
+                             '❄️ LEAD FRIO'}
                           </span>
                         </td>
                       </tr>
@@ -361,7 +358,8 @@ export function Funil() {
                           <span className={`funil-badge ${contact.status_funil}`}>
                             {contact.status_funil === 'fundo' ? '✅ CLIENTE' :
                              contact.status_funil === 'meio' ? '🔥 QUENTE' :
-                             '❄️ EXPIRADO'}
+                             contact.status_funil === 'expirado' ? '❄️ EXPIRADO' :
+                             '❄️ LEAD FRIO'}
                           </span>
                         </td>
                       </tr>
