@@ -114,6 +114,41 @@ export function Funil() {
     return badges[status] || <span className="status-badge">{status}</span>;
   };
 
+  // 🔥 FUNÇÃO ROBUSTA: Determina badge do funil com múltiplos critérios
+  const getFunilBadge = (contact) => {
+    // Prioridade 1: status_funil (se existir e for válido)
+    if (contact.status_funil === 'fundo') {
+      return <span className="funil-badge fundo">✅ CLIENTE</span>;
+    }
+    if (contact.status_funil === 'meio') {
+      return <span className="funil-badge meio">🔥 QUENTE</span>;
+    }
+    if (contact.status_funil === 'expirado') {
+      return <span className="funil-badge expirado">❄️ EXPIRADO</span>;
+    }
+    
+    // Prioridade 2: Fallback usando campo 'status' (status do pagamento)
+    const status = contact.status?.toLowerCase();
+    
+    // Se PAGOU → CLIENTE (FUNDO)
+    if (['paid', 'active', 'approved', 'aprovado'].includes(status)) {
+      return <span className="funil-badge fundo">✅ CLIENTE</span>;
+    }
+    
+    // Se PENDENTE → QUENTE (MEIO) - gerou PIX mas não pagou
+    if (status === 'pending') {
+      return <span className="funil-badge meio">🔥 QUENTE</span>;
+    }
+    
+    // Se EXPIRADO → EXPIRADO
+    if (['expired', 'expirado'].includes(status)) {
+      return <span className="funil-badge expirado">❄️ EXPIRADO</span>;
+    }
+    
+    // Fallback final: LEAD FRIO
+    return <span className="funil-badge topo">❄️ LEAD FRIO</span>;
+  };
+
   const handlePrevPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
@@ -278,7 +313,7 @@ export function Funil() {
                       </tr>
                     ))}
                     
-                    {/* PEDIDOS */}
+                    {/* PEDIDOS - USA getFunilBadge() */}
                     {contacts.map((contact) => (
                       <tr key={`contact-${contact.id}`}>
                         <td>{contact.first_name || 'Sem nome'}</td>
@@ -287,14 +322,7 @@ export function Funil() {
                         <td>{formatMoney(contact.valor)}</td>
                         <td>{formatDate(contact.created_at)}</td>
                         <td>{getStatusBadge(contact.status)}</td>
-                        <td>
-                          <span className={`funil-badge ${contact.status_funil}`}>
-                            {contact.status_funil === 'fundo' ? '✅ CLIENTE' :
-                             contact.status_funil === 'meio' ? '🔥 QUENTE' :
-                             contact.status_funil === 'expirado' ? '❄️ EXPIRADO' :
-                             '❄️ LEAD FRIO'}
-                          </span>
-                        </td>
+                        <td>{getFunilBadge(contact)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -354,14 +382,7 @@ export function Funil() {
                         <td>{formatMoney(contact.valor)}</td>
                         <td>{formatDate(contact.created_at)}</td>
                         <td>{getStatusBadge(contact.status)}</td>
-                        <td>
-                          <span className={`funil-badge ${contact.status_funil}`}>
-                            {contact.status_funil === 'fundo' ? '✅ CLIENTE' :
-                             contact.status_funil === 'meio' ? '🔥 QUENTE' :
-                             contact.status_funil === 'expirado' ? '❄️ EXPIRADO' :
-                             '❄️ LEAD FRIO'}
-                          </span>
-                        </td>
+                        <td>{getFunilBadge(contact)}</td>
                       </tr>
                     ))}
                   </tbody>
