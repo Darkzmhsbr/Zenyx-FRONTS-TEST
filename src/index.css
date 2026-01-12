@@ -1,5 +1,8 @@
+/* ============================================================
+   VARIÁVEIS CSS - TEMA DARK (PADRÃO)
+   ============================================================ */
 :root {
-  /* --- PALETA DE CORES (Baseada no Zenyx Gbot) --- */
+  /* --- PALETA DE CORES DARK (Baseada no Zenyx Gbot) --- */
   --background: #0f0b14;       /* Fundo Profundo */
   --foreground: #f2f2f2;       /* Texto Principal */
   
@@ -32,6 +35,34 @@
   --spacing-xl: 2rem;    
 }
 
+/* ============================================================
+   VARIÁVEIS CSS - TEMA LIGHT
+   ============================================================ */
+body.light-theme {
+  --background: #f5f5f7;       /* Fundo Claro */
+  --foreground: #1a1a1a;       /* Texto Escuro */
+  
+  --card: #ffffff;             /* Cards Brancos */
+  --card-border: #e0e0e0;      /* Bordas Suaves */
+  
+  --primary: #c333ff;          /* Magenta Mantém */
+  --primary-hover: #a623db;    
+  --primary-foreground: #ffffff;
+  
+  --secondary: #f0f0f0;        
+  --secondary-foreground: #1a1a1a;
+  
+  --muted: #e8e8e8;            
+  --muted-foreground: #6b6b6b; /* Texto Cinza */
+  
+  --success: #10b981;          
+  --danger: #ef4444;           
+  --warning: #f59e0b;          
+}
+
+/* ============================================================
+   RESET E BASE
+   ============================================================ */
 * {
   box-sizing: border-box;
 }
@@ -43,6 +74,7 @@ body {
   color: var(--foreground);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 a {
@@ -90,22 +122,21 @@ a:hover {
 }
 
 /* =========================================================
-   🚨 OVERRIDE SWEETALERT2 (TEMA DARK FORÇADO)
-   Isso garante que os pop-ups não fiquem brancos
+   🚨 OVERRIDE SWEETALERT2 (TEMA DARK/LIGHT DINÂMICO)
    ========================================================= */
 div:where(.swal2-container) div:where(.swal2-popup) {
-  background: #1a1a1a !important;
-  border: 1px solid #333 !important;
-  color: #fff !important;
+  background: var(--card) !important;
+  border: 1px solid var(--card-border) !important;
+  color: var(--foreground) !important;
   border-radius: 12px !important;
 }
 
 div:where(.swal2-container) .swal2-title {
-  color: #fff !important;
+  color: var(--foreground) !important;
 }
 
 div:where(.swal2-container) .swal2-html-container {
-  color: #b9b6c9 !important;
+  color: var(--muted-foreground) !important;
 }
 
 div:where(.swal2-icon).swal2-success {
@@ -126,6 +157,20 @@ div:where(.swal2-container) button.swal2-confirm {
 
 div:where(.swal2-container) button.swal2-cancel {
   background-color: transparent !important;
-  border: 1px solid #444 !important;
-  color: #aaa !important;
+  border: 1px solid var(--card-border) !important;
+  color: var(--muted-foreground) !important;
+}
+
+/* =========================================================
+   🎨 ANIMAÇÃO DE TRANSIÇÃO SUAVE ENTRE TEMAS
+   ========================================================= */
+body, 
+div, 
+header, 
+aside, 
+.card, 
+button {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease;
 }
