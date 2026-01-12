@@ -2,62 +2,54 @@
    VARIÁVEIS CSS - TEMA DARK (PADRÃO)
    ============================================================ */
 :root {
-  /* --- PALETA DE CORES DARK (Baseada no Zenyx Gbot) --- */
-  --background: #0f0b14;       /* Fundo Profundo */
-  --foreground: #f2f2f2;       /* Texto Principal */
-  
-  --card: #1b1730;             /* Fundo dos Cards/Modais */
-  --card-border: #2d2647;      /* Bordas Sutis */
-  
-  --primary: #d65ad1;          /* Magenta Vibrante */
-  --primary-hover: #b942b4;    /* Hover Magenta */
+  /* --- PALETA DE CORES DARK --- */
+  --background: #0f0b14;
+  --foreground: #f2f2f2;
+  --card: #1b1730;
+  --card-border: #2d2647;
+  --primary: #d65ad1;
+  --primary-hover: #b942b4;
   --primary-foreground: #ffffff;
-  
-  --secondary: #221d3a;        /* Roxo Escuro Secundário */
+  --secondary: #221d3a;
   --secondary-foreground: #f2f2f2;
+  --muted: #1f1a2e;
+  --muted-foreground: #b9b6c9;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
   
-  --muted: #1f1a2e;            /* Elementos Apagados */
-  --muted-foreground: #b9b6c9; /* Texto Secundário */
-  
-  --success: #10b981;          /* Verde Neon */
-  --danger: #ef4444;           /* Vermelho Neon */
-  --warning: #f59e0b;          /* Laranja Aviso */
-  
-  /* --- MEDIDAS --- */
-  --radius: 12px;              
-  --sidebar-width: 260px;      
-  --header-height: 70px;       
-
-  /* --- ESPAÇAMENTOS --- */
-  --spacing-sm: 0.5rem;  
-  --spacing-md: 1rem;    
-  --spacing-lg: 1.5rem;  
-  --spacing-xl: 2rem;    
+  --radius: 12px;
+  --sidebar-width: 260px;
+  --header-height: 70px;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
 }
 
 /* ============================================================
-   VARIÁVEIS CSS - TEMA LIGHT
+   VARIÁVEIS CSS - TEMA LIGHT (MELHORADO)
    ============================================================ */
 body.light-theme {
-  --background: #f5f5f7;       /* Fundo Claro */
-  --foreground: #1a1a1a;       /* Texto Escuro */
+  --background: #fafafa;          /* Cinza clarinho */
+  --foreground: #0a0a0a;          /* Preto suave */
   
-  --card: #ffffff;             /* Cards Brancos */
-  --card-border: #e0e0e0;      /* Bordas Suaves */
+  --card: #ffffff;                /* Cards brancos */
+  --card-border: #e5e5e5;         /* Bordas suaves */
   
-  --primary: #c333ff;          /* Magenta Mantém */
-  --primary-hover: #a623db;    
+  --primary: #c333ff;             /* Roxo mantém */
+  --primary-hover: #a623db;
   --primary-foreground: #ffffff;
   
-  --secondary: #f0f0f0;        
-  --secondary-foreground: #1a1a1a;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
   
-  --muted: #e8e8e8;            
-  --muted-foreground: #6b6b6b; /* Texto Cinza */
+  --muted: #f4f4f5;               /* Cinza bem claro */
+  --muted-foreground: #71717a;    /* Cinza médio */
   
-  --success: #10b981;          
-  --danger: #ef4444;           
-  --warning: #f59e0b;          
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
 }
 
 /* ============================================================
@@ -87,7 +79,7 @@ a:hover {
   color: var(--primary);
 }
 
-/* --- SCROLLBAR PERSONALIZADA (ESTILO MODERNO) --- */
+/* --- SCROLLBAR PERSONALIZADA --- */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -100,13 +92,13 @@ a:hover {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary); /* Brilha ao passar o mouse */
+  background: var(--primary);
 }
 
 /* --- RESPONSIVIDADE GLOBAL --- */
 @media (max-width: 768px) {
   :root {
-    --sidebar-width: 0px; 
+    --sidebar-width: 0px;
     --header-height: 60px;
   }
 }
@@ -122,7 +114,7 @@ a:hover {
 }
 
 /* =========================================================
-   🚨 OVERRIDE SWEETALERT2 (TEMA DARK/LIGHT DINÂMICO)
+   OVERRIDE SWEETALERT2 (TEMA DINÂMICO)
    ========================================================= */
 div:where(.swal2-container) div:where(.swal2-popup) {
   background: var(--card) !important;
@@ -162,14 +154,16 @@ div:where(.swal2-container) button.swal2-cancel {
 }
 
 /* =========================================================
-   🎨 ANIMAÇÃO DE TRANSIÇÃO SUAVE ENTRE TEMAS
+   TRANSIÇÃO SUAVE ENTRE TEMAS
    ========================================================= */
 body, 
 div, 
 header, 
 aside, 
 .card, 
-button {
+button,
+.sidebar,
+.dashboard-container {
   transition: background-color 0.3s ease, 
               color 0.3s ease, 
               border-color 0.3s ease;
