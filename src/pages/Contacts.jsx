@@ -45,18 +45,36 @@ export function Contacts() {
       const statsData = await crmService.getFunnelStats(botId);
       setStats(statsData);
       
-      // Carregar dados conforme aba ativa
-      if (activeTab === 'topo') {
-        // Buscar LEADS (tabela leads)
+      // ============================================================
+      // 🔥 CORREÇÃO: ABA "TODOS" BUSCA LEADS + PEDIDOS
+      // ============================================================
+      if (activeTab === 'todos') {
+        // Buscar LEADS (TOPO)
+        const leadsData = await crmService.getLeads(botId, currentPage, perPage);
+        
+        // Buscar PEDIDOS (MEIO + FUNDO + EXPIRADOS)
+        const pedidosData = await crmService.getContacts(botId, 'todos', currentPage, perPage);
+        
+        // Armazenar separadamente para renderizar depois
+        setLeads(leadsData.data || []);
+        setContacts(pedidosData.data || []);
+        
+        // Total combinado
+        const totalCombinado = (leadsData.total || 0) + (pedidosData.total || 0);
+        setTotalContacts(totalCombinado);
+        setTotalPages(Math.ceil(totalCombinado / perPage));
+        
+      } else if (activeTab === 'topo') {
+        // Buscar apenas LEADS
         const leadsData = await crmService.getLeads(botId, currentPage, perPage);
         setLeads(leadsData.data || []);
         setContacts([]);
         setTotalPages(leadsData.total_pages || 1);
         setTotalContacts(leadsData.total || 0);
+        
       } else {
-        // Buscar PEDIDOS (tabela pedidos) com filtro de funil
+        // Buscar apenas PEDIDOS (MEIO, FUNDO, EXPIRADOS)
         const filterMap = {
-          'todos': 'todos',
           'meio': 'meio',
           'fundo': 'fundo',
           'expirados': 'expirado'
@@ -212,7 +230,88 @@ export function Contacts() {
             </div>
           ) : (
             <>
-              {/* TABELA PARA TOPO (LEADS) */}
+              {/* ============================================================ */}
+              {/* 🔥 ABA "TODOS" - MOSTRA LEADS + PEDIDOS COMBINADOS */}
+              {/* ============================================================ */}
+              {activeTab === 'todos' && (leads.length > 0 || contacts.length > 0) && (
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Username</th>
+                      <th>Plano</th>
+                      <th>Valor</th>
+                      <th>Data</th>
+                      <th>Status</th>
+                      <th>Funil</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* RENDERIZAR LEADS PRIMEIRO (TOPO) */}
+                    {leads.map((lead) => (
+                      <tr key={`lead-${lead.id}`}>
+                        <td>{lead.nome || 'Sem nome'}</td>
+                        <td>@{lead.username || 'N/A'}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>{formatDate(lead.primeiro_contato)}</td>
+                        <td>
+                          <span className="status-badge" style={{ 
+                            background: 'rgba(59, 130, 246, 0.1)', 
+                            color: '#3b82f6',
+                            border: '1px solid rgba(59, 130, 246, 0.3)'
+                          }}>
+                            ❄️ LEAD FRIO
+                          </span>
+                        </td>
+                        <td>
+                          <span className="status-badge" style={{ 
+                            background: 'rgba(59, 130, 246, 0.1)', 
+                            color: '#3b82f6',
+                            border: '1px solid rgba(59, 130, 246, 0.3)'
+                          }}>
+                            🎯 TOPO
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    
+                    {/* RENDERIZAR PEDIDOS DEPOIS (MEIO/FUNDO/EXPIRADOS) */}
+                    {contacts.map((contact) => (
+                      <tr key={`contact-${contact.id}`}>
+                        <td>{contact.first_name || 'Sem nome'}</td>
+                        <td>@{contact.username || 'N/A'}</td>
+                        <td>{contact.plano_nome || '-'}</td>
+                        <td>{formatMoney(contact.valor)}</td>
+                        <td>{formatDate(contact.created_at)}</td>
+                        <td>{getStatusBadge(contact.status)}</td>
+                        <td>
+                          <span className="status-badge" style={{
+                            background: 
+                              contact.status_funil === 'fundo' ? 'rgba(16, 185, 129, 0.1)' :
+                              contact.status_funil === 'meio' ? 'rgba(245, 158, 11, 0.1)' :
+                              'rgba(239, 68, 68, 0.1)',
+                            color:
+                              contact.status_funil === 'fundo' ? '#10b981' :
+                              contact.status_funil === 'meio' ? '#f59e0b' :
+                              '#ef4444',
+                            border:
+                              contact.status_funil === 'fundo' ? '1px solid rgba(16, 185, 129, 0.3)' :
+                              contact.status_funil === 'meio' ? '1px solid rgba(245, 158, 11, 0.3)' :
+                              '1px solid rgba(239, 68, 68, 0.3)'
+                          }}>
+                            {contact.status_funil === 'fundo' ? '✅ CLIENTE' :
+                             contact.status_funil === 'meio' ? '🔥 QUENTE' :
+                             '❄️ EXPIRADO'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {/* TABELA PARA TOPO (SOMENTE LEADS) */}
               {activeTab === 'topo' && leads.length > 0 && (
                 <table className="custom-table">
                   <thead>
@@ -246,8 +345,8 @@ export function Contacts() {
                 </table>
               )}
 
-              {/* TABELA PARA MEIO/FUNDO/EXPIRADOS (PEDIDOS) */}
-              {activeTab !== 'topo' && contacts.length > 0 && (
+              {/* TABELA PARA MEIO/FUNDO/EXPIRADOS (SOMENTE PEDIDOS) */}
+              {activeTab !== 'topo' && activeTab !== 'todos' && contacts.length > 0 && (
                 <table className="custom-table">
                   <thead>
                     <tr>
@@ -296,8 +395,9 @@ export function Contacts() {
               )}
 
               {/* Vazio */}
-              {((activeTab === 'topo' && leads.length === 0) || 
-                (activeTab !== 'topo' && contacts.length === 0)) && (
+              {((activeTab === 'todos' && leads.length === 0 && contacts.length === 0) ||
+                (activeTab === 'topo' && leads.length === 0) || 
+                (activeTab !== 'topo' && activeTab !== 'todos' && contacts.length === 0)) && (
                 <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                   <p style={{ color: '#888', fontSize: '1.1rem' }}>
                     {activeTab === 'topo' 
