@@ -75,13 +75,57 @@
 .btn-reuse:hover { background: #444; }
 
 /* HISTÓRICO */
-.history-list { display: grid; gap: 10px; }
+.history-list { display: grid; gap: 10px; margin-bottom: 20px; }
 .history-item { 
     background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; 
 }
 .history-actions { display: flex; gap: 10px; }
 .btn-small { padding: 6px 12px; font-size: 0.85rem; background: #222; border: 1px solid #444; color: #ccc; }
 .btn-small.primary { border-color: #c333ff; color: #c333ff; }
+.btn-small.primary:hover { background: rgba(195, 51, 255, 0.1); }
+
+/* [NOVO] Botão Deletar */
+.btn-small.danger { border-color: #ef4444; color: #ef4444; }
+.btn-small.danger:hover { background: rgba(239, 68, 68, 0.1); }
+
 .btn-small:hover { background: #333; }
+
+/* [NOVO] CONTROLES DE PAGINAÇÃO */
+.pagination-controls-remarketing {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-top: 1px solid #333;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 8px 8px;
+  margin-top: 0;
+}
+
+.pagination-controls-remarketing .page-info {
+  color: var(--foreground);
+  font-size: 0.9rem;
+}
+
+.pagination-controls-remarketing .page-info strong {
+  color: #c333ff;
+  font-weight: 700;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 768px) {
+  .remarketing-container { padding: 15px; margin-left: 0; }
+  .history-item { flex-direction: column; gap: 15px; align-items: flex-start; }
+  .history-actions { width: 100%; justify-content: space-between; }
+  
+  /* [NOVO] Paginação mobile */
+  .pagination-controls-remarketing { 
+    flex-direction: column; 
+    gap: 15px; 
+  }
+  .pagination-controls-remarketing .page-info { 
+    text-align: center; 
+  }
+}
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
