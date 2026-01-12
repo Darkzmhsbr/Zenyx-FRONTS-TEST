@@ -118,6 +118,26 @@
 .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
 .status-expired { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
 
+/* --- [NOVO] CONTROLES DE PAGINAÇÃO --- */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-top: 1px solid var(--card-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.page-info {
+  color: var(--foreground);
+  font-size: 0.9rem;
+}
+
+.page-info strong {
+  color: #c333ff;
+  font-weight: 700;
+}
+
 /* --- MODAL POP-UP --- */
 .modal-overlay {
     position: fixed; 
@@ -130,8 +150,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    
-    /* Z-Index alto, mas MENOR que o do SweetAlert */
     z-index: 9999; 
     animation: fadeIn 0.2s ease-in-out;
 }
@@ -169,13 +187,18 @@
   .custom-table, .custom-table tbody, .custom-table tr, .custom-table td { display: block; width: 100%; }
   .custom-table tr { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 20px; padding: 15px; }
   .custom-table td { display: flex; justify-content: space-between; text-align: right; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  
+  /* [NOVO] Paginação mobile */
+  .pagination-controls { 
+    flex-direction: column; 
+    gap: 15px; 
+  }
+  .page-info { 
+    text-align: center; 
+  }
 }
 
-/* =========================================================
-   🚨 CORREÇÃO DEFINITIVA DE Z-INDEX (SUPER ALERTA)
-   Removemos o :where para aumentar a especificidade e 
-   usamos o valor máximo de inteiro para garantir topo absoluto.
-   ========================================================= */
+/* SweetAlert z-index fix */
 .swal2-container {
-  z-index: 2147483647 !important; /* Valor máximo permitido pelo navegador */
+  z-index: 2147483647 !important;
 }
