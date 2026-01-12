@@ -1,11 +1,63 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useBot } from '../context/BotContext';
-import { Bot, ChevronDown, Check, Bell, Moon, Menu } from 'lucide-react'; 
+import { Bot, ChevronDown, Check, Bell, Moon, Sun, Menu, User, Settings, LogOut } from 'lucide-react'; 
 import './Header.css'; 
 
 export function Header({ onToggleMenu }) {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const { bots, selectedBot, changeBot } = useBot();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  const [isBotMenuOpen, setIsBotMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Padrão: dark
+
+  // ============================================================
+  // FUNÇÃO: TOGGLE DARK MODE
+  // ============================================================
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    
+    // Salva preferência no localStorage
+    localStorage.setItem('zenyx_theme', newTheme ? 'dark' : 'light');
+    
+    // Aplica classe no body
+    if (newTheme) {
+      document.body.classList.remove('light-theme');
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+      document.body.classList.add('light-theme');
+    }
+  };
+
+  // ============================================================
+  // FUNÇÃO: LOGOUT
+  // ============================================================
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  // ============================================================
+  // INICIALIZA TEMA AO CARREGAR
+  // ============================================================
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem('zenyx_theme') || 'dark';
+    const isDark = savedTheme === 'dark';
+    setIsDarkMode(isDark);
+    
+    if (isDark) {
+      document.body.classList.add('dark-theme');
+      document.body.classList.remove('light-theme');
+    } else {
+      document.body.classList.add('light-theme');
+      document.body.classList.remove('dark-theme');
+    }
+  }, []);
 
   return (
     <header className="header">
@@ -26,8 +78,8 @@ export function Header({ onToggleMenu }) {
         {/* --- SELETOR DE BOT GLOBAL --- */}
         <div className="bot-selector-wrapper">
           <button 
-            className={`bot-selector-btn ${isMenuOpen ? 'active' : ''}`} 
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className={`bot-selector-btn ${isBotMenuOpen ? 'active' : ''}`} 
+            onClick={() => setIsBotMenuOpen(!isBotMenuOpen)}
           >
             <div className="bot-icon-circle">
               <Bot size={20} />
@@ -38,8 +90,8 @@ export function Header({ onToggleMenu }) {
             <ChevronDown size={16} />
           </button>
 
-          {/* Menu Dropdown */}
-          {isMenuOpen && (
+          {/* Menu Dropdown de Bots */}
+          {isBotMenuOpen && (
             <div className="bot-dropdown-menu">
               <div className="dropdown-header">Meus bots ativos</div>
               
@@ -52,7 +104,7 @@ export function Header({ onToggleMenu }) {
                     className={`dropdown-item ${selectedBot?.id === bot.id ? 'selected' : ''}`}
                     onClick={() => {
                       changeBot(bot);
-                      setIsMenuOpen(false);
+                      setIsBotMenuOpen(false);
                     }}
                   >
                     <div className="bot-mini-icon"><Bot size={16}/></div>
@@ -69,10 +121,79 @@ export function Header({ onToggleMenu }) {
           )}
         </div>
         
-        {/* Outros ícones */}
-        <button className="icon-btn"><Bell size={20} /></button>
-        <button className="icon-btn"><Moon size={20} /></button>
-        <div className="user-avatar">AD</div>
+        {/* ÍCONE: NOTIFICAÇÕES (implementaremos depois) */}
+        <button className="icon-btn" title="Notificações">
+          <Bell size={20} />
+        </button>
+
+        {/* ÍCONE: DARK MODE TOGGLE */}
+        <button 
+          className="icon-btn" 
+          onClick={toggleTheme}
+          title={isDarkMode ? "Modo Claro" : "Modo Escuro"}
+        >
+          {isDarkMode ? <Moon size={20} /> : <Sun size={20} />}
+        </button>
+
+        {/* ÍCONE: PERFIL COM DROPDOWN */}
+        <div className="profile-dropdown-wrapper">
+          <div 
+            className="user-avatar" 
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            style={{ cursor: 'pointer' }}
+          >
+            {user?.name ? user.name.substring(0, 2).toUpperCase() : 'AD'}
+          </div>
+
+          {/* DROPDOWN DE PERFIL */}
+          {isProfileMenuOpen && (
+            <div className="profile-dropdown-menu">
+              <div className="profile-dropdown-header">
+                <div className="profile-avatar-large">
+                  {user?.name ? user.name.substring(0, 2).toUpperCase() : 'AD'}
+                </div>
+                <div>
+                  <div className="profile-name">{user?.name || 'Admin'}</div>
+                  <div className="profile-email">{user?.username || 'admin@zenyx.com'}</div>
+                </div>
+              </div>
+
+              <div className="profile-dropdown-divider"></div>
+
+              <div 
+                className="profile-dropdown-item"
+                onClick={() => {
+                  navigate('/perfil');
+                  setIsProfileMenuOpen(false);
+                }}
+              >
+                <User size={16} />
+                <span>Meu Perfil</span>
+              </div>
+
+              <div 
+                className="profile-dropdown-item"
+                onClick={() => {
+                  navigate('/config');
+                  setIsProfileMenuOpen(false);
+                }}
+              >
+                <Settings size={16} />
+                <span>Configurações</span>
+              </div>
+
+              <div className="profile-dropdown-divider"></div>
+
+              <div 
+                className="profile-dropdown-item danger"
+                onClick={handleLogout}
+              >
+                <LogOut size={16} />
+                <span>Sair</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
