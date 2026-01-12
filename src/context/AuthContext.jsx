@@ -10,15 +10,18 @@ export function AuthProvider({ children }) {
     // Verifica se já tem login salvo ao abrir o site
     const savedUser = localStorage.getItem('zenyx_admin_user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error("Erro ao carregar usuário:", error);
+        localStorage.removeItem('zenyx_admin_user');
+      }
     }
     setLoading(false);
   }, []);
 
   const login = (username, password) => {
     // 🔒 VALIDAÇÃO SIMPLES (FRONTEND)
-    // Para segurança máxima, isso deveria ser checado no backend,
-    // mas para bloquear o painel visualmente agora, isso resolve.
     if (username === 'ZeKai' && password === '123456') {
       const userData = { name: 'Admin Zenyx', username };
       setUser(userData);
@@ -28,10 +31,22 @@ export function AuthProvider({ children }) {
     return false;
   };
 
+  // ============================================================
+  // 🔥 FUNÇÃO LOGOUT CORRIGIDA
+  // ============================================================
   const logout = () => {
+    console.log("🚪 Fazendo logout...");
+    
+    // Limpa estado
     setUser(null);
+    
+    // Limpa localStorage
     localStorage.removeItem('zenyx_admin_user');
-    localStorage.removeItem('zenyx_selected_bot'); // Limpa seleção de bot também
+    localStorage.removeItem('zenyx_selected_bot');
+    localStorage.removeItem('zenyx_theme');
+    
+    // Força reload da página para garantir limpeza total
+    window.location.href = '/login';
   };
 
   return (
@@ -42,5 +57,9 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de AuthProvider');
+  }
+  return context;
 }
