@@ -1,24 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { crmService, remarketingService } from '../services/api'; 
 import { useBot } from '../context/BotContext';
-import { crmService, remarketingService } from '../services/api';
+import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Edit, Send, Zap, Shield, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/Button';
-import { Edit, RefreshCw, Send, CheckCircle, XCircle, Clock } from 'lucide-react';
 import Swal from 'sweetalert2';
 import './Contacts.css';
 
 export function Contacts() {
   const { selectedBot } = useBot();
-  const [filter, setFilter] = useState('todos');
   const [contacts, setContacts] = useState([]);
-  const [leads, setLeads] = useState([]); // 🔥 NOVO: Para armazenar leads
+  const [filter, setFilter] = useState('todos');
   const [loading, setLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
+  
+  // Paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const perPage = 50;
+  const [totalCount, setTotalCount] = useState(0);
+  const [perPage] = useState(50);
 
+  // Estados do Modal
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  
+  // Histórico de Campanhas
   const [campaignHistory, setCampaignHistory] = useState([]);
 
   useEffect(() => {
@@ -28,38 +32,18 @@ export function Contacts() {
     }
   }, [selectedBot, filter, currentPage]);
 
-  // 🔥 FUNÇÃO ATUALIZADA: Busca LEADS + PEDIDOS quando filtro = "todos"
   const carregarContatos = async () => {
     if (!selectedBot) return;
     setLoading(true);
     try {
-      if (filter === 'todos') {
-        // Buscar LEADS + PEDIDOS
-        const [leadsResponse, pedidosResponse] = await Promise.all([
-          crmService.getLeads(selectedBot.id, currentPage, perPage),
-          crmService.getContacts(selectedBot.id, 'todos', currentPage, perPage)
-        ]);
-        
-        setLeads(Array.isArray(leadsResponse.data) ? leadsResponse.data : []);
-        setContacts(Array.isArray(pedidosResponse.data) ? pedidosResponse.data : []);
-        
-        const totalCombinado = (leadsResponse.total || 0) + (pedidosResponse.total || 0);
-        setTotalCount(totalCombinado);
-        setTotalPages(Math.ceil(totalCombinado / perPage));
-        
-      } else {
-        // Buscar apenas PEDIDOS com filtro específico
-        const response = await crmService.getContacts(selectedBot.id, filter, currentPage, perPage);
-        
-        setContacts(Array.isArray(response.data) ? response.data : []);
-        setLeads([]);
-        setTotalCount(response.total || 0);
-        setTotalPages(response.total_pages || 1);
-      }
+      const response = await crmService.getContacts(selectedBot.id, filter, currentPage, perPage);
+      
+      setContacts(Array.isArray(response.data) ? response.data : []);
+      setTotalCount(response.total || 0);
+      setTotalPages(response.total_pages || 1);
     } catch (error) {
       console.error("Erro ao listar contatos", error);
       setContacts([]);
-      setLeads([]);
     } finally {
       setLoading(false);
     }
@@ -94,7 +78,7 @@ export function Contacts() {
       setEditingUser({
           id: user.id,
           telegram_id: user.telegram_id,
-          name: user.first_name || user.nome || 'Sem nome',
+          name: user.first_name || 'Sem nome',
           username: user.username,
           status: user.status,
           role: user.role || 'user',
@@ -109,16 +93,23 @@ export function Contacts() {
           await crmService.updateUser(editingUser.id, {
               status: editingUser.status,
               role: editingUser.role,
-              custom_expiration: editingUser.custom_expiration
+              custom_expiration: editingUser.custom_expiration || 'remover'
           });
-          Swal.fire({title: 'Salvo!', text: 'Usuário atualizado', icon: 'success', background: '#151515', color: '#fff'});
+          Swal.fire({
+            title: 'Salvo!',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false,
+            background: '#151515', color: '#fff'
+          });
           setShowUserModal(false);
           carregarContatos();
-      } catch (error) {
-          Swal.fire('Erro', 'Falha ao salvar usuário', 'error');
+      } catch (error) { 
+          Swal.fire('Erro', 'Falha ao salvar.', 'error'); 
       }
   };
 
+  // --- DISPARO INDIVIDUAL ---
   const handleIndividualCampaign = async (historyId) => {
       try {
           await remarketingService.sendIndividual(selectedBot.id, editingUser.telegram_id, historyId);
@@ -142,236 +133,212 @@ export function Contacts() {
   const getStatusBadge = (status) => {
     if (['paid', 'active', 'approved'].includes(status)) return <span className="status-badge status-paid"><CheckCircle size={12}/> Ativo</span>;
     if (status === 'expired') return <span className="status-badge status-expired"><XCircle size={12}/> Expirado</span>;
-    if (status === 'pending') return <span className="status-badge status-pending"><Clock size={12}/> Pendente</span>;
-    return <span className="status-badge">{status}</span>;
+    return <span className="status-badge status-pending"><Clock size={12}/> Pendente</span>;
   };
 
+  if (!selectedBot) return <div className="contacts-container"><p style={{textAlign:'center', marginTop:50, color:'#666'}}>Selecione um bot.</p></div>;
+
   return (
-    <div className="contacts-page">
+    <div className="contacts-container">
       <div className="contacts-header">
-        <div>
-          <h1>Contatos ({totalCount})</h1>
-          <p style={{fontSize: '0.9rem', color: 'var(--muted-foreground)', marginTop: '5px'}}>
-            {selectedBot ? `Bot: ${selectedBot.nome}` : 'Selecione um bot'}
-          </p>
+        <h1>Contatos <span style={{fontSize:'0.9rem', color:'#666'}}>({totalCount})</span></h1>
+        <Button onClick={carregarContatos} variant="outline"><RefreshCw size={16}/></Button>
+      </div>
+
+      <div className="tabs-container">
+        <div className="filters-bar">
+          {['todos', 'pagantes', 'pendentes', 'expirados'].map(f => (
+            <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => handleFilterChange(f)}>
+              {f.toUpperCase()}
+            </button>
+          ))}
         </div>
-        <Button onClick={carregarContatos} disabled={loading}>
-          <RefreshCw size={18} className={loading ? 'spin' : ''} />
-          Atualizar
-        </Button>
       </div>
 
-      {/* Filtros */}
-      <div className="filters-bar">
-        <button className={`filter-tab ${filter === 'todos' ? 'active' : ''}`} onClick={() => handleFilterChange('todos')}>
-          TODOS
-        </button>
-        <button className={`filter-tab ${filter === 'pagantes' ? 'active' : ''}`} onClick={() => handleFilterChange('pagantes')}>
-          PAGANTES
-        </button>
-        <button className={`filter-tab ${filter === 'pendentes' ? 'active' : ''}`} onClick={() => handleFilterChange('pendentes')}>
-          PENDENTES
-        </button>
-        <button className={`filter-tab ${filter === 'expirados' ? 'active' : ''}`} onClick={() => handleFilterChange('expirados')}>
-          EXPIRADOS
-        </button>
-      </div>
-
-      {/* Tabela */}
-      <div className="table-wrapper">
-        <table className="contacts-table">
-          <thead>
-            <tr>
-              <th>USUÁRIO</th>
-              <th>PLANO / VALOR</th>
-              <th>STATUS</th>
-              <th>CARGO</th>
-              <th>EXPIRAÇÃO</th>
-              <th>AÇÃO</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="6" style={{textAlign: 'center', padding: '40px'}}>
-                  <RefreshCw size={24} className="spin" style={{margin: '0 auto 10px'}} />
-                  <p>Carregando...</p>
-                </td>
-              </tr>
-            ) : (
-              <>
-                {/* 🔥 RENDERIZAR LEADS (só no filtro TODOS) */}
-                {filter === 'todos' && leads.map(lead => (
-                  <tr key={`lead-${lead.id}`}>
-                    <td>
-                      <div className="user-info">
-                        <div className="user-avatar">{(lead.nome || 'S')[0].toUpperCase()}</div>
-                        <div>
-                          <div className="user-name">{lead.nome || 'Sem nome'}</div>
-                          <div className="user-username">@{lead.username || 'N/A'}</div>
-                        </div>
-                      </div>
+      <div className="table-container">
+        {loading ? <p style={{padding:20, textAlign:'center'}}>Carregando...</p> : (
+          <>
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>Usuário</th>
+                  <th>Plano / Valor</th>
+                  <th>Status</th>
+                  <th>Cargo</th>
+                  <th>Expiração</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contacts.length > 0 ? contacts.map((c) => (
+                  <tr key={c.id}>
+                    <td data-label="Usuário">
+                      <div style={{ fontWeight: '600', color: '#fff' }}>{c.first_name || 'Sem nome'}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#666' }}>@{c.username || '...'}</div>
                     </td>
-                    <td>
-                      <div className="plan-info">
-                        <div className="plan-name">-</div>
-                        <div className="plan-price">-</div>
-                      </div>
+                    <td data-label="Plano">
+                      <div style={{fontSize:'0.85rem'}}>{c.plano_nome || '-'}</div>
+                      <div style={{fontWeight:'bold'}}>R$ {c.valor ? c.valor.toFixed(2) : '0.00'}</div>
                     </td>
-                    <td>
-                      <span className="status-badge" style={{
-                        background: 'rgba(59, 130, 246, 0.1)',
-                        color: '#3b82f6',
-                        border: '1px solid rgba(59, 130, 246, 0.3)'
-                      }}>
-                        ❄️ LEAD FRIO
-                      </span>
+                    <td data-label="Status">{getStatusBadge(c.status)}</td>
+                    <td data-label="Cargo">
+                        {c.role === 'admin' ? <span style={{color:'#c333ff', fontWeight:'bold'}}>Admin</span> : 'Usuário'}
                     </td>
-                    <td>Usuário</td>
-                    <td>-</td>
-                    <td>
-                      <Button size="sm" variant="ghost" disabled>
-                        <Edit size={16} />
-                      </Button>
+                    <td data-label="Expiração">
+                      {['paid','active','approved'].includes(c.status) 
+                          ? (c.custom_expiration ? formatDate(c.custom_expiration) : <span style={{color:'#10b981'}}>Vitalício</span>) 
+                          : '-'}
+                    </td>
+                    <td data-label="Ação">
+                      <Button size="sm" onClick={() => openUserEdit(c)}><Edit size={14}/></Button>
                     </td>
                   </tr>
-                ))}
-
-                {/* RENDERIZAR PEDIDOS */}
-                {contacts.map(contact => (
-                  <tr key={`contact-${contact.id}`}>
-                    <td>
-                      <div className="user-info">
-                        <div className="user-avatar">{(contact.first_name || 'S')[0].toUpperCase()}</div>
-                        <div>
-                          <div className="user-name">{contact.first_name || 'Sem nome'}</div>
-                          <div className="user-username">@{contact.username || 'N/A'}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="plan-info">
-                        <div className="plan-name">{contact.plano_nome || '-'}</div>
-                        <div className="plan-price">
-                          {contact.valor ? `R$ ${contact.valor.toFixed(2)}` : '-'}
-                        </div>
-                      </div>
-                    </td>
-                    <td>{getStatusBadge(contact.status)}</td>
-                    <td>{contact.role === 'admin' ? 'Admin' : 'Usuário'}</td>
-                    <td>{formatDate(contact.custom_expiration || contact.data_expiracao)}</td>
-                    <td>
-                      <Button size="sm" variant="ghost" onClick={() => openUserEdit(contact)}>
-                        <Edit size={16} />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-
-                {leads.length === 0 && contacts.length === 0 && (
-                  <tr>
-                    <td colSpan="6" style={{textAlign: 'center', padding: '40px', color: '#888'}}>
-                      Nenhum contato encontrado
-                    </td>
-                  </tr>
+                )) : (
+                  <tr><td colSpan="6" style={{textAlign:'center', padding:'30px', color:'#666'}}>Nenhum contato encontrado.</td></tr>
                 )}
-              </>
-            )}
-          </tbody>
-        </table>
-      </div>
+              </tbody>
+            </table>
 
-      {/* Paginação */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <Button variant="ghost" onClick={prevPage} disabled={currentPage === 1}>
-            Anterior
-          </Button>
-          <span>Página {currentPage} de {totalPages}</span>
-          <Button variant="ghost" onClick={nextPage} disabled={currentPage === totalPages}>
-            Próxima
-          </Button>
-        </div>
-      )}
+            {totalPages > 1 && (
+              <div className="pagination-controls">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={prevPage} 
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft size={16} /> Anterior
+                </Button>
+                
+                <div className="page-info">
+                  Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+                  <span style={{marginLeft:'10px', color:'#666'}}>
+                    ({contacts.length} de {totalCount} registros)
+                  </span>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={nextPage} 
+                  disabled={currentPage === totalPages}
+                >
+                  Próxima <ChevronRight size={16} />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* MODAL DE EDIÇÃO */}
       {showUserModal && editingUser && (
-        <div className="modal-overlay" onClick={() => setShowUserModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Editar Usuário</h3>
-              <span className="user-id-badge">ID: {editingUser.telegram_id} • {editingUser.name}</span>
-              <button className="modal-close" onClick={() => setShowUserModal(false)}>✕</button>
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
+                    <div>
+                        <h2 style={{margin:0}}>Editar Usuário</h2>
+                        <span style={{fontSize:'0.85rem', color:'#888'}}>ID: {editingUser.telegram_id} • {editingUser.name}</span>
+                    </div>
+                    <button className="icon-btn" onClick={() => setShowUserModal(false)}><XCircle size={24}/></button>
+                </div>
+
+                {/* DISPARO RÁPIDO */}
+                <div style={{background: 'rgba(195, 51, 255, 0.05)', border: '1px solid rgba(195, 51, 255, 0.2)', borderRadius:'8px', padding:'15px', marginBottom:'20px'}}>
+                    <h4 style={{margin:'0 0 10px 0', color:'#c333ff', display:'flex', alignItems:'center', gap:'8px'}}>
+                        <Zap size={16}/> Enviar Campanha Rápida
+                    </h4>
+                    {campaignHistory.length === 0 ? (
+                        <p style={{fontSize:'0.8rem', color:'#666', fontStyle:'italic'}}>Nenhuma campanha recente encontrada.</p>
+                    ) : (
+                        <div style={{display:'flex', flexDirection:'column', gap:'8px'}}>
+                            {campaignHistory.map(camp => {
+                                let config = {};
+                                try { 
+                                  config = typeof camp.config === 'string' ? JSON.parse(camp.config) : camp.config;
+                                } catch(e){
+                                  console.error('Erro ao parsear config:', e);
+                                }
+                                
+                                const mensagem = config.mensagem || config.msg || 'Sem texto';
+                                const dataFormatada = new Date(camp.data_envio).toLocaleDateString('pt-BR');
+                                
+                                return (
+                                    <div key={camp.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(0,0,0,0.3)', padding:'8px', borderRadius:'6px'}}>
+                                        <div style={{fontSize:'0.8rem', color:'#ccc', maxWidth:'70%', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                                            {dataFormatada} - {mensagem.substring(0, 30)}...
+                                        </div>
+                                        <Button size="sm" style={{fontSize:'0.7rem', padding:'4px 8px'}} onClick={() => handleIndividualCampaign(camp.id)}>
+                                            Enviar <Send size={10} style={{marginLeft:4}}/>
+                                        </Button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* FORMULÁRIO */}
+                <form onSubmit={handleSaveUser}>
+                    
+                    {/* CARGO */}
+                    <div className="form-group">
+                        <label>Cargo</label>
+                        <div style={{position:'relative'}}>
+                            <Shield size={16} style={{position:'absolute', left:10, top:12, color:'#888'}}/>
+                            <select 
+                                className="input-field" 
+                                style={{paddingLeft:'35px'}}
+                                value={editingUser.role} 
+                                onChange={e => setEditingUser({...editingUser, role: e.target.value})}
+                            >
+                                <option value="user">Usuário Comum</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* STATUS */}
+                    <div className="form-group">
+                        <label>Status Financeiro</label>
+                        <select className="input-field" value={editingUser.status} onChange={e => setEditingUser({...editingUser, status: e.target.value})}>
+                            <option value="pending">⏳ Pendente</option>
+                            <option value="paid">✅ Ativo / Pago</option>
+                            <option value="expired">🚫 Expirado</option>
+                        </select>
+                    </div>
+
+                    {/* DATA DE EXPIRAÇÃO */}
+                    <div className="form-group">
+                        <label>Data Personalizada</label>
+                        <div style={{display:'flex', gap:'10px'}}>
+                            <div style={{position:'relative', flex:1}}>
+                                <Calendar size={16} style={{position:'absolute', left:10, top:12, color:'#888'}}/>
+                                <input 
+                                    type="date" 
+                                    className="input-field" 
+                                    style={{paddingLeft:'35px'}}
+                                    value={editingUser.custom_expiration} 
+                                    onChange={e => setEditingUser({...editingUser, custom_expiration: e.target.value})}
+                                />
+                            </div>
+                        </div>
+                        <div style={{marginTop:10, display:'flex', gap:10}}>
+                            <button type="button" className="btn-small primary" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>
+                                ♾️ Vitalício
+                            </button>
+                            <button type="button" className="btn-small danger" onClick={() => setEditingUser({...editingUser, custom_expiration: 'remover'})}>
+                                <Trash2 size={14}/> Remover Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="modal-actions" style={{borderTop:'1px solid #333', paddingTop:'15px', marginTop:'10px'}}>
+                        <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Cancelar</button>
+                        <button type="submit" className="btn-save">Salvar Alterações</button>
+                    </div>
+                </form>
             </div>
-
-            <form onSubmit={handleSaveUser}>
-              {/* Enviar Campanha Rápida */}
-              {campaignHistory.length > 0 && (
-                <div className="quick-campaign-section">
-                  <h4 style={{marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px'}}>
-                    <Send size={16} /> Enviar Campanha Rápida
-                  </h4>
-                  <div className="campaign-history-quick">
-                    {campaignHistory.map((camp) => (
-                      <div key={camp.id} className="campaign-item-mini">
-                        <span className="campaign-date-mini">
-                          {camp.data_envio ? new Date(camp.data_envio).toLocaleDateString('pt-BR') : camp.data}
-                        </span>
-                        <span className="campaign-target-mini">{camp.target?.toUpperCase() || 'TODOS'}</span>
-                        <Button size="sm" style={{fontSize:'0.7rem', padding:'4px 8px'}} onClick={() => handleIndividualCampaign(camp.id)}>
-                          Enviar
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Campos de Edição */}
-              <div className="form-group">
-                <label>Cargo</label>
-                <select value={editingUser.role} onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}>
-                  <option value="user">Usuário</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Status</label>
-                <select value={editingUser.status} onChange={(e) => setEditingUser({...editingUser, status: e.target.value})}>
-                  <option value="paid">Ativo</option>
-                  <option value="pending">Pendente</option>
-                  <option value="expired">Expirado</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Data de Expiração</label>
-                <input 
-                  type="date" 
-                  value={editingUser.custom_expiration} 
-                  onChange={(e) => setEditingUser({...editingUser, custom_expiration: e.target.value})}
-                />
-                <div style={{display: 'flex', gap: '10px', marginTop: '8px'}}>
-                  <Button type="button" size="sm" onClick={() => setEditingUser({...editingUser, custom_expiration: '9999-12-31'})}>
-                    ♾️ Vitalício
-                  </Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setEditingUser({...editingUser, custom_expiration: ''})}>
-                    🗑️ Remover Data
-                  </Button>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <Button type="button" variant="ghost" onClick={() => setShowUserModal(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  Salvar Alterações
-                </Button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>
