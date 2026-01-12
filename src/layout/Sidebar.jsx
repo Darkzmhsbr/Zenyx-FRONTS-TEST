@@ -17,23 +17,24 @@ import {
   ShieldCheck,
   Layers,
   Unlock,
-  X 
+  X,
+  TrendingUp // 🔥 NOVO ÍCONE PARA FUNIL
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext'; // [NOVO] Importa useAuth
+import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
 // Recebe props isOpen e onClose do Layout
 export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
-  const navigate = useNavigate(); // [NOVO]
-  const { logout } = useAuth(); // [NOVO]
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const currentPath = location.pathname;
   
   const [isBotMenuOpen, setIsBotMenuOpen] = useState(true);
   const [isExtrasMenuOpen, setIsExtrasMenuOpen] = useState(false);
 
   // ============================================================
-  // 🔥 FUNÇÃO DE LOGOUT (IGUAL AO HEADER)
+  // 🔥 FUNÇÃO DE LOGOUT
   // ============================================================
   const handleLogout = () => {
     console.log('🚪 LOGOUT - Sidebar');
@@ -63,7 +64,6 @@ export function Sidebar({ isOpen, onClose }) {
   };
 
   return (
-    // Adiciona classe 'open' se isOpen for true
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
@@ -122,6 +122,12 @@ export function Sidebar({ isOpen, onClose }) {
           )}
         </div>
 
+        {/* 🔥 FUNIL (NOVO) */}
+        <Link to="/funil" className={`nav-item ${currentPath === '/funil' ? 'active' : ''}`} onClick={onClose}>
+          <TrendingUp size={20} />
+          Funil
+        </Link>
+
         {/* Contatos */}
         <Link to="/contatos" className={`nav-item ${currentPath === '/contatos' ? 'active' : ''}`} onClick={onClose}>
           <Users size={20} />
@@ -177,7 +183,7 @@ export function Sidebar({ isOpen, onClose }) {
           Integrações
         </Link>
 
-        {/* 🔥 BOTÃO SAIR COM FUNÇÃO CORRIGIDA */}
+        {/* 🔥 BOTÃO SAIR */}
         <div 
           className="nav-item logout" 
           style={{ marginTop: 'auto', cursor: 'pointer' }} 
