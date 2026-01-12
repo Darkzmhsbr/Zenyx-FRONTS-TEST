@@ -53,7 +53,7 @@ export const planService = {
 };
 
 // ============================================================
-// 📢 SERVIÇO DE REMARKETING
+// 📢 SERVIÇO DE REMARKETING (ATUALIZADO COM FUNIL)
 // ============================================================
 export const remarketingService = {
   send: async (botId, data, isTest = false, specificUserId = null) => {
@@ -132,15 +132,68 @@ export const flowService = {
   }
 };
 
-// --- CRM / CONTATOS ---
+// ============================================================
+// 👥 CRM / CONTATOS (ATUALIZADO COM FUNIL)
+// ============================================================
 export const crmService = {
-  getContacts: async (botId, filter = 'todos') => {
-    const url = botId 
-        ? `/api/admin/contacts?bot_id=${botId}&status=${filter}` 
-        : `/api/admin/contacts?status=${filter}`;
+  // [ATUALIZADO] Agora suporta filtros de funil
+  getContacts: async (botId, filter = 'todos', page = 1, perPage = 50) => {
+    const params = new URLSearchParams({
+      status: filter,
+      page: page.toString(),
+      per_page: perPage.toString()
+    });
+    
+    if (botId) {
+      params.append('bot_id', botId);
+    }
+    
+    const url = `/api/admin/contacts?${params.toString()}`;
     const response = await api.get(url);
     return response.data;
   },
+  
+  // [NOVO] Buscar leads (TOPO do funil)
+  getLeads: async (botId, page = 1, perPage = 50) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString()
+    });
+    
+    if (botId) {
+      params.append('bot_id', botId);
+    }
+    
+    const url = `/api/admin/leads?${params.toString()}`;
+    try {
+      const response = await api.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar leads:', error);
+      return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 };
+    }
+  },
+  
+  // [NOVO] Estatísticas do funil
+  getFunnelStats: async (botId) => {
+    try {
+      const url = botId 
+        ? `/api/admin/contacts/funnel-stats?bot_id=${botId}`
+        : '/api/admin/contacts/funnel-stats';
+      const response = await api.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas do funil:', error);
+      return {
+        topo: 0,
+        meio: 0,
+        fundo: 0,
+        expirados: 0,
+        total: 0
+      };
+    }
+  },
+  
   updateUser: async (userId, data) => (await api.put(`/api/admin/users/${userId}`, data)).data,
   resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
 };
