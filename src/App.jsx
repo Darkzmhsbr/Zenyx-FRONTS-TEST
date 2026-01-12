@@ -1,11 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { BotProvider } from './context/BotContext';
-import { AuthProvider } from './context/AuthContext'; // <--- Importe Auth
-import { MainLayout } from './layout/MainLayout';      // <--- Importe Layout
-import { Login } from './pages/Login';                 // <--- Importe Login
+import { AuthProvider } from './context/AuthContext';
+import { MainLayout } from './layout/MainLayout';
+import { Login } from './pages/Login';
 
 import { Dashboard } from './pages/Dashboard';
 import { Contacts } from './pages/Contacts';
+import { Funil } from './pages/Funil'; // 🔥 NOVO IMPORT
 import { Plans } from './pages/Plans';
 import { Bots } from './pages/Bots';
 import { NewBot } from './pages/NewBot';
@@ -13,7 +14,7 @@ import { BotConfig } from './pages/BotConfig';
 import { Integrations } from './pages/Integrations';
 import { ChatFlow } from './pages/ChatFlow';
 import { Remarketing } from './pages/Remarketing';
-import { AdminManager } from './pages/AdminManager'; // <--- NOVO IMPORT (ADICIONADO)
+import { AdminManager } from './pages/AdminManager';
 
 // Placeholder para Logout
 const Logout = () => {
@@ -31,8 +32,8 @@ const PlaceholderPage = ({ title }) => (
 
 function App() {
   return (
-    <AuthProvider> {/* 1. Auth envolve tudo para prover user */}
-      <BotProvider> {/* 2. BotProvider dentro de Auth (opcional, mas comum) */}
+    <AuthProvider>
+      <BotProvider>
         <Router>
           <Routes>
             
@@ -48,6 +49,7 @@ function App() {
               <Route path="/bots/new" element={<NewBot />} />
               <Route path="/bots/config/:id" element={<BotConfig />} />
               
+              <Route path="/funil" element={<Funil />} /> {/* 🔥 NOVA ROTA */}
               <Route path="/contatos" element={<Contacts />} />
               <Route path="/planos" element={<Plans />} />
               <Route path="/flow" element={<ChatFlow />} />
@@ -59,7 +61,7 @@ function App() {
               
               {/* FUNÇÕES EXTRAS */}
               <Route path="/funcoes" element={<PlaceholderPage title="Funções Extras" />} />
-              <Route path="/funcoes/admins" element={<AdminManager />} /> {/* <--- NOVA ROTA (ADICIONADA) */}
+              <Route path="/funcoes/admins" element={<AdminManager />} />
             </Route>
 
             {/* Qualquer outra rota redireciona para login */}
