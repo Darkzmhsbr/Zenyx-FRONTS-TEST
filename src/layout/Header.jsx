@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useBot } from '../context/BotContext';
@@ -12,7 +12,48 @@ export function Header({ onToggleMenu }) {
   
   const [isBotMenuOpen, setIsBotMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true); // Padrão: dark
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  // ============================================================
+  // INICIALIZA TEMA AO CARREGAR (EFFECT PRIMEIRO)
+  // ============================================================
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('zenyx_theme') || 'dark';
+    const isDark = savedTheme === 'dark';
+    setIsDarkMode(isDark);
+    applyTheme(isDark);
+  }, []);
+
+  // ============================================================
+  // FUNÇÃO: APLICAR TEMA
+  // ============================================================
+  const applyTheme = (isDark) => {
+    const root = document.documentElement;
+    
+    if (isDark) {
+      // TEMA DARK
+      root.style.setProperty('--background', '#0f0b14');
+      root.style.setProperty('--foreground', '#f2f2f2');
+      root.style.setProperty('--card', '#1b1730');
+      root.style.setProperty('--card-border', '#2d2647');
+      root.style.setProperty('--muted', '#1f1a2e');
+      root.style.setProperty('--muted-foreground', '#b9b6c9');
+      
+      document.body.classList.remove('light-theme');
+      document.body.classList.add('dark-theme');
+    } else {
+      // TEMA LIGHT
+      root.style.setProperty('--background', '#f5f5f7');
+      root.style.setProperty('--foreground', '#1a1a1a');
+      root.style.setProperty('--card', '#ffffff');
+      root.style.setProperty('--card-border', '#e0e0e0');
+      root.style.setProperty('--muted', '#e8e8e8');
+      root.style.setProperty('--muted-foreground', '#6b6b6b');
+      
+      document.body.classList.remove('dark-theme');
+      document.body.classList.add('light-theme');
+    }
+  };
 
   // ============================================================
   // FUNÇÃO: TOGGLE DARK MODE
@@ -20,44 +61,19 @@ export function Header({ onToggleMenu }) {
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
     setIsDarkMode(newTheme);
-    
-    // Salva preferência no localStorage
     localStorage.setItem('zenyx_theme', newTheme ? 'dark' : 'light');
+    applyTheme(newTheme);
     
-    // Aplica classe no body
-    if (newTheme) {
-      document.body.classList.remove('light-theme');
-      document.body.classList.add('dark-theme');
-    } else {
-      document.body.classList.remove('dark-theme');
-      document.body.classList.add('light-theme');
-    }
+    console.log('🎨 Tema alterado para:', newTheme ? 'DARK' : 'LIGHT');
   };
 
   // ============================================================
   // FUNÇÃO: LOGOUT
   // ============================================================
   const handleLogout = () => {
+    console.log('🚪 Clicou em Sair');
     logout();
-    navigate('/login');
   };
-
-  // ============================================================
-  // INICIALIZA TEMA AO CARREGAR
-  // ============================================================
-  React.useEffect(() => {
-    const savedTheme = localStorage.getItem('zenyx_theme') || 'dark';
-    const isDark = savedTheme === 'dark';
-    setIsDarkMode(isDark);
-    
-    if (isDark) {
-      document.body.classList.add('dark-theme');
-      document.body.classList.remove('light-theme');
-    } else {
-      document.body.classList.add('light-theme');
-      document.body.classList.remove('dark-theme');
-    }
-  }, []);
 
   return (
     <header className="header">
