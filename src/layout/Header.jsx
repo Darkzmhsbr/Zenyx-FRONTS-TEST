@@ -12,10 +12,11 @@ export function Header({ onToggleMenu }) {
   
   const [isBotMenuOpen, setIsBotMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false); // [NOVO]
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   // ============================================================
-  // INICIALIZA TEMA AO CARREGAR (EFFECT PRIMEIRO)
+  // INICIALIZA TEMA AO CARREGAR
   // ============================================================
   useEffect(() => {
     const savedTheme = localStorage.getItem('zenyx_theme') || 'dark';
@@ -42,13 +43,13 @@ export function Header({ onToggleMenu }) {
       document.body.classList.remove('light-theme');
       document.body.classList.add('dark-theme');
     } else {
-      // TEMA LIGHT
-      root.style.setProperty('--background', '#f5f5f7');
-      root.style.setProperty('--foreground', '#1a1a1a');
+      // TEMA LIGHT MELHORADO
+      root.style.setProperty('--background', '#fafafa');
+      root.style.setProperty('--foreground', '#0a0a0a');
       root.style.setProperty('--card', '#ffffff');
-      root.style.setProperty('--card-border', '#e0e0e0');
-      root.style.setProperty('--muted', '#e8e8e8');
-      root.style.setProperty('--muted-foreground', '#6b6b6b');
+      root.style.setProperty('--card-border', '#e5e5e5');
+      root.style.setProperty('--muted', '#f4f4f5');
+      root.style.setProperty('--muted-foreground', '#71717a');
       
       document.body.classList.remove('dark-theme');
       document.body.classList.add('light-theme');
@@ -68,11 +69,18 @@ export function Header({ onToggleMenu }) {
   };
 
   // ============================================================
-  // FUNÇÃO: LOGOUT
+  // FUNÇÃO: LOGOUT CORRIGIDA
   // ============================================================
   const handleLogout = () => {
-    console.log('🚪 Clicou em Sair');
-    logout();
+    console.log('🚪 Logout iniciado');
+    
+    // Fecha o dropdown primeiro
+    setIsProfileMenuOpen(false);
+    
+    // Pequeno delay para animação
+    setTimeout(() => {
+      logout(); // Chama logout do AuthContext
+    }, 100);
   };
 
   return (
@@ -137,10 +145,64 @@ export function Header({ onToggleMenu }) {
           )}
         </div>
         
-        {/* ÍCONE: NOTIFICAÇÕES (implementaremos depois) */}
-        <button className="icon-btn" title="Notificações">
-          <Bell size={20} />
-        </button>
+        {/* ============================================================ */}
+        {/* ÍCONE: NOTIFICAÇÕES (NOVO - COM DROPDOWN)                   */}
+        {/* ============================================================ */}
+        <div className="notification-dropdown-wrapper">
+          <button 
+            className={`icon-btn ${isNotificationOpen ? 'active' : ''}`}
+            onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+            title="Notificações"
+          >
+            <Bell size={20} />
+            {/* Badge com número (exemplo: 3 notificações) */}
+            <span className="notification-badge">3</span>
+          </button>
+
+          {/* DROPDOWN DE NOTIFICAÇÕES */}
+          {isNotificationOpen && (
+            <div className="notification-dropdown-menu">
+              <div className="notification-header">
+                <h4>Notificações</h4>
+                <button className="mark-all-read">Marcar todas como lidas</button>
+              </div>
+
+              <div className="notification-list">
+                {/* Exemplo de notificações (depois vem do backend) */}
+                <div className="notification-item unread">
+                  <div className="notification-icon success">💰</div>
+                  <div className="notification-content">
+                    <p className="notification-title">Nova venda!</p>
+                    <p className="notification-text">João comprou o plano Mensal</p>
+                    <p className="notification-time">Há 5 minutos</p>
+                  </div>
+                </div>
+
+                <div className="notification-item unread">
+                  <div className="notification-icon warning">⚠️</div>
+                  <div className="notification-content">
+                    <p className="notification-title">Bot pausado</p>
+                    <p className="notification-text">VIPEZERA está offline</p>
+                    <p className="notification-time">Há 1 hora</p>
+                  </div>
+                </div>
+
+                <div className="notification-item">
+                  <div className="notification-icon info">ℹ️</div>
+                  <div className="notification-content">
+                    <p className="notification-title">Atualização disponível</p>
+                    <p className="notification-text">Nova versão do Flow Chat V5</p>
+                    <p className="notification-time">Há 2 horas</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="notification-footer">
+                <a href="/notificacoes">Ver todas →</a>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* ÍCONE: DARK MODE TOGGLE */}
         <button 
