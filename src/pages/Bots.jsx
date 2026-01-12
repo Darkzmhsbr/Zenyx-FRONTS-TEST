@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Send, Settings, Power, MoreVertical, RefreshCcw, Trash2 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
-import { botService } from '../services/api'; 
+import { botService } from '../services/api';
+import { useBot } from '../context/BotContext';  // [NOVO]
 import Swal from 'sweetalert2';
 import './Bots.css';
 
 export function Bots() {
   const navigate = useNavigate();
+  const { refreshBots } = useBot();  // [NOVO] Pega a função de refresh
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState(null);
@@ -76,6 +78,7 @@ export function Bots() {
       if (result.isConfirmed) {
           try {
               await botService.deleteBot(bot.id);
+              await refreshBots();  // [NOVO] Atualiza o seletor no header
               setBots(bots.filter(b => b.id !== bot.id));
               Swal.fire({title: 'Excluído!', icon: 'success', background: '#151515', color: '#fff'});
           } catch (error) {
@@ -147,12 +150,10 @@ export function Bots() {
                 <div className="bot-stats">
                   <div className="stat-item">
                     <span className="stat-label">Leads Total</span>
-                    {/* [CORRIGIDO] Fallback para 0 se undefined */}
                     <span className="stat-value">{bot.leads || 0}</span>
                   </div>
                   <div className="stat-item">
                     <span className="stat-label">Receita Total</span>
-                    {/* [CORRIGIDO] Fallback para 0,00 se undefined */}
                     <span className="stat-value highlight">
                         R$ {typeof bot.revenue === 'number' 
                             ? bot.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) 
