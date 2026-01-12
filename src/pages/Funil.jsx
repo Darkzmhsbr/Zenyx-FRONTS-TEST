@@ -10,7 +10,6 @@ import './Funil.css';
 export function Funil() {
   const { selectedBot } = useBot();
   
-  // Estados
   const [activeTab, setActiveTab] = useState('todos');
   const [contacts, setContacts] = useState([]);
   const [leads, setLeads] = useState([]);
@@ -23,7 +22,6 @@ export function Funil() {
     total: 0
   });
   
-  // Paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalContacts, setTotalContacts] = useState(0);
@@ -42,21 +40,21 @@ export function Funil() {
       const statsData = await crmService.getFunnelStats(botId);
       setStats(statsData);
       
-      // Carregar dados conforme aba ativa
       if (activeTab === 'todos') {
-        // Buscar LEADS + PEDIDOS
-        const leadsData = await crmService.getLeads(botId, currentPage, perPage);
+        // 🔥 CORREÇÃO: Na aba TODOS, buscar apenas os pedidos
+        // Os leads que viraram pedidos já estarão aqui
         const pedidosData = await crmService.getContacts(botId, 'todos', currentPage, perPage);
+        const leadsData = await crmService.getLeads(botId, currentPage, perPage);
         
         setLeads(leadsData.data || []);
         setContacts(pedidosData.data || []);
         
+        // Total = leads + pedidos
         const totalCombinado = (leadsData.total || 0) + (pedidosData.total || 0);
         setTotalContacts(totalCombinado);
         setTotalPages(Math.ceil(totalCombinado / perPage));
         
       } else if (activeTab === 'topo') {
-        // Buscar apenas LEADS
         const leadsData = await crmService.getLeads(botId, currentPage, perPage);
         setLeads(leadsData.data || []);
         setContacts([]);
@@ -64,7 +62,6 @@ export function Funil() {
         setTotalContacts(leadsData.total || 0);
         
       } else {
-        // Buscar apenas PEDIDOS
         const filterMap = {
           'meio': 'meio',
           'fundo': 'fundo',
@@ -113,6 +110,7 @@ export function Funil() {
     const badges = {
       'aprovado': <span className="status-badge status-paid">✓ PAGO</span>,
       'approved': <span className="status-badge status-paid">✓ PAGO</span>,
+      'paid': <span className="status-badge status-paid">✓ PAGO</span>,
       'pending': <span className="status-badge status-pending">⏳ PENDENTE</span>,
       'expirado': <span className="status-badge status-expired">✕ EXPIRADO</span>,
       'expired': <span className="status-badge status-expired">✕ EXPIRADO</span>
@@ -140,13 +138,11 @@ export function Funil() {
     { id: 'expirados', label: 'Expirados', count: stats.expirados, icon: '⏰' }
   ];
 
-  // Calcular taxa de conversão
   const taxaConversao = stats.topo > 0 ? ((stats.fundo / stats.topo) * 100).toFixed(1) : 0;
 
   return (
     <div className="funil-container">
       
-      {/* Header com Métricas */}
       <div className="funil-header">
         <div>
           <h1>
@@ -246,7 +242,7 @@ export function Funil() {
             </div>
           ) : (
             <>
-              {/* ABA TODOS - LEADS + PEDIDOS */}
+              {/* ABA TODOS */}
               {activeTab === 'todos' && (leads.length > 0 || contacts.length > 0) && (
                 <table className="custom-table">
                   <thead>
@@ -308,7 +304,7 @@ export function Funil() {
                 </table>
               )}
 
-              {/* ABA TOPO - SOMENTE LEADS */}
+              {/* ABA TOPO */}
               {activeTab === 'topo' && leads.length > 0 && (
                 <table className="custom-table">
                   <thead>
@@ -338,7 +334,7 @@ export function Funil() {
                 </table>
               )}
 
-              {/* ABAS MEIO/FUNDO/EXPIRADOS - SOMENTE PEDIDOS */}
+              {/* ABAS MEIO/FUNDO/EXPIRADOS */}
               {activeTab !== 'topo' && activeTab !== 'todos' && contacts.length > 0 && (
                 <table className="custom-table">
                   <thead>
