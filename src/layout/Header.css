@@ -79,7 +79,7 @@
   text-overflow: ellipsis;
 }
 
-/* Dropdown */
+/* Dropdown de Bots */
 .bot-dropdown-menu {
   position: absolute;
   top: 50px;
@@ -145,6 +145,7 @@
   font-weight: bold;
 }
 
+/* --- ÍCONES DE AÇÃO --- */
 .icon-btn {
   background: none;
   border: none;
@@ -152,13 +153,22 @@
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
+  transition: all 0.2s;
 }
-.icon-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.icon-btn:hover { 
+  background: rgba(255,255,255,0.1); 
+  color: var(--primary); 
+}
+
+/* --- AVATAR E DROPDOWN DE PERFIL --- */
+.profile-dropdown-wrapper {
+  position: relative;
+}
 
 .user-avatar {
   width: 36px;
   height: 36px;
-  background: #333;
+  background: linear-gradient(135deg, #c333ff, #7b1fa2);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -167,8 +177,92 @@
   color: #fff;
   font-size: 0.8rem;
   border: 2px solid var(--card-border);
+  transition: transform 0.2s;
 }
 
+.user-avatar:hover {
+  transform: scale(1.05);
+  border-color: var(--primary);
+}
+
+/* Dropdown de Perfil */
+.profile-dropdown-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 240px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  overflow: hidden;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.profile-dropdown-header {
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(195, 51, 255, 0.05);
+}
+
+.profile-avatar-large {
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #c333ff, #7b1fa2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.profile-name {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.profile-email {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+.profile-dropdown-divider {
+  height: 1px;
+  background: #333;
+  margin: 5px 0;
+}
+
+.profile-dropdown-item {
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.profile-dropdown-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.profile-dropdown-item.danger {
+  color: #ef4444;
+}
+
+.profile-dropdown-item.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* --- ANIMAÇÕES --- */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -193,6 +287,12 @@
   }
   
   .icon-btn {
-    display: none; /* Esconde sino e lua no mobile para economizar espaço */
+    padding: 6px; /* Reduz padding */
+  }
+
+  .bot-dropdown-menu,
+  .profile-dropdown-menu {
+    width: 90vw;
+    max-width: 280px;
   }
 }
