@@ -73,13 +73,21 @@ export const remarketingService = {
     };
     return (await api.post('/api/admin/remarketing/send', payload)).data;
   },
-  getHistory: async (id) => {
+  
+  // [MODIFICADO] Adiciona paginação
+  getHistory: async (id, page = 1, perPage = 10) => {
     try { 
-        return (await api.get(`/api/admin/remarketing/history/${id}`)).data; 
+        return (await api.get(`/api/admin/remarketing/history/${id}?page=${page}&per_page=${perPage}`)).data; 
     } catch { 
-        return []; 
+        return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 }; 
     }
   },
+  
+  // [NOVO] Função para deletar histórico
+  deleteHistory: async (historyId) => {
+    return (await api.delete(`/api/admin/remarketing/history/${historyId}`)).data;
+  },
+  
   sendIndividual: async (botId, telegramId, historyId) => {
     return (await api.post('/api/admin/remarketing/send-individual', {
         bot_id: botId,
