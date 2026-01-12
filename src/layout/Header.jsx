@@ -12,7 +12,7 @@ export function Header({ onToggleMenu }) {
   
   const [isBotMenuOpen, setIsBotMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false); // [NOVO]
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   // ============================================================
@@ -32,7 +32,6 @@ export function Header({ onToggleMenu }) {
     const root = document.documentElement;
     
     if (isDark) {
-      // TEMA DARK
       root.style.setProperty('--background', '#0f0b14');
       root.style.setProperty('--foreground', '#f2f2f2');
       root.style.setProperty('--card', '#1b1730');
@@ -43,7 +42,6 @@ export function Header({ onToggleMenu }) {
       document.body.classList.remove('light-theme');
       document.body.classList.add('dark-theme');
     } else {
-      // TEMA LIGHT MELHORADO
       root.style.setProperty('--background', '#fafafa');
       root.style.setProperty('--foreground', '#0a0a0a');
       root.style.setProperty('--card', '#ffffff');
@@ -69,37 +67,54 @@ export function Header({ onToggleMenu }) {
   };
 
   // ============================================================
-  // FUNÇÃO: LOGOUT CORRIGIDA
+  // 🔥 FUNÇÃO: LOGOUT FORÇADO (SEM DEPENDER DO CONTEXT)
   // ============================================================
   const handleLogout = () => {
-    console.log('🚪 Logout iniciado');
+    console.log('🚪 LOGOUT FORÇADO - Iniciando...');
     
-    // Fecha o dropdown primeiro
+    // Fecha dropdown
     setIsProfileMenuOpen(false);
     
-    // Pequeno delay para animação
+    // LIMPA TUDO DO LOCALSTORAGE
+    console.log('🗑️ Limpando localStorage...');
+    localStorage.removeItem('zenyx_admin_user');
+    localStorage.removeItem('zenyx_selected_bot');
+    localStorage.removeItem('zenyx_theme');
+    localStorage.clear(); // Limpa TUDO mesmo
+    
+    console.log('✅ LocalStorage limpo!');
+    
+    // Tenta chamar logout do context (se existir)
+    if (logout) {
+      console.log('📞 Chamando logout do AuthContext...');
+      try {
+        logout();
+      } catch (error) {
+        console.error('❌ Erro no logout do context:', error);
+      }
+    }
+    
+    // FORÇA REDIRECT ABSOLUTO
+    console.log('🚀 Redirecionando para /login...');
     setTimeout(() => {
-      logout(); // Chama logout do AuthContext
-    }, 100);
+      window.location.href = '/login';
+    }, 200);
   };
 
   return (
     <header className="header">
-      {/* Lado Esquerdo: Botão Menu (Mobile) + Título */}
+      {/* Lado Esquerdo */}
       <div className="header-left">
-        
-        {/* Botão Hambúrguer (Só aparece no mobile via CSS) */}
         <button className="mobile-menu-btn" onClick={onToggleMenu}>
           <Menu size={24} />
         </button>
-
         <h2 style={{margin:0, fontSize:'1.2rem'}}>Painel de Controle</h2>
       </div>
 
-      {/* Lado Direito: Seletor e Ações */}
+      {/* Lado Direito */}
       <div className="header-right">
         
-        {/* --- SELETOR DE BOT GLOBAL --- */}
+        {/* SELETOR DE BOT */}
         <div className="bot-selector-wrapper">
           <button 
             className={`bot-selector-btn ${isBotMenuOpen ? 'active' : ''}`} 
@@ -114,7 +129,6 @@ export function Header({ onToggleMenu }) {
             <ChevronDown size={16} />
           </button>
 
-          {/* Menu Dropdown de Bots */}
           {isBotMenuOpen && (
             <div className="bot-dropdown-menu">
               <div className="dropdown-header">Meus bots ativos</div>
@@ -145,9 +159,7 @@ export function Header({ onToggleMenu }) {
           )}
         </div>
         
-        {/* ============================================================ */}
-        {/* ÍCONE: NOTIFICAÇÕES (NOVO - COM DROPDOWN)                   */}
-        {/* ============================================================ */}
+        {/* NOTIFICAÇÕES */}
         <div className="notification-dropdown-wrapper">
           <button 
             className={`icon-btn ${isNotificationOpen ? 'active' : ''}`}
@@ -155,11 +167,9 @@ export function Header({ onToggleMenu }) {
             title="Notificações"
           >
             <Bell size={20} />
-            {/* Badge com número (exemplo: 3 notificações) */}
             <span className="notification-badge">3</span>
           </button>
 
-          {/* DROPDOWN DE NOTIFICAÇÕES */}
           {isNotificationOpen && (
             <div className="notification-dropdown-menu">
               <div className="notification-header">
@@ -168,7 +178,6 @@ export function Header({ onToggleMenu }) {
               </div>
 
               <div className="notification-list">
-                {/* Exemplo de notificações (depois vem do backend) */}
                 <div className="notification-item unread">
                   <div className="notification-icon success">💰</div>
                   <div className="notification-content">
@@ -204,7 +213,7 @@ export function Header({ onToggleMenu }) {
           )}
         </div>
 
-        {/* ÍCONE: DARK MODE TOGGLE */}
+        {/* DARK MODE */}
         <button 
           className="icon-btn" 
           onClick={toggleTheme}
@@ -213,7 +222,7 @@ export function Header({ onToggleMenu }) {
           {isDarkMode ? <Moon size={20} /> : <Sun size={20} />}
         </button>
 
-        {/* ÍCONE: PERFIL COM DROPDOWN */}
+        {/* PERFIL */}
         <div className="profile-dropdown-wrapper">
           <div 
             className="user-avatar" 
@@ -223,7 +232,6 @@ export function Header({ onToggleMenu }) {
             {user?.name ? user.name.substring(0, 2).toUpperCase() : 'AD'}
           </div>
 
-          {/* DROPDOWN DE PERFIL */}
           {isProfileMenuOpen && (
             <div className="profile-dropdown-menu">
               <div className="profile-dropdown-header">
@@ -262,9 +270,11 @@ export function Header({ onToggleMenu }) {
 
               <div className="profile-dropdown-divider"></div>
 
+              {/* 🔥 BOTÃO SAIR COM LOGOUT FORÇADO */}
               <div 
                 className="profile-dropdown-item danger"
                 onClick={handleLogout}
+                style={{ cursor: 'pointer' }}
               >
                 <LogOut size={16} />
                 <span>Sair</span>
