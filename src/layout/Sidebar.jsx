@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   MessageSquare, 
@@ -19,15 +19,48 @@ import {
   Unlock,
   X 
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext'; // [NOVO] Importa useAuth
 import './Sidebar.css';
 
 // Recebe props isOpen e onClose do Layout
 export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
+  const navigate = useNavigate(); // [NOVO]
+  const { logout } = useAuth(); // [NOVO]
   const currentPath = location.pathname;
   
   const [isBotMenuOpen, setIsBotMenuOpen] = useState(true);
   const [isExtrasMenuOpen, setIsExtrasMenuOpen] = useState(false);
+
+  // ============================================================
+  // 🔥 FUNÇÃO DE LOGOUT (IGUAL AO HEADER)
+  // ============================================================
+  const handleLogout = () => {
+    console.log('🚪 LOGOUT - Sidebar');
+    
+    // Fecha menu mobile se estiver aberto
+    if (onClose) onClose();
+    
+    // Limpa tudo do localStorage
+    localStorage.removeItem('zenyx_admin_user');
+    localStorage.removeItem('zenyx_selected_bot');
+    localStorage.removeItem('zenyx_theme');
+    localStorage.clear();
+    
+    // Tenta chamar logout do context
+    if (logout) {
+      try {
+        logout();
+      } catch (error) {
+        console.error('Erro no logout:', error);
+      }
+    }
+    
+    // Força redirect
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 200);
+  };
 
   return (
     // Adiciona classe 'open' se isOpen for true
@@ -144,7 +177,12 @@ export function Sidebar({ isOpen, onClose }) {
           Integrações
         </Link>
 
-        <div className="nav-item logout" style={{ marginTop: 'auto', cursor: 'pointer' }} onClick={() => {/* Lógica de logout */}}>
+        {/* 🔥 BOTÃO SAIR COM FUNÇÃO CORRIGIDA */}
+        <div 
+          className="nav-item logout" 
+          style={{ marginTop: 'auto', cursor: 'pointer' }} 
+          onClick={handleLogout}
+        >
           <LogOut size={20} />
           Sair
         </div>
