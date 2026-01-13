@@ -17,7 +17,6 @@ api.interceptors.response.use(
 
 // --- SERVIÇO DE BOTS ---
 export const botService = {  
-  // [CORRIGIDO] Padronizado para inglês
   createBot : async ( dados ) => {    
     const response = await api.post ( '/api/admin/bots' , dados ) ; 
     return response.data ;
@@ -53,7 +52,7 @@ export const planService = {
 };
 
 // ============================================================
-// 📢 SERVIÇO DE REMARKETING (ATUALIZADO COM FUNIL)
+// 📢 SERVIÇO DE REMARKETING (CORRIGIDO)
 // ============================================================
 export const remarketingService = {
   send: async (botId, data, isTest = false, specificUserId = null) => {
@@ -74,7 +73,6 @@ export const remarketingService = {
     return (await api.post('/api/admin/remarketing/send', payload)).data;
   },
   
-  // [MODIFICADO] Adiciona paginação
   getHistory: async (id, page = 1, perPage = 10) => {
     try { 
         return (await api.get(`/api/admin/remarketing/history/${id}?page=${page}&per_page=${perPage}`)).data; 
@@ -83,22 +81,28 @@ export const remarketingService = {
     }
   },
   
-  // [NOVO] Função para deletar histórico
   deleteHistory: async (historyId) => {
     return (await api.delete(`/api/admin/remarketing/history/${historyId}`)).data;
   },
   
+  // 🔥 [CORRIGIDO] Função de envio individual
   sendIndividual: async (botId, telegramId, historyId) => {
-    return (await api.post('/api/admin/remarketing/send-individual', {
-        bot_id: botId,
-        user_telegram_id: telegramId,
-        campaign_history_id: historyId
-    })).data;
+    try {
+      const response = await api.post('/api/admin/remarketing/send-individual', {
+        bot_id: parseInt(botId),
+        user_telegram_id: String(telegramId),
+        campaign_history_id: parseInt(historyId)
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao enviar remarketing individual:', error.response?.data || error.message);
+      throw error;
+    }
   }
 };
 
 // ============================================================
-// 🔥 [ATUALIZADO V3] FLOW V2 (Passos Dinâmicos + Edição)
+// 🔥 FLOW V2 (Passos Dinâmicos + Edição)
 // ============================================================
 export const flowService = {
   getFlow: async (botId) => {
@@ -110,33 +114,29 @@ export const flowService = {
     return (await api.post(`/api/admin/bots/${botId}/flow`, data)).data;
   },
   
-  // Listar passos
   getSteps: async (botId) => {
     try { return (await api.get(`/api/admin/bots/${botId}/flow/steps`)).data; } 
     catch { return []; }
   },
   
-  // Adicionar passo
   addStep: async (botId, stepData) => {
     return (await api.post(`/api/admin/bots/${botId}/flow/steps`, stepData)).data;
   },
   
-  // [NOVO V3] Editar passo
   updateStep: async (botId, stepId, stepData) => {
     return (await api.put(`/api/admin/bots/${botId}/flow/steps/${stepId}`, stepData)).data;
   },
   
-  // Deletar passo
   deleteStep: async (botId, stepId) => {
     return (await api.delete(`/api/admin/bots/${botId}/flow/steps/${stepId}`)).data;
   }
 };
 
 // ============================================================
-// 👥 CRM / CONTATOS (ATUALIZADO COM FUNIL)
+// 👥 CRM / CONTATOS (CORRIGIDO - AGORA UNIFICA LEADS + PEDIDOS)
 // ============================================================
 export const crmService = {
-  // [ATUALIZADO] Agora suporta filtros de funil
+  // 🔥 [CORRIGIDO] Agora busca leads + pedidos quando filter='todos'
   getContacts: async (botId, filter = 'todos', page = 1, perPage = 50) => {
     const params = new URLSearchParams({
       status: filter,
@@ -148,12 +148,23 @@ export const crmService = {
       params.append('bot_id', botId);
     }
     
-    const url = `/api/admin/contacts?${params.toString()}`;
-    const response = await api.get(url);
-    return response.data;
+    try {
+      const url = `/api/admin/contacts?${params.toString()}`;
+      const response = await api.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar contatos:', error);
+      return { 
+        data: [], 
+        total: 0, 
+        page: 1, 
+        per_page: perPage, 
+        total_pages: 0 
+      };
+    }
   },
   
-  // [NOVO] Buscar leads (TOPO do funil)
+  // Buscar apenas leads (TOPO do funil)
   getLeads: async (botId, page = 1, perPage = 50) => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -174,7 +185,7 @@ export const crmService = {
     }
   },
   
-  // [NOVO] Estatísticas do funil
+  // Estatísticas do funil
   getFunnelStats: async (botId) => {
     try {
       const url = botId 
@@ -194,18 +205,43 @@ export const crmService = {
     }
   },
   
-  updateUser: async (userId, data) => (await api.put(`/api/admin/users/${userId}`, data)).data,
-  resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
+  updateUser: async (userId, data) => {
+    try {
+      return (await api.put(`/api/admin/users/${userId}`, data)).data;
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      throw error;
+    }
+  },
+  
+  resendAccess: async (userId) => {
+    try {
+      return (await api.post(`/api/admin/users/${userId}/resend-access`)).data;
+    } catch (error) {
+      console.error('Erro ao reenviar acesso:', error);
+      throw error;
+    }
+  }
 };
 
 // --- ADMIN & DASHBOARD & INTEGRATION ---
 export const admin = crmService;
+
 export const adminService = {
-    listAdmins: async (id) => { try { return (await api.get(`/api/admin/bots/${id}/admins`)).data } catch { return [] } },
+    listAdmins: async (id) => { 
+      try { 
+        return (await api.get(`/api/admin/bots/${id}/admins`)).data 
+      } catch { 
+        return [] 
+      } 
+    },
     addAdmin: async (id, d) => (await api.post(`/api/admin/bots/${id}/admins`, d)).data,
     removeAdmin: async (id, tId) => (await api.delete(`/api/admin/bots/${id}/admins/${tId}`)).data
 };
-export const dashboardService = { getStats: async (id) => (await api.get(`/api/admin/dashboard/stats?bot_id=${id}`)).data };
+
+export const dashboardService = { 
+  getStats: async (id) => (await api.get(`/api/admin/dashboard/stats?bot_id=${id}`)).data 
+};
 
 export const integrationService = { 
     getConfig: async () => (await api.get('/api/admin/config')).data,

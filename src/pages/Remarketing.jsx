@@ -41,13 +41,15 @@ export function Remarketing() {
   }, [selectedBot, currentPage]);
 
   const carregarHistorico = async () => {
+    if (!selectedBot) return;
+    
     try {
       const response = await remarketingService.getHistory(selectedBot.id, currentPage, perPage);
       setHistory(Array.isArray(response.data) ? response.data : []);
       setTotalCount(response.total || 0);
       setTotalPages(response.total_pages || 1);
     } catch (error) {
-      console.error("Erro ao carregar histórico", error);
+      console.error("Erro ao carregar histórico:", error);
       setHistory([]);
     }
   };
@@ -88,7 +90,14 @@ export function Remarketing() {
         });
         carregarHistorico();
       } catch (error) {
-        Swal.fire('Erro', 'Falha ao deletar campanha.', 'error');
+        console.error('Erro ao deletar:', error);
+        Swal.fire({
+          title: 'Erro',
+          text: 'Falha ao deletar campanha.',
+          icon: 'error',
+          background: '#151515',
+          color: '#fff'
+        });
       }
     }
   };
@@ -110,11 +119,18 @@ export function Remarketing() {
       setStep(1);
       window.scrollTo(0, 0);
     } catch (error) {
-      console.error("Erro ao reusar campanha", error);
-      Swal.fire('Erro', 'Falha ao carregar configuração da campanha.', 'error');
+      console.error("Erro ao reusar campanha:", error);
+      Swal.fire({
+        title: 'Erro',
+        text: 'Falha ao carregar configuração da campanha.',
+        icon: 'error',
+        background: '#151515',
+        color: '#fff'
+      });
     }
   };
 
+  // 🔥 [CORRIGIDO] Função de teste individual
   const handleTestarIndividual = async (item) => {
     const { value: telegramId } = await Swal.fire({
       title: 'Testar Envio Individual',
@@ -135,9 +151,25 @@ export function Remarketing() {
     if (telegramId) {
       try {
         setLoading(true);
-        await remarketingService.sendIndividual(selectedBot.id, telegramId, item.id);
+        
+        Swal.fire({
+          title: 'Enviando...',
+          text: 'Aguarde enquanto o teste é enviado.',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+        
+        await remarketingService.sendIndividual(
+          selectedBot.id, 
+          telegramId, 
+          item.id
+        );
+        
         Swal.fire({
           title: 'Teste Enviado!',
+          text: `Mensagem enviada para o ID ${telegramId}`,
           icon: 'success',
           timer: 2000,
           showConfirmButton: false,
@@ -145,7 +177,14 @@ export function Remarketing() {
           color: '#fff'
         });
       } catch (error) {
-        Swal.fire('Erro', 'Falha ao enviar teste.', 'error');
+        console.error('Erro ao enviar teste:', error);
+        Swal.fire({
+          title: 'Erro',
+          text: error.response?.data?.detail || 'Falha ao enviar teste.',
+          icon: 'error',
+          background: '#151515',
+          color: '#fff'
+        });
       } finally {
         setLoading(false);
       }
@@ -153,17 +192,40 @@ export function Remarketing() {
   };
 
   const handleEnviar = async () => {
+    // Validações
     if (!formData.mensagem.trim()) {
-      Swal.fire('Atenção', 'Por favor, escreva uma mensagem.', 'warning');
+      Swal.fire({
+        title: 'Atenção',
+        text: 'Por favor, escreva uma mensagem.',
+        icon: 'warning',
+        background: '#151515',
+        color: '#fff'
+      });
       return;
     }
 
     if (formData.incluir_oferta && !formData.plano_oferta_id) {
-      Swal.fire('Atenção', 'Selecione um plano para a oferta.', 'warning');
+      Swal.fire({
+        title: 'Atenção',
+        text: 'Selecione um plano para a oferta.',
+        icon: 'warning',
+        background: '#151515',
+        color: '#fff'
+      });
       return;
     }
 
     setLoading(true);
+    
+    Swal.fire({
+      title: 'Enviando...',
+      text: 'Aguarde enquanto a campanha é enviada.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+    
     try {
       const result = await remarketingService.send(selectedBot.id, formData, false, null);
       
@@ -197,20 +259,27 @@ export function Remarketing() {
       setStep(1);
       carregarHistorico();
     } catch (error) {
-      console.error("Erro ao enviar", error);
-      Swal.fire('Erro', 'Falha ao enviar campanha.', 'error');
+      console.error("Erro ao enviar campanha:", error);
+      Swal.fire({
+        title: 'Erro',
+        text: error.response?.data?.detail || 'Falha ao enviar campanha.',
+        icon: 'error',
+        background: '#151515',
+        color: '#fff'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const targetOptions = [
-  { id: 'todos', icon: '👥', title: 'Todos', desc: 'Envia para todos os contatos' },
-  { id: 'topo', icon: '🎯', title: 'TOPO - Leads Frios', desc: 'Usuários que só deram /start' },
-  { id: 'meio', icon: '🔥', title: 'MEIO - Leads Quentes', desc: 'Usuários que geraram PIX' },
-  { id: 'fundo', icon: '✅', title: 'FUNDO - Clientes', desc: 'Usuários que pagaram' },
-  { id: 'expirado', icon: '⏰', title: 'Expirados', desc: 'PIX venceu sem pagamento' }
-];
+    { id: 'todos', icon: '👥', title: 'Todos', desc: 'Envia para todos os contatos' },
+    { id: 'topo', icon: '🎯', title: 'TOPO - Leads Frios', desc: 'Usuários que só deram /start' },
+    { id: 'meio', icon: '🔥', title: 'MEIO - Leads Quentes', desc: 'Usuários que geraram PIX' },
+    { id: 'fundo', icon: '✅', title: 'FUNDO - Clientes', desc: 'Usuários que pagaram' },
+    { id: 'expirado', icon: '⏰', title: 'Expirados', desc: 'PIX venceu sem pagamento' }
+  ];
+
   // ============================================================
   // RENDER - HISTÓRICO
   // ============================================================
@@ -218,84 +287,105 @@ export function Remarketing() {
     return (
       <div className="remarketing-container">
         <div className="wizard-container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 className="wizard-title">
-              <History size={28} style={{ verticalAlign: 'middle', marginRight: '10px' }} />
-              Histórico de Campanhas
-            </h2>
-            <Button onClick={() => setStep(1)} variant="primary">
-              Nova Campanha
-            </Button>
-          </div>
+          <h2 className="wizard-title">
+            <History size={28} style={{ verticalAlign: 'middle', marginRight: '10px' }} />
+            Histórico de Campanhas
+          </h2>
 
-          {history.length === 0 ? (
-            <Card>
-              <CardContent>
-                <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>
-                  <MessageSquare size={48} style={{ margin: '0 auto 20px', opacity: 0.5 }} />
-                  <p>Nenhuma campanha enviada ainda.</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <div className="history-list">
-                {history.map((item) => (
+          <Button 
+            onClick={() => setStep(1)} 
+            style={{ marginBottom: '20px' }}
+          >
+            Nova Campanha <Send size={16} />
+          </Button>
+
+          <div className="history-list">
+            {history.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '30px', color: '#666' }}>
+                Nenhuma campanha enviada ainda.
+              </p>
+            ) : (
+              history.map(item => {
+                let config = {};
+                try {
+                  config = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
+                } catch (e) {
+                  console.error('Erro ao parsear config:', e);
+                }
+
+                const targetLabel = targetOptions.find(t => t.id === item.target)?.title || 'Desconhecido';
+                const dataFormatada = item.data_envio 
+                  ? new Date(item.data_envio).toLocaleString('pt-BR')
+                  : 'Data desconhecida';
+
+                return (
                   <div key={item.id} className="history-item">
                     <div>
                       <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                        {item.target === 'topo' && '🎯 TOPO'}
-                        {item.target === 'meio' && '🔥 MEIO'}
-                        {item.target === 'fundo' && '✅ FUNDO'}
-                        {item.target === 'expirado' && '⏰ EXPIRADOS'}
-                        {item.target === 'todos' && '👥 TODOS'}
-                        {!['topo', 'meio', 'fundo', 'expirado', 'todos'].includes(item.target) && item.target}
+                        {targetLabel}
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: '#888' }}>
-                        {new Date(item.data_envio).toLocaleString('pt-BR')}
+                      <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                        {dataFormatada}
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: '#aaa', marginTop: '5px' }}>
-                        ✅ {item.sent_success || 0} enviados • ❌ {item.blocked_count || 0} bloqueados
+                      <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '5px' }}>
+                        ✅ {item.sent_success || 0} enviados • 
+                        ❌ {item.blocked_count || 0} bloqueados
                       </div>
                     </div>
                     <div className="history-actions">
-                      <button className="btn-small primary" onClick={() => handleReusar(item)}>
+                      <button 
+                        className="btn-small primary" 
+                        onClick={() => handleReusar(item)}
+                        title="Reutilizar esta campanha"
+                      >
                         <RotateCcw size={14} /> Reusar
                       </button>
-                      <button className="btn-small primary" onClick={() => handleTestarIndividual(item)}>
+                      <button 
+                        className="btn-small primary" 
+                        onClick={() => handleTestarIndividual(item)}
+                        title="Testar envio individual"
+                      >
                         <Play size={14} /> Testar
                       </button>
-                      <button className="btn-small danger" onClick={() => handleDelete(item.id)}>
+                      <button 
+                        className="btn-small danger" 
+                        onClick={() => handleDelete(item.id)}
+                        title="Deletar esta campanha"
+                      >
                         <Trash2 size={14} /> Deletar
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {totalPages > 1 && (
-                <div className="pagination-controls-remarketing">
-                  <Button variant="ghost" onClick={prevPage} disabled={currentPage === 1}>
-                    <ChevronLeft size={18} /> Anterior
-                  </Button>
-                  <div className="page-info">
-                    Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
-                    {' • '}
-                    <strong>{totalCount}</strong> {totalCount === 1 ? 'campanha' : 'campanhas'}
-                  </div>
-                  <Button variant="ghost" onClick={nextPage} disabled={currentPage === totalPages}>
-                    Próxima <ChevronRight size={18} />
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-
-          <div className="wizard-actions">
-            <button className="btn-back" onClick={() => setStep(1)}>
-              Voltar para Nova Campanha
-            </button>
+                );
+              })
+            )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="pagination-controls-remarketing">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={prevPage} 
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={16} /> Anterior
+              </Button>
+              
+              <div className="page-info">
+                Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={nextPage} 
+                disabled={currentPage === totalPages}
+              >
+                Próxima <ChevronRight size={16} />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -406,12 +496,14 @@ export function Remarketing() {
                     <label>Preço</label>
                     <div className="toggle-buttons">
                       <button
+                        type="button"
                         className={formData.price_mode === 'original' ? 'active' : ''}
                         onClick={() => setFormData({ ...formData, price_mode: 'original' })}
                       >
                         Original
                       </button>
                       <button
+                        type="button"
                         className={formData.price_mode === 'custom' ? 'active' : ''}
                         onClick={() => setFormData({ ...formData, price_mode: 'custom' })}
                       >
@@ -435,18 +527,21 @@ export function Remarketing() {
                     <label><Clock size={16} /> Expiração da Oferta</label>
                     <div className="toggle-buttons">
                       <button
+                        type="button"
                         className={formData.expiration_mode === 'none' ? 'active' : ''}
                         onClick={() => setFormData({ ...formData, expiration_mode: 'none' })}
                       >
                         Sem Expiração
                       </button>
                       <button
+                        type="button"
                         className={formData.expiration_mode === 'minutes' ? 'active' : ''}
                         onClick={() => setFormData({ ...formData, expiration_mode: 'minutes' })}
                       >
                         Minutos
                       </button>
                       <button
+                        type="button"
                         className={formData.expiration_mode === 'hours' ? 'active' : ''}
                         onClick={() => setFormData({ ...formData, expiration_mode: 'hours' })}
                       >
