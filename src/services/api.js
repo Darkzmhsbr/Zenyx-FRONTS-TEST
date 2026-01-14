@@ -240,7 +240,16 @@ export const adminService = {
 };
 
 export const dashboardService = { 
-  getStats: async (id) => (await api.get(`/api/admin/dashboard/stats?bot_id=${id}`)).data 
+  // Agora aceita startDate e endDate (opcionais)
+  getStats: async (id, startDate, endDate) => {
+    // Cria os parâmetros de URL
+    const params = new URLSearchParams();
+    if (id) params.append('bot_id', id);
+    if (startDate) params.append('start_date', startDate.toISOString());
+    if (endDate) params.append('end_date', endDate.toISOString());
+
+    return (await api.get(`/api/admin/dashboard/stats?${params.toString()}`)).data;
+  }
 };
 
 export const integrationService = { 

@@ -9,7 +9,9 @@ import {
   Activity,
   UserPlus,
   Percent,
-  CreditCard
+  CreditCard,
+  Calendar as CalendarIcon, 
+  ChevronDown
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -21,17 +23,32 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
+// --- IMPORTS DO CALENDÁRIO ---
+import DatePicker, { registerLocale } from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import ptBR from 'date-fns/locale/pt-BR'; // Para português
+
 import { dashboardService } from '../services/api';
 import { useBot } from '../context/BotContext'; 
 import { Button } from '../components/Button';
 import './Dashboard.css';
+
+// Registra idioma português no calendário
+registerLocale('pt-BR', ptBR);
 
 export function Dashboard() {
   const navigate = useNavigate();
   const { selectedBot } = useBot(); 
   const [loading, setLoading] = useState(true);
   
-  // Estado inicial com TODOS os campos novos do Backend
+  // --- ESTADO DE DATA (PADRÃO: MÊS ATUAL) ---
+  const [dateRange, setDateRange] = useState([
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1), // Dia 1 do mês atual
+    new Date() // Hoje
+  ]);
+  const [startDate, endDate] = dateRange;
+
+  // Estado das métricas
   const [metrics, setMetrics] = useState({
     total_revenue: 0,
     active_users: 0,
@@ -48,13 +65,18 @@ export function Dashboard() {
   useEffect(() => {
     carregarDados();
     // eslint-disable-next-line
-  }, [selectedBot]);
+  }, [selectedBot, endDate]); // Recarrega quando escolhe a data final
 
   const carregarDados = async () => {
+    // Só busca se tiver data fim definida (quando usuário termina de selecionar)
+    if (!startDate || !endDate) return;
+
     try {
       setLoading(true);
       const botId = selectedBot ? selectedBot.id : null;
-      const data = await dashboardService.getStats(botId);
+      
+      // Passa as datas para o serviço (Backend vai filtrar)
+      const data = await dashboardService.getStats(botId, startDate, endDate);
       
       // Garante que chart_data seja um array para não quebrar o Recharts
       if (!data.chart_data) data.chart_data = [];
@@ -70,6 +92,15 @@ export function Dashboard() {
   const formatMoney = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   };
+
+  // Componente visual do botão de data (Input Customizado)
+  const CustomDateInput = React.forwardRef(({ value, onClick }, ref) => (
+    <button className="date-filter-btn" onClick={onClick} ref={ref}>
+      <CalendarIcon size={16} />
+      <span>{value || "Filtrar Data"}</span>
+      <ChevronDown size={14} />
+    </button>
+  ));
 
   return (
     <div className="dashboard-container fade-in">
@@ -100,7 +131,7 @@ export function Dashboard() {
         {/* Card 1: Leads Mês */}
         <div className="analytic-card">
           <div className="card-header-row">
-            <span className="card-label">LEADS DO MÊS ATUAL</span>
+            <span className="card-label">LEADS (NO PERÍODO)</span>
             <Users size={18} className="card-icon-muted" />
           </div>
           <div className="card-main-value">
@@ -138,20 +169,36 @@ export function Dashboard() {
         {/* COLUNA ESQUERDA: GRÁFICO E FATURAMENTO */}
         <div className="chart-section card-box">
           <div className="chart-header">
+             
+             {/* Info à Esquerda */}
              <div className="chart-info">
                <div className="icon-circle">
                  <ShoppingBag size={20} />
                </div>
                <div>
-                 <span className="chart-label">TOTAL DE FATURAMENTO (GERAL)</span>
+                 <span className="chart-label">FATURAMENTO (PERÍODO)</span>
                  <div className="chart-big-number">
                     {loading ? "..." : formatMoney(metrics.total_revenue)}
                  </div>
                </div>
              </div>
-             <div className="chart-legend">
-               <span className="dot"></span> Faturamento
+
+             {/* FILTRO DE DATA À DIREITA */}
+             <div className="chart-filter-wrapper">
+                <DatePicker
+                  selectsRange={true}
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChange={(update) => {
+                    setDateRange(update);
+                  }}
+                  locale="pt-BR"
+                  dateFormat="dd/MM/yyyy"
+                  customInput={<CustomDateInput />}
+                  withPortal // Isso faz o calendário "flutuar" acima de tudo
+                />
              </div>
+
           </div>
 
           <div className="chart-wrapper">
@@ -170,6 +217,7 @@ export function Dashboard() {
                   tickLine={false} 
                   tick={{fill: '#b9b6c9', fontSize: 12}} 
                   dy={10}
+                  interval="preserveStartEnd"
                 />
                 <YAxis 
                   axisLine={false} 
@@ -223,7 +271,7 @@ export function Dashboard() {
           {/* Item: Total de Transações (Qtd) */}
           <div className="side-stat-card">
              <div className="side-stat-header">
-               <span>TOTAL DE TRANSAÇÕES</span>
+               <span>TRANSAÇÕES (Período)</span>
                <RefreshCw size={16} />
              </div>
              <div className="side-stat-value">
