@@ -107,7 +107,7 @@ export function Sidebar({ isOpen, onClose }) {
                 <PlusCircle size={16} /> Criar novo bot
               </Link>
 
-              <Link to="/bots/config" className={`nav-item ${currentPath === '/bots/config' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
+              <Link to="/bots/config" className={`nav-item ${currentPath === '/bots/config' ? 'active' : ''}`} style={{ fontSize: '0.9rem' }}>
                 <Settings size={16} /> Atualizar bot
               </Link>
 
