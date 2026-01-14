@@ -29,9 +29,9 @@ export const botService = {
     const response = await api.get ( `/api/admin/bots/${botId}` ) ; 
     return response.data ;
   } ,
-  updateBot: async (botId, dados) => {
-    const response = await api.put(`/api/admin/bots/${botId}`, dados);
-    return response.data;
+  updateBot : async ( botId , dados ) => {    
+    const response = await api.put ( `/api/admin/bots/${botId}` , dados ) ; 
+    return response.data ;
   } ,
   toggleBot : async ( botId ) => {    
     const response = await api.post ( `/api/admin/bots/${botId}/toggle` ) ; 
