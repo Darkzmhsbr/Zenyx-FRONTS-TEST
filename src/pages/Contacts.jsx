@@ -109,7 +109,7 @@ export function Contacts() {
       }
   };
 
-  // 🔥 [NOVO] Reenviar Acesso
+  // 🔥 [CORRIGIDO] Reenviar Acesso
   const handleReenviarAcesso = async () => {
       try {
           const result = await Swal.fire({
@@ -126,30 +126,24 @@ export function Contacts() {
           });
 
           if (result.isConfirmed) {
-              // Faz requisição para backend
-              const response = await fetch(`/api/admin/reenviar-acesso/${editingUser.id}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' }
+              // 🔥 [CORRIGIDO] Usa crmService em vez de fetch direto
+              await crmService.resendAccess(editingUser.id);
+              
+              Swal.fire({
+                  title: 'Enviado!',
+                  text: 'Acesso reenviado com sucesso!',
+                  icon: 'success',
+                  timer: 2000,
+                  showConfirmButton: false,
+                  background: '#151515',
+                  color: '#fff'
               });
-
-              if (response.ok) {
-                  Swal.fire({
-                      title: 'Enviado!',
-                      text: 'Acesso reenviado com sucesso!',
-                      icon: 'success',
-                      timer: 2000,
-                      showConfirmButton: false,
-                      background: '#151515',
-                      color: '#fff'
-                  });
-              } else {
-                  throw new Error('Erro ao reenviar');
-              }
           }
       } catch (error) {
+          console.error('Erro ao reenviar acesso:', error);
           Swal.fire({
               title: 'Erro!',
-              text: 'Falha ao reenviar acesso.',
+              text: error.response?.data?.detail || 'Falha ao reenviar acesso.',
               icon: 'error',
               background: '#151515',
               color: '#fff'
