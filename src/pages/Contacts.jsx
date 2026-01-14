@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { crmService, remarketingService } from '../services/api'; 
 import { useBot } from '../context/BotContext';
-import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Edit, Send, Zap, Shield, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, CheckCircle, Clock, XCircle, RefreshCw, Hash, Calendar, Edit, Send, Zap, Shield, Trash2, AlertTriangle, ChevronLeft, ChevronRight, Key } from 'lucide-react';
 import { Button } from '../components/Button';
 import Swal from 'sweetalert2';
 import './Contacts.css';
@@ -109,6 +109,54 @@ export function Contacts() {
       }
   };
 
+  // 🔥 [NOVO] Reenviar Acesso
+  const handleReenviarAcesso = async () => {
+      try {
+          const result = await Swal.fire({
+              title: '🔑 Reenviar Acesso?',
+              text: `Deseja reenviar o link de acesso para ${editingUser.name}?`,
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sim, Reenviar!',
+              cancelButtonText: 'Cancelar',
+              background: '#151515',
+              color: '#fff',
+              confirmButtonColor: '#c333ff',
+              cancelButtonColor: '#666'
+          });
+
+          if (result.isConfirmed) {
+              // Faz requisição para backend
+              const response = await fetch(`/api/admin/reenviar-acesso/${editingUser.id}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' }
+              });
+
+              if (response.ok) {
+                  Swal.fire({
+                      title: 'Enviado!',
+                      text: 'Acesso reenviado com sucesso!',
+                      icon: 'success',
+                      timer: 2000,
+                      showConfirmButton: false,
+                      background: '#151515',
+                      color: '#fff'
+                  });
+              } else {
+                  throw new Error('Erro ao reenviar');
+              }
+          }
+      } catch (error) {
+          Swal.fire({
+              title: 'Erro!',
+              text: 'Falha ao reenviar acesso.',
+              icon: 'error',
+              background: '#151515',
+              color: '#fff'
+          });
+      }
+  };
+
   // --- DISPARO INDIVIDUAL ---
   const handleIndividualCampaign = async (historyId) => {
       try {
@@ -134,6 +182,15 @@ export function Contacts() {
     if (['paid', 'active', 'approved'].includes(status)) return <span className="status-badge status-paid"><CheckCircle size={12}/> Ativo</span>;
     if (status === 'expired') return <span className="status-badge status-expired"><XCircle size={12}/> Expirado</span>;
     return <span className="status-badge status-pending"><Clock size={12}/> Pendente</span>;
+  };
+
+  // 🔥 [NOVO] Verificar se deve mostrar botão "Reenviar Acesso"
+  const mostrarBotaoReenviar = () => {
+      // Mostra se status for paid/active/approved OU se custom_expiration estiver vazio (vitalício)
+      return editingUser && (
+          ['paid', 'active', 'approved'].includes(editingUser.status) ||
+          editingUser.custom_expiration === ''
+      );
   };
 
   if (!selectedBot) return <div className="contacts-container"><p style={{textAlign:'center', marginTop:50, color:'#666'}}>Selecione um bot.</p></div>;
@@ -332,6 +389,43 @@ export function Contacts() {
                             </button>
                         </div>
                     </div>
+
+                    {/* 🔥 [NOVO] BOTÃO REENVIAR ACESSO */}
+                    {mostrarBotaoReenviar() && (
+                        <div style={{
+                            background: 'rgba(16, 185, 129, 0.05)', 
+                            border: '1px solid rgba(16, 185, 129, 0.2)', 
+                            borderRadius:'8px', 
+                            padding:'15px', 
+                            marginTop:'15px',
+                            marginBottom:'15px'
+                        }}>
+                            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                                <div>
+                                    <h4 style={{margin:'0 0 5px 0', color:'#10b981', display:'flex', alignItems:'center', gap:'8px'}}>
+                                        <Key size={16}/> Acesso Ativo
+                                    </h4>
+                                    <p style={{margin:0, fontSize:'0.8rem', color:'#888'}}>
+                                        Este usuário tem acesso ativo. Clique para reenviar o link.
+                                    </p>
+                                </div>
+                                <button 
+                                    type="button" 
+                                    className="btn-small primary" 
+                                    onClick={handleReenviarAcesso}
+                                    style={{
+                                        background: '#10b981', 
+                                        color: '#fff', 
+                                        border: 'none',
+                                        padding: '8px 16px',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    <Key size={14} style={{marginRight:6}}/> Reenviar Acesso
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="modal-actions" style={{borderTop:'1px solid #333', paddingTop:'15px', marginTop:'10px'}}>
                         <button type="button" className="btn-cancel" onClick={() => setShowUserModal(false)}>Cancelar</button>
