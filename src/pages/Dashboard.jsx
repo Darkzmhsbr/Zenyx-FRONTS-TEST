@@ -11,7 +11,9 @@ import {
   Percent,
   CreditCard,
   Calendar as CalendarIcon, 
-  ChevronDown
+  ChevronDown,
+  LayoutGrid, // Ícone novo para "Todos os bots"
+  Bot         // Ícone novo para "Bot único"
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -41,6 +43,11 @@ export function Dashboard() {
   const { selectedBot } = useBot(); 
   const [loading, setLoading] = useState(true);
   
+  // --- ESTADO DE VISÃO (GLOBAL OU BOT ÚNICO) ---
+  // false = Vê apenas o bot selecionado no menu lateral
+  // true = Vê a soma de todos os bots
+  const [isGlobalView, setIsGlobalView] = useState(false);
+
   // --- ESTADO DE DATA (PADRÃO: MÊS ATUAL) ---
   const [dateRange, setDateRange] = useState([
     new Date(new Date().getFullYear(), new Date().getMonth(), 1), // Dia 1 do mês atual
@@ -62,23 +69,28 @@ export function Dashboard() {
     chart_data: [] 
   });
 
+  // Efeito para recarregar quando mudar: Bot, Data ou Modo de Visão
   useEffect(() => {
     carregarDados();
     // eslint-disable-next-line
-  }, [selectedBot, endDate]); // Recarrega quando escolhe a data final
+  }, [selectedBot, endDate, isGlobalView]); 
 
   const carregarDados = async () => {
-    // Só busca se tiver data fim definida (quando usuário termina de selecionar)
+    // Só busca se tiver data fim definida
     if (!startDate || !endDate) return;
 
     try {
       setLoading(true);
-      const botId = selectedBot ? selectedBot.id : null;
       
-      // Passa as datas para o serviço (Backend vai filtrar)
+      // LÓGICA MESTRA:
+      // Se estiver em Visão Global, mandamos null como ID.
+      // Se não, mandamos o ID do bot selecionado.
+      const botId = isGlobalView ? null : (selectedBot ? selectedBot.id : null);
+      
+      // Passa as datas e o ID para o serviço
       const data = await dashboardService.getStats(botId, startDate, endDate);
       
-      // Garante que chart_data seja um array para não quebrar o Recharts
+      // Garante que chart_data seja um array
       if (!data.chart_data) data.chart_data = [];
       
       setMetrics(data);
@@ -93,7 +105,12 @@ export function Dashboard() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   };
 
-  // Componente visual do botão de data (Input Customizado)
+  // Função para alternar entre Visão Global e Bot Selecionado
+  const toggleViewMode = () => {
+    setIsGlobalView(!isGlobalView);
+  };
+
+  // Componente visual do botão de data
   const CustomDateInput = React.forwardRef(({ value, onClick }, ref) => (
     <button className="date-filter-btn" onClick={onClick} ref={ref}>
       <CalendarIcon size={16} />
@@ -109,7 +126,12 @@ export function Dashboard() {
       <div className="dashboard-header">
         <div>
           <h2 className="page-title">
-            Resumo analítico de bot selecionado: <span className="highlight-text">{selectedBot ? selectedBot.nome : "Visão Geral"}</span>
+            {/* Título Dinâmico */}
+            {isGlobalView ? (
+              <>Resumo analítico de <span className="highlight-text">todos os bots</span></>
+            ) : (
+              <>Resumo analítico de bot selecionado: <span className="highlight-text">{selectedBot ? selectedBot.nome : "Selecione um Bot"}</span></>
+            )}
           </h2>
           <p className="page-subtitle">Gerencie, acompanhe e tome decisões com mais clareza.</p>
         </div>
@@ -119,16 +141,28 @@ export function Dashboard() {
            <Button variant="ghost" size="icon" onClick={carregarDados} title="Atualizar Dados">
             <RefreshCw size={20} className={loading ? "spin" : ""} />
           </Button>
-          <Button onClick={() => navigate('/bots')}>
-            Ver todos os bots
+
+          {/* BOTÃO MÁGICO DE ALTERNAR VISÃO */}
+          <Button onClick={toggleViewMode} style={{ minWidth: '180px' }}>
+            {isGlobalView ? (
+              <>
+                <Bot size={18} style={{ marginRight: '8px' }} />
+                Ver bot selecionado
+              </>
+            ) : (
+              <>
+                <LayoutGrid size={18} style={{ marginRight: '8px' }} />
+                Ver todos os bots
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      {/* 2. TOP CARDS (Leads Mês, Leads Hoje, Assinantes) */}
+      {/* 2. TOP CARDS */}
       <div className="top-cards-grid">
         
-        {/* Card 1: Leads Mês */}
+        {/* Card 1 */}
         <div className="analytic-card">
           <div className="card-header-row">
             <span className="card-label">LEADS (NO PERÍODO)</span>
@@ -139,7 +173,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Card 2: Leads Hoje */}
+        {/* Card 2 */}
         <div className="analytic-card">
           <div className="card-header-row">
             <span className="card-label">NOVOS LEADS HOJE</span>
@@ -150,7 +184,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Card 3: Assinantes */}
+        {/* Card 3 */}
         <div className="analytic-card">
           <div className="card-header-row">
             <span className="card-label">ASSINANTES ATIVOS</span>
@@ -163,14 +197,14 @@ export function Dashboard() {
 
       </div>
 
-      {/* 3. GRID PRINCIPAL (Gráfico Esq + Métricas Dir) */}
+      {/* 3. GRID PRINCIPAL */}
       <div className="main-analytic-grid">
         
-        {/* COLUNA ESQUERDA: GRÁFICO E FATURAMENTO */}
+        {/* COLUNA ESQUERDA: GRÁFICO */}
         <div className="chart-section card-box">
           <div className="chart-header">
              
-             {/* Info à Esquerda */}
+             {/* Info Esquerda */}
              <div className="chart-info">
                <div className="icon-circle">
                  <ShoppingBag size={20} />
@@ -183,7 +217,7 @@ export function Dashboard() {
                </div>
              </div>
 
-             {/* FILTRO DE DATA À DIREITA */}
+             {/* Filtro de Data */}
              <div className="chart-filter-wrapper">
                 <DatePicker
                   selectsRange={true}
@@ -195,7 +229,7 @@ export function Dashboard() {
                   locale="pt-BR"
                   dateFormat="dd/MM/yyyy"
                   customInput={<CustomDateInput />}
-                  withPortal // Isso faz o calendário "flutuar" acima de tudo
+                  withPortal
                 />
              </div>
 
@@ -246,7 +280,6 @@ export function Dashboard() {
         {/* COLUNA DIREITA: LISTA DE KPIs */}
         <div className="side-stats-column">
           
-          {/* Item: Ticket Médio */}
           <div className="side-stat-card">
              <div className="side-stat-header">
                <span>TICKET MÉDIO</span>
@@ -257,7 +290,6 @@ export function Dashboard() {
              </div>
           </div>
 
-          {/* Item: Total de Vendas (Valor Hoje) */}
           <div className="side-stat-card">
              <div className="side-stat-header">
                <span>VENDAS HOJE</span>
@@ -268,7 +300,6 @@ export function Dashboard() {
              </div>
           </div>
 
-          {/* Item: Total de Transações (Qtd) */}
           <div className="side-stat-card">
              <div className="side-stat-header">
                <span>TRANSAÇÕES (Período)</span>
@@ -279,7 +310,6 @@ export function Dashboard() {
              </div>
           </div>
 
-           {/* Item: Reembolsos */}
            <div className="side-stat-card">
              <div className="side-stat-header">
                <span>REEMBOLSOS</span>
@@ -290,10 +320,9 @@ export function Dashboard() {
              </div>
           </div>
 
-          {/* Item: Conversão */}
           <div className="side-stat-card">
              <div className="side-stat-header">
-               <span>CONVERSÃO (Vendas/Leads)</span>
+               <span>CONVERSÃO</span>
                <Percent size={16} />
              </div>
              <div className="side-stat-value highlight-text">
