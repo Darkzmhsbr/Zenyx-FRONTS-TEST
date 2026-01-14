@@ -1,38 +1,64 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { ChevronRight, TrendingUp, Users, CreditCard, Activity, RefreshCw } from 'lucide-react';
+import { 
+  Users, 
+  TrendingUp, 
+  DollarSign, 
+  ShoppingBag, 
+  RefreshCw, 
+  Activity,
+  UserPlus,
+  Percent,
+  CreditCard
+} from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
+
 import { dashboardService } from '../services/api';
-import { useBot } from '../context/BotContext'; // <--- Uso do Contexto
+import { useBot } from '../context/BotContext'; 
 import { Button } from '../components/Button';
-import { Card, CardContent } from '../components/Card';
 import './Dashboard.css';
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { selectedBot } = useBot(); // Pega o bot global
+  const { selectedBot } = useBot(); 
   const [loading, setLoading] = useState(true);
+  
+  // Estado inicial com TODOS os campos novos do Backend
   const [metrics, setMetrics] = useState({
     total_revenue: 0,
     active_users: 0,
-    sales_today: 0
+    sales_today: 0,
+    leads_mes: 0,
+    leads_hoje: 0,
+    ticket_medio: 0,
+    total_transacoes: 0,
+    reembolsos: 0,
+    taxa_conversao: 0,
+    chart_data: [] 
   });
 
-  // Carrega dados quando o bot muda
   useEffect(() => {
-    if (selectedBot) {
-      carregarDados();
-    } else {
-      // Se não tiver bot, zera (ou carrega geral, opcional)
-      carregarDados(null); 
-    }
+    carregarDados();
+    // eslint-disable-next-line
   }, [selectedBot]);
 
   const carregarDados = async () => {
     try {
       setLoading(true);
-      // Passa o ID do bot selecionado para filtrar no backend
       const botId = selectedBot ? selectedBot.id : null;
       const data = await dashboardService.getStats(botId);
+      
+      // Garante que chart_data seja um array para não quebrar o Recharts
+      if (!data.chart_data) data.chart_data = [];
+      
       setMetrics(data);
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error);
@@ -42,109 +68,194 @@ export function Dashboard() {
   };
 
   const formatMoney = (value) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   };
 
-  const stats = [
-    { 
-      title: "Faturamento Total", 
-      value: formatMoney(metrics.total_revenue), 
-      icon: <TrendingUp size={24} />, 
-      trend: "Total Acumulado",
-      isPositive: true 
-    },
-    { 
-      title: "Assinantes Ativos", 
-      value: metrics.active_users, 
-      icon: <Users size={24} />, 
-      trend: "Base Atual",
-      isPositive: true 
-    },
-    { 
-      title: "Vendas Hoje", 
-      value: formatMoney(metrics.sales_today), 
-      icon: <CreditCard size={24} />, 
-      trend: "Últimas 24h",
-      isPositive: metrics.sales_today > 0 
-    },
-  ];
-
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container fade-in">
       
-      {/* Banner Principal - Título dinâmico */}
-      <div className="banner">
-        <div className="banner-content">
-          <h2>
-            Resultados de: <span style={{color:'#c333ff'}}>{selectedBot ? selectedBot.nome : "Geral"}</span>
+      {/* 1. CABEÇALHO DA PÁGINA */}
+      <div className="dashboard-header">
+        <div>
+          <h2 className="page-title">
+            Resumo analítico de bot selecionado: <span className="highlight-text">{selectedBot ? selectedBot.nome : "Visão Geral"}</span>
           </h2>
-          <p>
-            Acompanhe o desempenho, vendas e leads deste bot.
-            Seus dados são atualizados automaticamente em tempo real.
-          </p>
-          <Button size="lg" onClick={() => navigate('/bots')}>
-            Gerenciar Bots
-            <ChevronRight size={18} />
+          <p className="page-subtitle">Gerencie, acompanhe e tome decisões com mais clareza.</p>
+        </div>
+        
+        <div className="header-actions">
+           {/* Botão de Atualizar */}
+           <Button variant="ghost" size="icon" onClick={carregarDados} title="Atualizar Dados">
+            <RefreshCw size={20} className={loading ? "spin" : ""} />
+          </Button>
+          <Button onClick={() => navigate('/bots')}>
+            Ver todos os bots
           </Button>
         </div>
       </div>
 
-      {/* Grid de Estatísticas */}
-      <div className="stats-grid">
-        {stats.map((stat, index) => (
-          <Card key={index}>
-            <CardContent>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                <div className="stat-icon-wrapper">
-                  {stat.icon}
-                </div>
-                <span className={`stat-trend ${stat.isPositive ? 'trend-up' : 'trend-down'}`}>
-                  {stat.trend}
-                </span>
-              </div>
-              
-              <div className="stat-value">
-                {loading ? <span style={{fontSize:'1rem', opacity:0.5}}>Carregando...</span> : stat.value}
-              </div>
-              <div className="stat-label">{stat.title}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Ações Rápidas */}
-      <h3 style={{ marginTop: '30px', marginBottom: '15px', color: 'var(--foreground)' }}>Acesso Rápido</h3>
-      <div className="stats-grid">
+      {/* 2. TOP CARDS (Leads Mês, Leads Hoje, Assinantes) */}
+      <div className="top-cards-grid">
         
-        <Card className="hover-effect" onClick={() => navigate('/bots')}>
-          <CardContent style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}>
-            <div className="stat-icon-wrapper" style={{ background: 'rgba(42, 171, 238, 0.1)', color: '#2AABEE' }}>
-              <Activity size={24} />
-            </div>
-            <div>
-              <h4 style={{ margin: 0, color: 'var(--foreground)' }}>Status dos Bots</h4>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>Ver conexões</p>
-            </div>
-            <div style={{ marginLeft: 'auto' }}>
-              <Button variant="ghost" size="icon"><ChevronRight /></Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Card 1: Leads Mês */}
+        <div className="analytic-card">
+          <div className="card-header-row">
+            <span className="card-label">LEADS DO MÊS ATUAL</span>
+            <Users size={18} className="card-icon-muted" />
+          </div>
+          <div className="card-main-value">
+            {loading ? "..." : metrics.leads_mes}
+          </div>
+        </div>
 
-        <Card className="hover-effect" onClick={() => carregarDados()}>
-          <CardContent style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}>
-            <div className="stat-icon-wrapper" style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--foreground)' }}>
-              <RefreshCw size={24} className={loading ? "spin" : ""} />
-            </div>
-            <div>
-              <h4 style={{ margin: 0, color: 'var(--foreground)' }}>Atualizar Dados</h4>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>Sincronizar agora</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Card 2: Leads Hoje */}
+        <div className="analytic-card">
+          <div className="card-header-row">
+            <span className="card-label">NOVOS LEADS HOJE</span>
+            <UserPlus size={18} className="card-icon-muted" />
+          </div>
+          <div className="card-main-value">
+            {loading ? "..." : metrics.leads_hoje}
+          </div>
+        </div>
+
+        {/* Card 3: Assinantes */}
+        <div className="analytic-card">
+          <div className="card-header-row">
+            <span className="card-label">ASSINANTES ATIVOS</span>
+            <Activity size={18} className="card-icon-muted" />
+          </div>
+          <div className="card-main-value">
+            {loading ? "..." : metrics.active_users}
+          </div>
+        </div>
 
       </div>
 
+      {/* 3. GRID PRINCIPAL (Gráfico Esq + Métricas Dir) */}
+      <div className="main-analytic-grid">
+        
+        {/* COLUNA ESQUERDA: GRÁFICO E FATURAMENTO */}
+        <div className="chart-section card-box">
+          <div className="chart-header">
+             <div className="chart-info">
+               <div className="icon-circle">
+                 <ShoppingBag size={20} />
+               </div>
+               <div>
+                 <span className="chart-label">TOTAL DE FATURAMENTO (GERAL)</span>
+                 <div className="chart-big-number">
+                    {loading ? "..." : formatMoney(metrics.total_revenue)}
+                 </div>
+               </div>
+             </div>
+             <div className="chart-legend">
+               <span className="dot"></span> Faturamento
+             </div>
+          </div>
+
+          <div className="chart-wrapper">
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={metrics.chart_data}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#c333ff" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#c333ff" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2d2647" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fill: '#b9b6c9', fontSize: 12}} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fill: '#b9b6c9', fontSize: 12}} 
+                  tickFormatter={(value) => `R$${value}`}
+                />
+                <Tooltip 
+                  contentStyle={{backgroundColor: '#1b1730', border: '1px solid #2d2647', borderRadius: '8px', color: '#fff'}}
+                  itemStyle={{color: '#c333ff'}}
+                  formatter={(value) => [`R$ ${value.toFixed(2)}`, "Faturamento"]}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#c333ff" 
+                  strokeWidth={3}
+                  fillOpacity={1} 
+                  fill="url(#colorRevenue)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* COLUNA DIREITA: LISTA DE KPIs */}
+        <div className="side-stats-column">
+          
+          {/* Item: Ticket Médio */}
+          <div className="side-stat-card">
+             <div className="side-stat-header">
+               <span>TICKET MÉDIO</span>
+               <ShoppingBag size={16} />
+             </div>
+             <div className="side-stat-value">
+               {loading ? "..." : formatMoney(metrics.ticket_medio)}
+             </div>
+          </div>
+
+          {/* Item: Total de Vendas (Valor Hoje) */}
+          <div className="side-stat-card">
+             <div className="side-stat-header">
+               <span>VENDAS HOJE</span>
+               <DollarSign size={16} />
+             </div>
+             <div className="side-stat-value">
+               {loading ? "..." : formatMoney(metrics.sales_today)}
+             </div>
+          </div>
+
+          {/* Item: Total de Transações (Qtd) */}
+          <div className="side-stat-card">
+             <div className="side-stat-header">
+               <span>TOTAL DE TRANSAÇÕES</span>
+               <RefreshCw size={16} />
+             </div>
+             <div className="side-stat-value">
+               {loading ? "..." : metrics.total_transacoes}
+             </div>
+          </div>
+
+           {/* Item: Reembolsos */}
+           <div className="side-stat-card">
+             <div className="side-stat-header">
+               <span>REEMBOLSOS</span>
+               <CreditCard size={16} />
+             </div>
+             <div className="side-stat-value text-danger">
+               {loading ? "..." : formatMoney(metrics.reembolsos)}
+             </div>
+          </div>
+
+          {/* Item: Conversão */}
+          <div className="side-stat-card">
+             <div className="side-stat-header">
+               <span>CONVERSÃO (Vendas/Leads)</span>
+               <Percent size={16} />
+             </div>
+             <div className="side-stat-value highlight-text">
+               {loading ? "..." : `${metrics.taxa_conversao}%`}
+             </div>
+          </div>
+
+        </div>
+
+      </div>
     </div>
   );
 }
