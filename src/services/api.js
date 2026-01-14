@@ -48,6 +48,7 @@ export const planService = {
   listPlans: async (id) => (await api.get(`/api/admin/plans/${id}`)).data,
   savePlan: async (p) => (await api.post('/api/admin/plans', p)).data,
   createPlan: async (dados) => (await api.post('/api/admin/plans', dados)).data,
+  updatePlan: async (id, dados) => (await api.put(`/api/admin/plans/${id}`, dados)).data,
   deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
 };
 
