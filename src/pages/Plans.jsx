@@ -79,14 +79,28 @@ export function Plans() {
   };
 
   // --- SALVAR EDIÇÃO ---
+  // --- SALVAR EDIÇÃO (COM PROTEÇÃO CONTRA ERROS) ---
   const handleUpdate = async () => {
     if (!editingPlan) return;
     
+    // Funções auxiliares para limpar os números
+    const limparPreco = (val) => {
+        if (!val) return 0.0;
+        const numero = parseFloat(String(val).replace(',', '.'));
+        return isNaN(numero) ? 0.0 : numero;
+    };
+
+    const limparDias = (val) => {
+        if (!val) return 0;
+        const numero = parseInt(val);
+        return isNaN(numero) ? 0 : numero;
+    };
+
     try {
       await planService.updatePlan(editingPlan.id, {
-        nome_exibicao: editingPlan.nome_exibicao,
-        preco: parseFloat(String(editingPlan.preco).replace(',', '.')),
-        dias_duracao: parseInt(editingPlan.dias_duracao)
+        nome_exibicao: editingPlan.nome_exibicao || "Plano Sem Nome",
+        preco: limparPreco(editingPlan.preco),
+        dias_duracao: limparDias(editingPlan.dias_duracao)
       });
 
       Swal.fire({ title: 'Atualizado!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
@@ -94,10 +108,11 @@ export function Plans() {
       setEditingPlan(null);
       carregarPlanos();
     } catch (error) {
-      Swal.fire('Erro', 'Falha ao atualizar plano.', 'error');
+      console.error(error); // Ajuda a ver o erro real no console
+      Swal.fire('Erro', 'Falha ao atualizar plano. Verifique os dados.', 'error');
     }
   };
-
+  
   // --- EXCLUSÃO ---
   const handleDelete = async (planId) => {
     const result = await Swal.fire({
