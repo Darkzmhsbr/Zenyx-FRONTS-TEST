@@ -21,7 +21,8 @@ export function ChatFlow() {
     autodestruir_1: false,
     msg_2_texto: '',
     msg_2_media: '',
-    mostrar_planos_2: true
+    mostrar_planos_2: true,
+    mostrar_planos_1: false // [NOVO] Opção para mostrar planos no passo 1
   });
 
   // Estado dos Passos Dinâmicos (Lista)
@@ -58,7 +59,8 @@ export function ChatFlow() {
             autodestruir_1: flowData.autodestruir_1 || false,
             msg_2_texto: flowData.msg_2_texto || '',
             msg_2_media: flowData.msg_2_media || '',
-            mostrar_planos_2: flowData.mostrar_planos_2 !== false
+            mostrar_planos_2: flowData.mostrar_planos_2 !== false,
+            mostrar_planos_1: flowData.mostrar_planos_1 || false // Carrega do backend
         });
 
         // 2. Carrega Passos Dinâmicos
@@ -224,23 +226,43 @@ export function ChatFlow() {
                   onChange={e => setFlow({...flow, msg_boas_vindas: e.target.value})}
                 />
 
-                <div className="row-inputs">
-                    <Input 
-                        label="Texto do Botão" 
-                        value={flow.btn_text_1}
-                        onChange={e => setFlow({...flow, btn_text_1: e.target.value})}
-                    />
-                    <div className="toggle-wrapper">
-                        <label>Auto-destruir após clicar?</label>
-                        <div 
-                            className={`custom-toggle ${flow.autodestruir_1 ? 'active' : ''}`}
-                            onClick={() => setFlow({...flow, autodestruir_1: !flow.autodestruir_1})}
-                        >
-                            <div className="toggle-handle"></div>
-                            <span className="toggle-label">{flow.autodestruir_1 ? 'SIM' : 'NÃO'}</span>
+                {/* --- [NOVO] OPÇÃO DE MOSTRAR PLANOS AQUI --- */}
+                <div className="toggle-wrapper full-width">
+                  <label>Mostrar botões de Planos (Checkout) nesta mensagem?</label>
+                  <div 
+                    className={`custom-toggle ${flow.mostrar_planos_1 ? 'active-green' : ''}`}
+                    onClick={() => setFlow({...flow, mostrar_planos_1: !flow.mostrar_planos_1})}
+                  >
+                    <div className="toggle-handle"></div>
+                    <span className="toggle-label">{flow.mostrar_planos_1 ? 'MOSTRAR PLANOS (ENCERRA FLUXO)' : 'NÃO (CONTINUA FLUXO)'}</span>
+                  </div>
+                  {flow.mostrar_planos_1 && (
+                    <p style={{fontSize: '0.8rem', color: '#10b981', marginTop: '5px'}}>
+                      ⚠️ Se ativado, o fluxo acaba aqui e a última mensagem (Passo Final) não será enviada.
+                    </p>
+                  )}
+                </div>
+
+                {/* Só mostra configurações do botão de desbloqueio se NÃO estiver mostrando planos */}
+                {!flow.mostrar_planos_1 && (
+                    <div className="row-inputs">
+                        <Input 
+                            label="Texto do Botão" 
+                            value={flow.btn_text_1}
+                            onChange={e => setFlow({...flow, btn_text_1: e.target.value})}
+                        />
+                        <div className="toggle-wrapper">
+                            <label>Auto-destruir após clicar?</label>
+                            <div 
+                                className={`custom-toggle ${flow.autodestruir_1 ? 'active' : ''}`}
+                                onClick={() => setFlow({...flow, autodestruir_1: !flow.autodestruir_1})}
+                            >
+                                <div className="toggle-handle"></div>
+                                <span className="toggle-label">{flow.autodestruir_1 ? 'SIM' : 'NÃO'}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
