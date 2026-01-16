@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   FolderPlus, Link as LinkIcon, Trash2, ArrowLeft, Copy, 
   BarChart2, PieChart, DollarSign, MousePointer, Users,
-  Facebook, Instagram, Youtube, MessageCircle, Globe, Share2
+  Facebook, Instagram, Youtube, MessageCircle, Globe, Share2, Send
 } from 'lucide-react';
 import { 
   PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -17,7 +17,7 @@ import Swal from 'sweetalert2';
 import './Tracking.css';
 
 // Cores para os Gráficos
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#c333ff', '#ef4444'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#c333ff', '#ef4444', '#229ED9'];
 
 export function Tracking() {
   // Estados de Navegação
@@ -62,7 +62,7 @@ export function Tracking() {
     try {
       const data = await trackingService.listFolders();
       setFolders(data);
-      processCharts(data); // 🔥 Processa dados reais
+      processCharts(data); // 🔥 Processa dados reais vindos do backend
     } catch (error) {
       console.error("Erro ao carregar pastas", error);
     } finally {
@@ -77,19 +77,20 @@ export function Tracking() {
     
     foldersData.forEach(folder => {
         const plat = folder.plataforma || 'outros';
-        // Normaliza nomes para o gráfico
+        // Normaliza nomes para o gráfico (Capitalize)
         const label = plat.charAt(0).toUpperCase() + plat.slice(1);
         
         if (!platformMap[label]) platformMap[label] = 0;
+        // O backend deve retornar 'total_clicks', se não vier, assume 0
         platformMap[label] += (folder.total_clicks || 0);
     });
 
     const newPieData = Object.keys(platformMap).map(key => ({
         name: key,
         value: platformMap[key]
-    })).filter(item => item.value > 0); // Só mostra se tiver > 0 cliques
+    })).filter(item => item.value > 0); // Só mostra fatias > 0
 
-    // Se estiver tudo zerado, mostra um placeholder cinza
+    // Se estiver tudo zerado, mostra um placeholder cinza para não ficar vazio
     if (newPieData.length === 0) {
         setPieData([{ name: 'Sem dados', value: 1, color: '#333' }]);
     } else {
@@ -97,13 +98,13 @@ export function Tracking() {
     }
 
     // 2. Gráfico de Barras (Pastas Individuais: Cliques x Vendas)
-    // Filtra apenas pastas que tem alguma atividade para não poluir
-    const activeFolders = foldersData.filter(f => f.total_clicks > 0 || f.total_vendas > 0);
+    // Filtra apenas pastas que tem alguma atividade para não poluir o gráfico
+    const activeFolders = foldersData.filter(f => (f.total_clicks > 0 || f.total_vendas > 0));
     
     const newBarData = activeFolders.map(f => ({
         name: f.nome,
-        clicks: f.total_clicks,
-        vendas: f.total_vendas
+        clicks: f.total_clicks || 0,
+        vendas: f.total_vendas || 0
     }));
 
     setBarData(newBarData);
@@ -131,7 +132,12 @@ export function Tracking() {
       setShowFolderModal(false);
       setNewFolder({ nome: '', plataforma: 'instagram' });
       loadDashboard();
-      Swal.fire('Sucesso', 'Pasta criada!', 'success');
+      Swal.fire({
+        title: 'Sucesso',
+        text: 'Pasta criada!',
+        icon: 'success',
+        background: '#151515', color: '#fff'
+      });
     } catch (error) {
       Swal.fire('Erro', 'Falha ao criar pasta.', 'error');
     }
@@ -145,11 +151,21 @@ export function Tracking() {
         folder_id: selectedFolder.id
       });
       setShowLinkModal(false);
+      // Recarrega links da pasta atual
       const links = await trackingService.listLinks(selectedFolder.id);
       setCurrentLinks(links);
+      
+      // Reseta form
       setNewLink({ nome: '', origem: 'stories', bot_id: '', codigo: '' });
-      Swal.fire('Sucesso', 'Link rastreável gerado!', 'success');
+      
+      Swal.fire({
+        title: 'Sucesso',
+        text: 'Link rastreável gerado!',
+        icon: 'success',
+        background: '#151515', color: '#fff'
+      });
     } catch (error) {
+        // Se der erro de duplicidade (código já existe)
         if (error.response && error.response.status === 400) {
             Swal.fire('Erro', 'Este código personalizado já existe. Tente outro.', 'error');
         } else {
@@ -180,7 +196,7 @@ export function Tracking() {
   };
 
   const handleDeleteFolder = async (e, id) => {
-    e.stopPropagation(); 
+    e.stopPropagation(); // Evita abrir a pasta ao clicar no lixo
     const result = await Swal.fire({
         title: 'Excluir Pasta?',
         text: "Todos os links dentro dela também serão apagados!",
@@ -200,6 +216,7 @@ export function Tracking() {
     }
   };
 
+  // --- UTILITÁRIOS ---
   const copyLink = (linkData) => {
     const bot = bots.find(b => b.value === linkData.bot_id);
     const username = bot ? bot.username : 'SeuBot';
@@ -221,7 +238,8 @@ export function Tracking() {
         case 'instagram': return <Instagram color="#E4405F" />;
         case 'youtube': return <Youtube color="#FF0000" />;
         case 'whatsapp': return <MessageCircle color="#25D366" />;
-        case 'tiktok': return <Share2 color="#000" />; 
+        case 'tiktok': return <Share2 color="#000" />;
+        case 'telegram': return <Send color="#229ED9" />;
         default: return <Globe color="#ccc" />;
     }
   };
@@ -229,6 +247,7 @@ export function Tracking() {
   return (
     <div className="tracking-container">
         
+        {/* --- CABEÇALHO --- */}
         <div className="page-header">
             <div>
                 <h1>Rastreamento de Links</h1>
@@ -304,6 +323,7 @@ export function Tracking() {
 
                 <h3 style={{marginTop: '30px', marginBottom: '15px'}}>Suas Pastas</h3>
                 
+                {/* --- GRID DE PASTAS --- */}
                 <div className="folders-grid">
                     {folders.map(folder => (
                         <div key={folder.id} className="folder-card" onClick={() => openFolder(folder)}>
@@ -329,7 +349,7 @@ export function Tracking() {
             </>
         ) : (
             <>
-                {/* --- DENTRO DA PASTA (LISTA DE LINKS) --- */}
+                {/* --- VIEW: DENTRO DA PASTA (LISTA DE LINKS) --- */}
                 <div className="folder-header-bar">
                     <button className="back-btn" onClick={() => { setView('dashboard'); setSelectedFolder(null); loadDashboard(); }}>
                         <ArrowLeft size={20} /> Voltar
@@ -413,6 +433,7 @@ export function Tracking() {
                                 {label: 'YouTube', value: 'youtube'},
                                 {label: 'TikTok', value: 'tiktok'},
                                 {label: 'WhatsApp', value: 'whatsapp'},
+                                {label: 'Telegram', value: 'telegram'}, // 🔥 Ícone do Telegram
                                 {label: 'Outros / Site', value: 'site'}
                             ]}
                             value={newFolder.plataforma}
