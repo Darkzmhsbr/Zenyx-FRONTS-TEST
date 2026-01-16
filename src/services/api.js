@@ -237,6 +237,10 @@ export const adminService = {
       } 
     },
     addAdmin: async (id, d) => (await api.post(`/api/admin/bots/${id}/admins`, d)).data,
+    
+    // 🔥 [NOVO] Função para atualizar admin existente
+    updateAdmin: async (botId, adminId, d) => (await api.put(`/api/admin/bots/${botId}/admins/${adminId}`, d)).data,
+    
     removeAdmin: async (id, tId) => (await api.delete(`/api/admin/bots/${id}/admins/${tId}`)).data
 };
 
