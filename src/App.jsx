@@ -6,7 +6,7 @@ import { Login } from './pages/Login';
 
 import { Dashboard } from './pages/Dashboard';
 import { Contacts } from './pages/Contacts';
-import { Funil } from './pages/Funil'; // 🔥 NOVO IMPORT
+import { Funil } from './pages/Funil';
 import { Plans } from './pages/Plans';
 import { Bots } from './pages/Bots';
 import { NewBot } from './pages/NewBot';
@@ -15,6 +15,7 @@ import { Integrations } from './pages/Integrations';
 import { ChatFlow } from './pages/ChatFlow';
 import { Remarketing } from './pages/Remarketing';
 import { AdminManager } from './pages/AdminManager';
+import { OrderBump } from './pages/OrderBump'; // 🔥 NOVO IMPORT
 
 // Placeholder para Logout
 const Logout = () => {
@@ -36,11 +37,9 @@ function App() {
       <BotProvider>
         <Router>
           <Routes>
-            
-            {/* ROTA PÚBLICA (LOGIN) */}
+            {/* Rota pública */}
             <Route path="/login" element={<Login />} />
-            <Route path="/logout" element={<Logout />} />
-
+            
             {/* ROTAS PROTEGIDAS (DENTRO DO LAYOUT) */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Dashboard />} />
@@ -49,12 +48,15 @@ function App() {
               <Route path="/bots/new" element={<NewBot />} />
               <Route path="/bots/config/:id" element={<BotConfig />} />
               
-              <Route path="/funil" element={<Funil />} /> {/* 🔥 NOVA ROTA */}
+              <Route path="/funil" element={<Funil />} />
               <Route path="/contatos" element={<Contacts />} />
               <Route path="/planos" element={<Plans />} />
               <Route path="/flow" element={<ChatFlow />} />
               <Route path="/remarketing" element={<Remarketing />} />
               <Route path="/integracoes" element={<Integrations />} />
+              
+              {/* 🔥 NOVA ROTA DE ORDER BUMP */}
+              <Route path="/ofertas/order-bump" element={<OrderBump />} />
               
               <Route path="/config" element={<PlaceholderPage title="Configurações Gerais" />} />
               <Route path="/tutorial" element={<PlaceholderPage title="Tutoriais" />} />

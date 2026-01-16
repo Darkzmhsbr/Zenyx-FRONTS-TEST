@@ -275,4 +275,18 @@ export const integrationService = {
     }
 };
 
+// 🔥 [NOVO] SERVIÇO DE ORDER BUMP (OFERTAS EXTRAS)
+export const orderBumpService = {
+  get: async (botId) => {
+    try {
+      return (await api.get(`/api/admin/bots/${botId}/order-bump`)).data;
+    } catch {
+      return null;
+    }
+  },
+  save: async (botId, data) => {
+    return (await api.post(`/api/admin/bots/${botId}/order-bump`, data)).data;
+  }
+};
+
 export default api;
