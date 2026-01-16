@@ -15,7 +15,8 @@ import { Integrations } from './pages/Integrations';
 import { ChatFlow } from './pages/ChatFlow';
 import { Remarketing } from './pages/Remarketing';
 import { AdminManager } from './pages/AdminManager';
-import { OrderBump } from './pages/OrderBump'; // 🔥 NOVO IMPORT
+import { OrderBump } from './pages/OrderBump';
+import { Profile } from './pages/Profile'; // 🔥 NOVO IMPORT
 
 // Placeholder para Logout
 const Logout = () => {
@@ -55,15 +56,17 @@ function App() {
               <Route path="/remarketing" element={<Remarketing />} />
               <Route path="/integracoes" element={<Integrations />} />
               
-              {/* 🔥 NOVA ROTA DE ORDER BUMP */}
               <Route path="/ofertas/order-bump" element={<OrderBump />} />
+              
+              {/* 🔥 NOVA ROTA DE PERFIL */}
+              <Route path="/perfil" element={<Profile />} />
               
               <Route path="/config" element={<PlaceholderPage title="Configurações Gerais" />} />
               <Route path="/tutorial" element={<PlaceholderPage title="Tutoriais" />} />
               
-              {/* FUNÇÕES EXTRAS */}
-              <Route path="/funcoes" element={<PlaceholderPage title="Funções Extras" />} />
-              <Route path="/funcoes/admins" element={<AdminManager />} />
+              {/* FUNÇÕES EXTRAS */}\
+              <Route path="/funcoes" element={<PlaceholderPage title="Funções Extras" />} />\
+              <Route path="/funcoes/admins" element={<AdminManager />} />\
             </Route>
 
             {/* Qualquer outra rota redireciona para login */}

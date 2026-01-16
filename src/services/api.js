@@ -289,4 +289,14 @@ export const orderBumpService = {
   }
 };
 
+// 🔥 [NOVO] SERVIÇO DE PERFIL & CONQUISTAS
+export const profileService = {
+  get: async () => {
+    return (await api.get('/api/admin/profile')).data;
+  },
+  update: async (data) => {
+    return (await api.post('/api/admin/profile', data)).data;
+  }
+};
+
 export default api;

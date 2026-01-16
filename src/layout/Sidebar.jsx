@@ -18,8 +18,9 @@ import {
   Layers,
   Unlock,
   X,
-  TrendingUp, // 🔥 NOVO ÍCONE PARA FUNIL
-  ShoppingBag // 🔥 NOVO ÍCONE PARA OFERTAS EXTRAS
+  TrendingUp, 
+  ShoppingBag,
+  User // 🔥 NOVO ICONE
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
@@ -33,7 +34,7 @@ export function Sidebar({ isOpen, onClose }) {
   
   const [isBotMenuOpen, setIsBotMenuOpen] = useState(true);
   const [isExtrasMenuOpen, setIsExtrasMenuOpen] = useState(false);
-  const [isOffersMenuOpen, setIsOffersMenuOpen] = useState(false); // 🔥 NOVO ESTADO
+  const [isOffersMenuOpen, setIsOffersMenuOpen] = useState(false);
 
   // ============================================================
   // 🔥 FUNÇÃO DE LOGOUT
@@ -111,7 +112,7 @@ export function Sidebar({ isOpen, onClose }) {
             )}
           </div>
 
-          {/* FUNIL (NOVO) */}
+          {/* FUNIL */}
           <Link to="/funil" className={`nav-item ${currentPath === '/funil' ? 'active' : ''}`} onClick={onClose}>
             <TrendingUp size={20} />
             Funil
@@ -135,7 +136,7 @@ export function Sidebar({ isOpen, onClose }) {
             Flow Chat
           </Link>
 
-          {/* 🔥 NOVO MENU: OFERTAS EXTRAS */}
+          {/* OFERTAS EXTRAS */}
           <div className="nav-group">
             <div 
               className={`nav-item has-submenu ${isOffersMenuOpen ? 'open' : ''}`}
@@ -203,11 +204,17 @@ export function Sidebar({ isOpen, onClose }) {
             Integrações
           </Link>
 
-          {/* 🔥 BOTÃO SAIR */}
+          {/* 🔥 NOVO LINK: MEU PERFIL */}
+          <Link to="/perfil" className={`nav-item ${currentPath === '/perfil' ? 'active' : ''}`} onClick={onClose} style={{ marginTop: 'auto' }}>
+            <User size={20} />
+            Meu Perfil
+          </Link>
+
+          {/* BOTÃO SAIR */}
           <div 
             className="nav-item" 
             onClick={handleLogout}
-            style={{ marginTop: 'auto', color: '#ef4444', cursor: 'pointer' }}
+            style={{ color: '#ef4444', cursor: 'pointer' }}
           >
             <LogOut size={20} />
             Sair
