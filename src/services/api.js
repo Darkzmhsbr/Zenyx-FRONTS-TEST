@@ -45,15 +45,15 @@ export const botService = {
 
 // --- PLANOS ---
 export const planService = {
-  listPlans: async (id) => (await api.get(`/api/admin/bots/${id}/plans`)).data, // Ajustado para rota correta de bots
+  listPlans: async (id) => (await api.get(`/api/admin/bots/${id}/plans`)).data, 
   savePlan: async (p) => (await api.post('/api/admin/plans', p)).data,
-  createPlan: async (botId, dados) => (await api.post(`/api/admin/bots/${botId}/plans`, dados)).data, // Ajustado assinatura
+  createPlan: async (botId, dados) => (await api.post(`/api/admin/bots/${botId}/plans`, dados)).data,
   updatePlan: async (id, dados) => (await api.put(`/api/admin/plans/${id}`, dados)).data,
   deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
 };
 
 // ============================================================
-// 📢 SERVIÇO DE REMARKETING (CORRIGIDO)
+// 📢 SERVIÇO DE REMARKETING
 // ============================================================
 export const remarketingService = {
   send: async (botId, data, isTest = false, specificUserId = null) => {
@@ -86,7 +86,6 @@ export const remarketingService = {
     return (await api.delete(`/api/admin/remarketing/history/${historyId}`)).data;
   },
   
-  // 🔥 [CORRIGIDO] Função de envio individual
   sendIndividual: async (botId, telegramId, historyId) => {
     try {
       const response = await api.post(`/api/admin/bots/${botId}/remarketing/send-individual`, {
@@ -102,7 +101,7 @@ export const remarketingService = {
 };
 
 // ============================================================
-// 🔥 FLOW V2 (Passos Dinâmicos + Edição)
+// 🔥 FLOW V2
 // ============================================================
 export const flowService = {
   getFlow: async (botId) => {
@@ -133,10 +132,9 @@ export const flowService = {
 };
 
 // ============================================================
-// 👥 CRM / CONTATOS (CORRIGIDO - AGORA UNIFICA LEADS + PEDIDOS)
+// 👥 CRM / CONTATOS
 // ============================================================
 export const crmService = {
-  // 🔥 [CORRIGIDO] Agora busca leads + pedidos quando filter='todos'
   getContacts: async (botId, filter = 'todos', page = 1, perPage = 50) => {
     const params = new URLSearchParams({
       status: filter,
@@ -144,115 +142,59 @@ export const crmService = {
       per_page: perPage.toString()
     });
     
-    if (botId) {
-      params.append('bot_id', botId);
-    }
+    if (botId) params.append('bot_id', botId);
     
     try {
-      const url = `/api/admin/contacts?${params.toString()}`;
-      const response = await api.get(url);
+      const response = await api.get(`/api/admin/contacts?${params.toString()}`);
       return response.data;
     } catch (error) {
-      console.error('Erro ao buscar contatos:', error);
-      return { 
-        data: [], 
-        total: 0, 
-        page: 1, 
-        per_page: perPage, 
-        total_pages: 0 
-      };
-    }
-  },
-  
-  // Buscar apenas leads (TOPO do funil)
-  getLeads: async (botId, page = 1, perPage = 50) => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      per_page: perPage.toString()
-    });
-    
-    if (botId) {
-      params.append('bot_id', botId);
-    }
-    
-    const url = `/api/admin/leads?${params.toString()}`;
-    try {
-      const response = await api.get(url);
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar leads:', error);
       return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 };
     }
   },
   
-  // Estatísticas do funil
+  getLeads: async (botId, page = 1, perPage = 50) => {
+    const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
+    if (botId) params.append('bot_id', botId);
+    
+    try {
+      return (await api.get(`/api/admin/leads?${params.toString()}`)).data;
+    } catch (error) {
+      return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 };
+    }
+  },
+  
   getFunnelStats: async (botId) => {
     try {
-      const url = botId 
-        ? `/api/admin/contacts/funnel-stats?bot_id=${botId}`
-        : '/api/admin/contacts/funnel-stats';
-      const response = await api.get(url);
-      return response.data;
+      const url = botId ? `/api/admin/contacts/funnel-stats?bot_id=${botId}` : '/api/admin/contacts/funnel-stats';
+      return (await api.get(url)).data;
     } catch (error) {
-      console.error('Erro ao buscar estatísticas do funil:', error);
-      return {
-        topo: 0,
-        meio: 0,
-        fundo: 0,
-        expirados: 0,
-        total: 0
-      };
+      return { topo: 0, meio: 0, fundo: 0, expirados: 0, total: 0 };
     }
   },
   
-  updateUser: async (userId, data) => {
-    try {
-      return (await api.put(`/api/admin/users/${userId}`, data)).data;
-    } catch (error) {
-      console.error('Erro ao atualizar usuário:', error);
-      throw error;
-    }
-  },
-  
-  resendAccess: async (userId) => {
-    try {
-      return (await api.post(`/api/admin/users/${userId}/resend-access`)).data;
-    } catch (error) {
-      console.error('Erro ao reenviar acesso:', error);
-      throw error;
-    }
-  }
+  updateUser: async (userId, data) => (await api.put(`/api/admin/users/${userId}`, data)).data,
+  resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
 };
 
-// Alias para manter compatibilidade
+// Alias
 export const admin = crmService;
-export const leadService = crmService; // Fallback se alguém usar leadService
+export const leadService = crmService;
 
 export const adminService = {
     listAdmins: async (id) => { 
-      try { 
-        return (await api.get(`/api/admin/bots/${id}/admins`)).data 
-      } catch { 
-        return [] 
-      } 
+      try { return (await api.get(`/api/admin/bots/${id}/admins`)).data } catch { return [] } 
     },
     addAdmin: async (id, d) => (await api.post(`/api/admin/bots/${id}/admins`, d)).data,
-    
-    // 🔥 [NOVO] Função para atualizar admin existente
     updateAdmin: async (botId, adminId, d) => (await api.put(`/api/admin/bots/${botId}/admins/${adminId}`, d)).data,
-    
     removeAdmin: async (id, tId) => (await api.delete(`/api/admin/bots/${id}/admins/${tId}`)).data
 };
 
 export const dashboardService = { 
-  // Agora aceita startDate e endDate (opcionais)
   getStats: async (id = null, startDate = null, endDate = null) => {
-    // Cria os parâmetros de URL
     const params = new URLSearchParams();
     if (id) params.append('bot_id', id);
     if (startDate) params.append('start_date', startDate.toISOString());
     if (endDate) params.append('end_date', endDate.toISOString());
-
     return (await api.get(`/api/admin/dashboard/stats?${params.toString()}`)).data;
   }
 };
@@ -261,55 +203,48 @@ export const integrationService = {
     getConfig: async () => (await api.get('/api/admin/config')).data,
     saveConfig: async (d) => (await api.post('/api/admin/config', d)).data,
     getPushinStatus: async () => {
-        try {
-            const response = await api.get('/api/admin/integrations/pushinpay');
-            return response.data;
-        } catch (error) {
-            console.error("Erro ao buscar status PushinPay", error);
-            return { status: 'desconectado' };
-        }
+        try { return (await api.get('/api/admin/integrations/pushinpay')).data; } 
+        catch { return { status: 'desconectado' }; }
     },
-    savePushinToken: async (token) => {
-        const response = await api.post('/api/admin/integrations/pushinpay', { token });
-        return response.data;
-    }
+    savePushinToken: async (token) => (await api.post('/api/admin/integrations/pushinpay', { token })).data
 };
 
-// 🔥 [NOVO] SERVIÇO DE ORDER BUMP (OFERTAS EXTRAS)
 export const orderBumpService = {
   get: async (botId) => {
-    try {
-      return (await api.get(`/api/admin/bots/${botId}/order-bump`)).data;
-    } catch {
-      return null;
-    }
+    try { return (await api.get(`/api/admin/bots/${botId}/order-bump`)).data; } catch { return null; }
   },
-  save: async (botId, data) => {
-    return (await api.post(`/api/admin/bots/${botId}/order-bump`, data)).data;
-  }
+  save: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/order-bump`, data)).data
 };
 
-// 🔥 [NOVO] SERVIÇO DE PERFIL & CONQUISTAS
 export const profileService = {
-  get: async () => {
-    return (await api.get('/api/admin/profile')).data;
-  },
-  update: async (data) => {
-    return (await api.post('/api/admin/profile', data)).data;
-  }
+  get: async () => (await api.get('/api/admin/profile')).data,
+  update: async (data) => (await api.post('/api/admin/profile', data)).data
 };
 
-// 🔥 [NOVO] SERVIÇO DE RASTREAMENTO (TRACKING LINKS)
 export const trackingService = {
-  // Pastas
   listFolders: async () => (await api.get('/api/admin/tracking/folders')).data,
   createFolder: async (data) => (await api.post('/api/admin/tracking/folders', data)).data,
   deleteFolder: async (folderId) => (await api.delete(`/api/admin/tracking/folders/${folderId}`)).data,
-  
-  // Links
   listLinks: async (folderId) => (await api.get(`/api/admin/tracking/links/${folderId}`)).data,
   createLink: async (data) => (await api.post('/api/admin/tracking/links', data)).data,
   deleteLink: async (linkId) => (await api.delete(`/api/admin/tracking/links/${linkId}`)).data
+};
+
+// 🔥 [NOVO] SERVIÇO DE MINI APP (TEMPLATE PERSONALIZÁVEL)
+export const miniappService = {
+  // Configuração Global (Admin)
+  saveConfig: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/miniapp/config`, data)).data,
+  
+  // Categorias (Admin)
+  listCategories: async (botId) => (await api.get(`/api/admin/bots/${botId}/miniapp/categories`)).data,
+  createCategory: async (data) => (await api.post(`/api/admin/miniapp/categories`, data)).data,
+  deleteCategory: async (catId) => (await api.delete(`/api/admin/miniapp/categories/${catId}`)).data,
+  
+  // Troca de Modo (Tradicional vs Mini App)
+  switchMode: async (botId, mode) => (await api.post(`/api/admin/bots/${botId}/mode`, { modo: mode })).data,
+  
+  // PÚBLICO (Usado pela loja final)
+  getPublicData: async (botId) => (await api.get(`/api/miniapp/${botId}`)).data
 };
 
 export default api;

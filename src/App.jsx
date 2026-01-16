@@ -17,9 +17,13 @@ import { Remarketing } from './pages/Remarketing';
 import { AdminManager } from './pages/AdminManager';
 import { OrderBump } from './pages/OrderBump';
 import { Profile } from './pages/Profile';
-import { Tracking } from './pages/Tracking'; // 🔥 NOVO IMPORT
+import { Tracking } from './pages/Tracking';
 
-// Placeholder para Logout
+// --- MINI APP PAGES (Vamos criar no próximo lote) ---
+// Por enquanto, vou deixar comentado para não quebrar seu build
+// import { MiniAppHome } from './pages/miniapp/MiniAppHome';
+// import { MiniAppCategory } from './pages/miniapp/MiniAppCategory';
+
 const Logout = () => {
   localStorage.removeItem('zenyx_admin_user');
   window.location.href = '/login';
@@ -33,6 +37,14 @@ const PlaceholderPage = ({ title }) => (
   </div>
 );
 
+// Placeholder temporário para a loja (até criarmos o arquivo real)
+const MiniAppPlaceholder = () => (
+    <div style={{color: '#fff', textAlign: 'center', paddingTop: 50}}>
+        <h1>Loja em Construção 🚧</h1>
+        <p>Aguarde o Lote 2 de arquivos...</p>
+    </div>
+);
+
 function App() {
   return (
     <AuthProvider>
@@ -42,7 +54,12 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
             
-            {/* Rotas Protegidas (Dentro do Layout) */}
+            {/* 🔥 ROTA PÚBLICA DA LOJA (MINI APP) */}
+            {/* Não usa MainLayout pois é tela cheia no celular */}
+            <Route path="/loja/:botId" element={<MiniAppPlaceholder />} />
+            <Route path="/loja/:botId/categoria/:slug" element={<MiniAppPlaceholder />} />
+            
+            {/* Rotas Protegidas (Painel Admin) */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/bots" element={<Bots />} />
@@ -58,9 +75,7 @@ function App() {
               
               <Route path="/ofertas/order-bump" element={<OrderBump />} />
               
-              {/* 🔥 NOVA ROTA DE RASTREAMENTO */}
               <Route path="/rastreamento" element={<Tracking />} />
-              
               <Route path="/perfil" element={<Profile />} />
               
               <Route path="/config" element={<PlaceholderPage title="Configurações Gerais" />} />
