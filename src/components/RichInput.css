@@ -1,0 +1,82 @@
+.rich-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.rich-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--muted-foreground, #888);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.rich-toolbar {
+  display: flex;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border, #333);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  padding: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rich-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted-foreground, #aaa);
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  min-width: 32px;
+  height: 32px;
+}
+
+.rich-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #c333ff;
+  border-color: rgba(195, 51, 255, 0.2);
+}
+
+.rich-separator {
+  width: 1px;
+  height: 20px;
+  background: #444;
+  margin: 0 5px;
+}
+
+.rich-textarea {
+  background: var(--input-bg, #111);
+  border: 1px solid var(--card-border, #333);
+  border-top: 1px solid #2a2a2a; /* Separação sutil da toolbar */
+  border-radius: 0 0 8px 8px;
+  padding: 12px;
+  color: var(--foreground, #fff);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.5;
+  width: 100%;
+  outline: none;
+}
+
+.rich-textarea:focus {
+  border-color: var(--primary, #c333ff);
+}
+
+.rich-helper {
+  font-size: 0.75rem;
+  color: #666;
+  text-align: right;
+  margin-top: 4px;
+}
