@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBot } from '../context/BotContext';
 import { orderBumpService } from '../services/api';
-import { ShoppingBag, Save, AlertCircle, Image as ImageIcon, Link as LinkIcon, DollarSign, MessageSquare } from 'lucide-react';
+import { ShoppingBag, Save, AlertCircle, Image as ImageIcon, Link as LinkIcon, DollarSign, MessageSquare, Trash2 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import { Input } from '../components/Input';
@@ -19,6 +19,7 @@ export function OrderBump() {
     nome_produto: '',
     preco: '',
     link_acesso: '',
+    autodestruir: false, // 🔥 NOVO ESTADO
     msg_texto: '',
     msg_media: '',
     btn_aceitar: '✅ SIM, ADICIONAR',
@@ -42,6 +43,7 @@ export function OrderBump() {
           nome_produto: data.nome_produto || '',
           preco: data.preco || '',
           link_acesso: data.link_acesso || '',
+          autodestruir: data.autodestruir ?? false, // 🔥 CARREGA
           msg_texto: data.msg_texto || '',
           msg_media: data.msg_media || '',
           btn_aceitar: data.btn_aceitar || '✅ SIM, ADICIONAR',
@@ -66,7 +68,7 @@ export function OrderBump() {
     try {
       await orderBumpService.save(selectedBot.id, {
         ...formData,
-        preco: parseFloat(formData.preco) // Garante que vai como número
+        preco: parseFloat(formData.preco) 
       });
       Swal.fire('Sucesso', 'Configurações de Order Bump salvas!', 'success');
     } catch (error) {
@@ -181,6 +183,25 @@ export function OrderBump() {
                   onChange={e => setFormData({...formData, msg_media: e.target.value})}
                   icon={<ImageIcon size={16}/>}
                 />
+
+                {/* 🔥 NOVO SWITCH DE AUTODESTRUIR */}
+                <div className="form-group toggle-group" style={{marginTop: '15px', marginBottom: '15px'}}>
+                  <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                    <Trash2 size={18} color="#ef4444" />
+                    <label style={{marginBottom:0}}>Auto-destruir após a escolha?</label>
+                  </div>
+                  <label className="switch">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.autodestruir}
+                      onChange={e => setFormData({...formData, autodestruir: e.target.checked})}
+                    />
+                    <span className="slider round"></span>
+                  </label>
+                </div>
+                <p className="helper-text" style={{marginTop:'-10px'}}>
+                  Se ativado, a mensagem da oferta será apagada assim que o cliente clicar em "Sim" ou "Não".
+                </p>
 
                 <div className="form-row">
                   <Input 
