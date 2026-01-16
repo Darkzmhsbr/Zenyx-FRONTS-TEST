@@ -19,10 +19,12 @@ import { OrderBump } from './pages/OrderBump';
 import { Profile } from './pages/Profile';
 import { Tracking } from './pages/Tracking';
 
-// --- MINI APP PAGES (Vamos criar no próximo lote) ---
-// Por enquanto, vou deixar comentado para não quebrar seu build
-// import { MiniAppHome } from './pages/miniapp/MiniAppHome';
-// import { MiniAppCategory } from './pages/miniapp/MiniAppCategory';
+// 🔥 AQUI ESTÁ A MÁGICA: IMPORTANDO A LOJA REAL
+import { MiniAppHome } from './pages/miniapp/MiniAppHome';
+import { MiniAppCategory } from './pages/miniapp/MiniAppCategory';
+import { MiniAppCheckout } from './pages/miniapp/MiniAppCheckout';
+import { MiniAppPayment } from './pages/miniapp/MiniAppPayment';
+import { MiniAppSuccess } from './pages/miniapp/MiniAppSuccess';
 
 const Logout = () => {
   localStorage.removeItem('zenyx_admin_user');
@@ -37,14 +39,6 @@ const PlaceholderPage = ({ title }) => (
   </div>
 );
 
-// Placeholder temporário para a loja (até criarmos o arquivo real)
-const MiniAppPlaceholder = () => (
-    <div style={{color: '#fff', textAlign: 'center', paddingTop: 50}}>
-        <h1>Loja em Construção 🚧</h1>
-        <p>Aguarde o Lote 2 de arquivos...</p>
-    </div>
-);
-
 function App() {
   return (
     <AuthProvider>
@@ -54,10 +48,13 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
             
-            {/* 🔥 ROTA PÚBLICA DA LOJA (MINI APP) */}
-            {/* Não usa MainLayout pois é tela cheia no celular */}
-            <Route path="/loja/:botId" element={<MiniAppPlaceholder />} />
-            <Route path="/loja/:botId/categoria/:slug" element={<MiniAppPlaceholder />} />
+            {/* 🔥 ROTAS PÚBLICAS DA LOJA (MINI APP) */}
+            {/* Agora elas apontam para os arquivos reais, não para o Placeholder */}
+            <Route path="/loja/:botId" element={<MiniAppHome />} />
+            <Route path="/loja/:botId/categoria/:slug" element={<MiniAppCategory />} />
+            <Route path="/loja/:botId/checkout" element={<MiniAppCheckout />} />
+            <Route path="/loja/:botId/pagamento" element={<MiniAppPayment />} />
+            <Route path="/loja/:botId/obrigado" element={<MiniAppSuccess />} />
             
             {/* Rotas Protegidas (Painel Admin) */}
             <Route element={<MainLayout />}>
@@ -74,14 +71,12 @@ function App() {
               <Route path="/integracoes" element={<Integrations />} />
               
               <Route path="/ofertas/order-bump" element={<OrderBump />} />
-              
               <Route path="/rastreamento" element={<Tracking />} />
               <Route path="/perfil" element={<Profile />} />
               
               <Route path="/config" element={<PlaceholderPage title="Configurações Gerais" />} />
               <Route path="/tutorial" element={<PlaceholderPage title="Tutoriais" />} />
               
-              {/* FUNÇÕES EXTRAS */}
               <Route path="/funcoes" element={<PlaceholderPage title="Funções Extras" />} />
               <Route path="/funcoes/admins" element={<AdminManager />} />
               <Route path="/funcoes/grupos" element={<PlaceholderPage title="Grupos e Canais" />} />
