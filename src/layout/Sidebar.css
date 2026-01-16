@@ -1,115 +1,225 @@
+/* --- CONFIGURAÇÕES BASE --- */
+:root {
+  --sidebar-width: 260px;
+  --sidebar-bg: #0a0a0a;
+  --sidebar-border: #222;
+  --text-primary: #e5e5e5;
+  --text-secondary: #a3a3a3;
+  --primary-color: #c333ff;
+  --primary-glow: rgba(195, 51, 255, 0.15);
+  --item-hover: #161616;
+}
+
+/* --- CONTAINER DO SIDEBAR --- */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background-color: var(--background);
-  border-right: 1px solid var(--card-border);
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
-  padding: var(--spacing-lg);
-  z-index: 100;
-  transition: transform 0.3s ease; /* Animação de deslize */
+  z-index: 1000;
+  transition: transform 0.3s ease;
 }
 
-/* Cabeçalho da Sidebar (Logo + Botão Fechar) */
+/* --- HEADER (LOGO) --- */
 .sidebar-header {
+  height: 70px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 40px;
-  padding: 0 var(--spacing-sm);
+  justify-content: space-between; /* Espaça logo e botão X */
+  padding: 0 20px;
+  border-bottom: 1px solid var(--sidebar-border);
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  color: var(--foreground);
-  font-size: 1.5rem;
+  gap: 12px;
   font-weight: 700;
+  font-size: 1.2rem;
+  color: #fff;
 }
 
-.sidebar-logo span {
-  background: linear-gradient(to right, var(--primary), #ffffff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
+.logo-icon {
+  color: var(--primary-color);
+  fill: var(--primary-color);
 }
 
-/* Botão de Fechar (Escondido no Desktop) */
-.close-sidebar-btn {
-  display: none;
-  background: none;
-  border: none;
-  color: var(--muted-foreground);
-  cursor: pointer;
+.logo-text .highlight {
+  color: var(--primary-color);
 }
 
+/* --- NAVEGAÇÃO --- */
 .sidebar-nav {
+  flex: 1;
+  padding: 20px 15px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
-  flex: 1;
-  overflow-y: auto; /* Permite scroll se o menu for grande */
+  gap: 5px;
 }
 
+/* Scrollbar fina e escura */
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+/* --- ITENS DE MENU (PADRÃO) --- */
 .nav-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: 10px 12px;
-  border-radius: 8px;
-  color: var(--muted-foreground);
+  gap: 12px;
+  padding: 12px 15px;
+  color: var(--text-secondary);
   text-decoration: none;
-  font-size: 0.95rem;
-  font-weight: 500;
+  border-radius: 8px;
   transition: all 0.2s ease;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1px solid transparent;
 }
 
 .nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: var(--foreground);
+  background-color: var(--item-hover);
+  color: #fff;
 }
 
 .nav-item.active {
-  background-color: var(--primary);
-  color: white;
-  box-shadow: 0 4px 12px rgba(195, 51, 255, 0.3);
+  background-color: var(--primary-glow);
+  color: var(--primary-color);
+  border-color: rgba(195, 51, 255, 0.2);
+  font-weight: 600;
 }
 
-.nav-item svg {
-  min-width: 20px;
+/* --- GROUP HEADER (BOTÃO QUE ABRE MENU) --- */
+.group-header {
+  justify-content: space-between;
 }
 
-.logout {
-  color: #ef4444;
+.group-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.logout:hover {
+/* --- SUBMENUS (LINHAS DE CONEXÃO E ALINHAMENTO) --- */
+.nav-subitems {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 20px; /* Recuo do submenu */
+  margin-top: 4px;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+/* Linha vertical guia */
+.nav-subitems::before {
+  content: '';
+  position: absolute;
+  left: 12px; /* Posição da linha */
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: #333;
+}
+
+.nav-subitems .nav-item {
+  padding: 10px 15px;
+  font-size: 0.9rem; /* Fonte levemente menor */
+  color: #888;
+}
+
+.nav-subitems .nav-item:hover {
+  color: #fff;
+  background: transparent; /* Sem fundo no hover do submenu */
+  padding-left: 20px; /* Pequeno movimento para direita */
+}
+
+.nav-subitems .nav-item.active {
+  color: var(--primary-color);
+  background: transparent;
+  border: none;
+}
+
+/* Ícones do submenu */
+.nav-subitems .nav-item svg {
+  width: 16px; 
+  height: 16px;
+  opacity: 0.7;
+}
+
+/* --- DIVIDER --- */
+.divider {
+  height: 1px;
+  background-color: var(--sidebar-border);
+  margin: 15px 0;
+}
+
+/* --- LOGOUT BUTTON --- */
+.logout-btn {
+  margin-top: auto; /* Empurra para o fundo se houver espaço */
+  color: #ef4444 !important;
+}
+.logout-btn:hover {
   background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
-/* --- RESPONSIVIDADE MOBILE --- */
+/* ============================================================
+   📱 MOBILE & TABLET 
+   ============================================================ */
+
+/* Botão Fechar (X) - Oculto no Desktop */
+.close-sidebar-btn {
+  display: none; 
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .sidebar {
-    /* No mobile, a sidebar sai da tela por padrão */
-    transform: translateX(-100%);
-    width: 280px; /* Largura fixa no mobile */
-    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
-    z-index: 200; /* Acima de tudo */
+    transform: translateX(-100%); /* Escondido por padrão no mobile */
+    width: 280px; /* Um pouco mais largo no mobile para toque */
   }
 
-  /* Classe adicionada via JS quando menu abre */
   .sidebar.open {
-    transform: translateX(0);
+    transform: translateX(0); /* Mostra quando open */
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
   }
 
+  /* Botão X visível no mobile */
   .close-sidebar-btn {
-    display: block; /* Mostra o X */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Overlay escuro de fundo */
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(2px);
+  }
+
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
   }
 }

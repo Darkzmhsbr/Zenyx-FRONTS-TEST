@@ -21,195 +21,181 @@ import {
   TrendingUp, 
   ShoppingBag,
   User, 
-  Target // ÍCONE RASTREAMENTO
+  Target // Ícone de Rastreamento
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
-// Recebe props isOpen e onClose do Layout
 export function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const { logout } = useAuth();
   const currentPath = location.pathname;
   
+  // Estados dos menus (Inicia com Bots aberto, resto fechado)
   const [isBotMenuOpen, setIsBotMenuOpen] = useState(true);
   const [isExtrasMenuOpen, setIsExtrasMenuOpen] = useState(false);
   const [isOffersMenuOpen, setIsOffersMenuOpen] = useState(false);
 
-  // ============================================================
-  // 🔥 FUNÇÃO DE LOGOUT
-  // ============================================================
   const handleLogout = () => {
-    console.log('🚪 LOGOUT - Sidebar');
-    
-    // Fecha menu mobile se estiver aberto
     if (onClose) onClose();
-    
-    // Limpa tudo do localStorage
-    localStorage.clear();
-    
-    // Chama função de logout do contexto
-    if (logout) logout();
-    
-    // Força redirecionamento e reload
+    logout();
     window.location.href = '/login';
   };
 
+  // Função auxiliar para verificar se o link está ativo
+  const isActive = (path) => currentPath === path ? 'active' : '';
+
   return (
     <>
-      {/* Overlay para Mobile */}
+      {/* Overlay Escuro para Mobile */}
       <div 
         className={`sidebar-overlay ${isOpen ? 'open' : ''}`} 
         onClick={onClose}
       />
 
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+        
+        {/* --- HEADER DO SIDEBAR --- */}
         <div className="sidebar-header">
-          <div className="logo-area">
-            <div className="logo-icon">
-              <Zap size={24} color="#fff" fill="#c333ff" />
-            </div>
+          <div className="sidebar-logo">
+            <Zap size={28} className="logo-icon" />
             <span className="logo-text">Zenyx<span className="highlight">GBOT</span></span>
           </div>
-          <button className="close-btn-mobile" onClick={onClose}>
+          
+          {/* Botão X (Só aparece no Mobile via CSS) */}
+          <button className="close-sidebar-btn" onClick={onClose}>
             <X size={24} />
           </button>
         </div>
 
+        {/* --- NAVEGAÇÃO --- */}
         <nav className="sidebar-nav">
-          <Link to="/" className={`nav-item ${currentPath === '/' ? 'active' : ''}`} onClick={onClose}>
+          
+          <Link to="/" className={`nav-item ${isActive('/')}`} onClick={onClose}>
             <LayoutDashboard size={20} />
-            Dashboard
+            <span>Dashboard</span>
           </Link>
 
-          {/* MENUS COLAPSÁVEIS - MEUS BOTS */}
+          {/* === GRUPO: MEUS BOTS === */}
           <div className="nav-group">
             <div 
               className={`nav-item group-header ${isBotMenuOpen ? 'open' : ''}`}
               onClick={() => setIsBotMenuOpen(!isBotMenuOpen)}
             >
-              <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+              <div className="group-label">
                 <MessageSquare size={20} />
-                Meus Bots
+                <span>Meus Bots</span>
               </div>
-              {isBotMenuOpen ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
+              {isBotMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
             
             {isBotMenuOpen && (
-              <div className="submenu">
-                <Link to="/bots" className={`nav-item ${currentPath === '/bots' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
-                  <Zap size={16} /> Gerenciar Bots
+              <div className="nav-subitems">
+                <Link to="/bots" className={`nav-item ${isActive('/bots')}`} onClick={onClose}>
+                  <Zap size={18} /> <span>Gerenciar Bots</span>
                 </Link>
-                <Link to="/bots/new" className={`nav-item ${currentPath === '/bots/new' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
-                  <PlusCircle size={16} /> Novo Bot
+                <Link to="/bots/new" className={`nav-item ${isActive('/bots/new')}`} onClick={onClose}>
+                  <PlusCircle size={18} /> <span>Novo Bot</span>
                 </Link>
               </div>
             )}
           </div>
 
-          <Link to="/funil" className={`nav-item ${currentPath === '/funil' ? 'active' : ''}`} onClick={onClose}>
+          <Link to="/funil" className={`nav-item ${isActive('/funil')}`} onClick={onClose}>
             <TrendingUp size={20} />
-            Funil de Vendas
+            <span>Funil de Vendas</span>
           </Link>
 
-          <Link to="/contatos" className={`nav-item ${currentPath === '/contatos' ? 'active' : ''}`} onClick={onClose}>
+          <Link to="/contatos" className={`nav-item ${isActive('/contatos')}`} onClick={onClose}>
             <Users size={20} />
-            Contatos (Leads)
+            <span>Contatos (Leads)</span>
           </Link>
 
-          <Link to="/flow" className={`nav-item ${currentPath === '/flow' ? 'active' : ''}`} onClick={onClose}>
+          <Link to="/flow" className={`nav-item ${isActive('/flow')}`} onClick={onClose}>
             <MessageSquare size={20} />
-            Flow Chat (Fluxo)
+            <span>Flow Chat (Fluxo)</span>
           </Link>
 
-          <Link to="/remarketing" className={`nav-item ${currentPath === '/remarketing' ? 'active' : ''}`} onClick={onClose}>
+          <Link to="/remarketing" className={`nav-item ${isActive('/remarketing')}`} onClick={onClose}>
             <Megaphone size={20} />
-            Remarketing
+            <span>Remarketing</span>
           </Link>
 
-          {/* OFERTAS E PLANOS */}
+          {/* === GRUPO: PLANOS E OFERTAS === */}
           <div className="nav-group">
             <div 
               className={`nav-item group-header ${isOffersMenuOpen ? 'open' : ''}`}
               onClick={() => setIsOffersMenuOpen(!isOffersMenuOpen)}
             >
-              <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+              <div className="group-label">
                 <CreditCard size={20} />
-                Planos e Ofertas
+                <span>Planos e Ofertas</span>
               </div>
-              {isOffersMenuOpen ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
+              {isOffersMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
             
             {isOffersMenuOpen && (
-              <div className="submenu">
-                <Link to="/planos" className={`nav-item ${currentPath === '/planos' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
-                  <Star size={16} /> Gerenciar Planos
+              <div className="nav-subitems">
+                <Link to="/planos" className={`nav-item ${isActive('/planos')}`} onClick={onClose}>
+                  <Star size={18} /> <span>Gerenciar Planos</span>
                 </Link>
-                <Link to="/ofertas/order-bump" className={`nav-item ${currentPath === '/ofertas/order-bump' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
-                  <ShoppingBag size={16} /> Order Bump
+                <Link to="/ofertas/order-bump" className={`nav-item ${isActive('/ofertas/order-bump')}`} onClick={onClose}>
+                  <ShoppingBag size={18} /> <span>Order Bump</span>
                 </Link>
               </div>
             )}
           </div>
 
-          <div className="divider"></div>
-
-          {/* EXTRAS (AGORA COM RASTREAMENTO) */}
+          {/* === GRUPO: EXTRAS (AGORA COM RASTREAMENTO) === */}
           <div className="nav-group">
             <div 
               className={`nav-item group-header ${isExtrasMenuOpen ? 'open' : ''}`}
               onClick={() => setIsExtrasMenuOpen(!isExtrasMenuOpen)}
             >
-              <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+              <div className="group-label">
                 <BookOpen size={20} />
-                Extras
+                <span>Extras</span>
               </div>
-              {isExtrasMenuOpen ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
+              {isExtrasMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
             
             {isExtrasMenuOpen && (
-              <div className="submenu">
-                <Link to="/funcoes/admins" className={`nav-item ${currentPath === '/funcoes/admins' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
-                  <ShieldCheck size={16} /> Administradores
+              <div className="nav-subitems">
+                <Link to="/funcoes/admins" className={`nav-item ${isActive('/funcoes/admins')}`} onClick={onClose}>
+                  <ShieldCheck size={18} /> <span>Administradores</span>
                 </Link>
 
-                <Link to="/funcoes/grupos" className={`nav-item ${currentPath === '/funcoes/grupos' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
-                  <Layers size={16} /> Grupos e Canais
+                <Link to="/funcoes/grupos" className={`nav-item ${isActive('/funcoes/grupos')}`} onClick={onClose}>
+                  <Layers size={18} /> <span>Grupos e Canais</span>
                 </Link>
 
-                <Link to="/funcoes/free" className={`nav-item ${currentPath === '/funcoes/free' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
-                  <Unlock size={16} /> Canal Free
+                <Link to="/funcoes/free" className={`nav-item ${isActive('/funcoes/free')}`} onClick={onClose}>
+                  <Unlock size={18} /> <span>Canal Free</span>
                 </Link>
 
-                {/* 🔥 [CORREÇÃO] RASTREAMENTO DENTRO DE EXTRAS */}
-                <Link to="/rastreamento" className={`nav-item ${currentPath === '/rastreamento' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
-                  <Target size={16} /> Rastreamento
+                {/* 🔥 RASTREAMENTO DENTRO DE EXTRAS */}
+                <Link to="/rastreamento" className={`nav-item ${isActive('/rastreamento')}`} onClick={onClose}>
+                  <Target size={18} /> <span>Rastreamento</span>
                 </Link>
               </div>
             )}
           </div>
           
-          {/* Integrações */}
-          <Link to="/integracoes" className={`nav-item ${currentPath === '/integracoes' ? 'active' : ''}`} onClick={onClose}>
+          <div className="divider"></div>
+
+          <Link to="/integracoes" className={`nav-item ${isActive('/integracoes')}`} onClick={onClose}>
             <Settings size={20} />
-            Integrações
+            <span>Integrações</span>
           </Link>
 
-          {/* MEU PERFIL */}
-          <Link to="/perfil" className={`nav-item ${currentPath === '/perfil' ? 'active' : ''}`} onClick={onClose} style={{ marginTop: 'auto' }}>
+          <Link to="/perfil" className={`nav-item ${isActive('/perfil')}`} onClick={onClose}>
             <User size={20} />
-            Meu Perfil
+            <span>Meu Perfil</span>
           </Link>
 
-          {/* BOTÃO SAIR */}
-          <div 
-            className="nav-item" 
-            onClick={handleLogout}
-            style={{ cursor: 'pointer', color: '#ef4444' }}
-          >
+          <div className="nav-item logout-btn" onClick={handleLogout}>
             <LogOut size={20} />
-            Sair
+            <span>Sair</span>
           </div>
 
         </nav>
