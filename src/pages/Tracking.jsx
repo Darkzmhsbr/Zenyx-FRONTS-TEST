@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  FolderPlus, Link as LinkIcon, Trash2, ArrowLeft, Copy, Check, 
-  BarChart2, PieChart, TrendingUp, DollarSign, MousePointer, Users,
+  FolderPlus, Link as LinkIcon, Trash2, ArrowLeft, Copy, 
+  BarChart2, PieChart, DollarSign, MousePointer, Users,
   Facebook, Instagram, Youtube, MessageCircle, Globe, Share2
 } from 'lucide-react';
 import { 
@@ -29,6 +29,10 @@ export function Tracking() {
   const [currentLinks, setCurrentLinks] = useState([]);
   const [bots, setBots] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState(null);
+  
+  // Dados Gráficos Reais
+  const [pieData, setPieData] = useState([]);
+  const [barData, setBarData] = useState([]);
   
   // Modais
   const [showFolderModal, setShowFolderModal] = useState(false);
@@ -58,11 +62,51 @@ export function Tracking() {
     try {
       const data = await trackingService.listFolders();
       setFolders(data);
+      processCharts(data); // 🔥 Processa dados reais
     } catch (error) {
       console.error("Erro ao carregar pastas", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 🔥 PROCESSAMENTO DE DADOS REAIS PARA OS GRÁFICOS
+  const processCharts = (foldersData) => {
+    // 1. Gráfico de Pizza (Agrupar cliques por Plataforma)
+    const platformMap = {};
+    
+    foldersData.forEach(folder => {
+        const plat = folder.plataforma || 'outros';
+        // Normaliza nomes para o gráfico
+        const label = plat.charAt(0).toUpperCase() + plat.slice(1);
+        
+        if (!platformMap[label]) platformMap[label] = 0;
+        platformMap[label] += (folder.total_clicks || 0);
+    });
+
+    const newPieData = Object.keys(platformMap).map(key => ({
+        name: key,
+        value: platformMap[key]
+    })).filter(item => item.value > 0); // Só mostra se tiver > 0 cliques
+
+    // Se estiver tudo zerado, mostra um placeholder cinza
+    if (newPieData.length === 0) {
+        setPieData([{ name: 'Sem dados', value: 1, color: '#333' }]);
+    } else {
+        setPieData(newPieData);
+    }
+
+    // 2. Gráfico de Barras (Pastas Individuais: Cliques x Vendas)
+    // Filtra apenas pastas que tem alguma atividade para não poluir
+    const activeFolders = foldersData.filter(f => f.total_clicks > 0 || f.total_vendas > 0);
+    
+    const newBarData = activeFolders.map(f => ({
+        name: f.nome,
+        clicks: f.total_clicks,
+        vendas: f.total_vendas
+    }));
+
+    setBarData(newBarData);
   };
 
   const openFolder = async (folder) => {
@@ -101,13 +145,11 @@ export function Tracking() {
         folder_id: selectedFolder.id
       });
       setShowLinkModal(false);
-      // Recarrega links da pasta atual
       const links = await trackingService.listLinks(selectedFolder.id);
       setCurrentLinks(links);
       setNewLink({ nome: '', origem: 'stories', bot_id: '', codigo: '' });
       Swal.fire('Sucesso', 'Link rastreável gerado!', 'success');
     } catch (error) {
-        // Se der erro de duplicidade (código já existe)
         if (error.response && error.response.status === 400) {
             Swal.fire('Erro', 'Este código personalizado já existe. Tente outro.', 'error');
         } else {
@@ -138,7 +180,7 @@ export function Tracking() {
   };
 
   const handleDeleteFolder = async (e, id) => {
-    e.stopPropagation(); // Evita abrir a pasta ao clicar no lixo
+    e.stopPropagation(); 
     const result = await Swal.fire({
         title: 'Excluir Pasta?',
         text: "Todos os links dentro dela também serão apagados!",
@@ -158,7 +200,6 @@ export function Tracking() {
     }
   };
 
-  // --- UTILITÁRIOS ---
   const copyLink = (linkData) => {
     const bot = bots.find(b => b.value === linkData.bot_id);
     const username = bot ? bot.username : 'SeuBot';
@@ -180,34 +221,14 @@ export function Tracking() {
         case 'instagram': return <Instagram color="#E4405F" />;
         case 'youtube': return <Youtube color="#FF0000" />;
         case 'whatsapp': return <MessageCircle color="#25D366" />;
-        case 'tiktok': return <Share2 color="#000" />; // Ícone genérico para TikTok
+        case 'tiktok': return <Share2 color="#000" />; 
         default: return <Globe color="#ccc" />;
     }
   };
 
-  // --- DADOS PARA GRÁFICOS ---
-  // Mockup simples: em produção, você calcularia isso somando os links de todas as pastas
-  // ou buscaria um endpoint de dashboard global de tracking.
-  // Aqui vamos simular visualmente para você ver o layout.
-  
-  const pieData = [
-    { name: 'Instagram', value: 400 },
-    { name: 'Facebook', value: 300 },
-    { name: 'YouTube', value: 300 },
-    { name: 'TikTok', value: 200 },
-  ];
-
-  const barData = [
-    { name: 'Insta Stories', clicks: 400, vendas: 24 },
-    { name: 'Face Ads', clicks: 300, vendas: 13 },
-    { name: 'YouTube Bio', clicks: 200, vendas: 98 },
-    { name: 'TikTok', clicks: 278, vendas: 39 },
-  ];
-
   return (
     <div className="tracking-container">
         
-        {/* --- CABEÇALHO --- */}
         <div className="page-header">
             <div>
                 <h1>Rastreamento de Links</h1>
@@ -243,7 +264,7 @@ export function Tracking() {
                                             dataKey="value"
                                         >
                                             {pieData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
                                         <Tooltip contentStyle={{backgroundColor: '#111', border: '1px solid #333'}} />
@@ -256,27 +277,33 @@ export function Tracking() {
 
                     <Card>
                         <CardContent>
-                            <h3 className="chart-title">Conversão por Canal (Cliques x Vendas)</h3>
-                            <div style={{ width: '100%', height: 250 }}>
-                                <ResponsiveContainer>
-                                    <BarChart data={barData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                                        <XAxis dataKey="name" stroke="#888" />
-                                        <YAxis stroke="#888" />
-                                        <Tooltip contentStyle={{backgroundColor: '#111', border: '1px solid #333'}} />
-                                        <Legend />
-                                        <Bar dataKey="clicks" name="Cliques" fill="#8884d8" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="vendas" name="Vendas" fill="#82ca9d" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
+                            <h3 className="chart-title">Conversão por Campanha (Cliques x Vendas)</h3>
+                            {barData.length > 0 ? (
+                                <div style={{ width: '100%', height: 250 }}>
+                                    <ResponsiveContainer>
+                                        <BarChart data={barData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                            <XAxis dataKey="name" stroke="#888" />
+                                            <YAxis stroke="#888" />
+                                            <Tooltip contentStyle={{backgroundColor: '#111', border: '1px solid #333'}} />
+                                            <Legend />
+                                            <Bar dataKey="clicks" name="Cliques" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                                            <Bar dataKey="vendas" name="Vendas" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            ) : (
+                                <div style={{height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', flexDirection: 'column'}}>
+                                    <BarChart2 size={48} style={{opacity:0.2, marginBottom: 10}}/>
+                                    <p>Sem dados de campanhas ativas</p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
 
                 <h3 style={{marginTop: '30px', marginBottom: '15px'}}>Suas Pastas</h3>
                 
-                {/* --- GRID DE PASTAS --- */}
                 <div className="folders-grid">
                     {folders.map(folder => (
                         <div key={folder.id} className="folder-card" onClick={() => openFolder(folder)}>
@@ -285,7 +312,7 @@ export function Tracking() {
                             </div>
                             <div className="folder-info">
                                 <h4>{folder.nome}</h4>
-                                <span>{folder.link_count || 0} links ativos</span>
+                                <span>{folder.link_count || 0} links • {folder.total_clicks || 0} cliques</span>
                             </div>
                             <button className="delete-folder-btn" onClick={(e) => handleDeleteFolder(e, folder.id)}>
                                 <Trash2 size={16} />
@@ -302,9 +329,9 @@ export function Tracking() {
             </>
         ) : (
             <>
-                {/* --- VIEW: DENTRO DA PASTA (LISTA DE LINKS) --- */}
+                {/* --- DENTRO DA PASTA (LISTA DE LINKS) --- */}
                 <div className="folder-header-bar">
-                    <button className="back-btn" onClick={() => { setView('dashboard'); setSelectedFolder(null); }}>
+                    <button className="back-btn" onClick={() => { setView('dashboard'); setSelectedFolder(null); loadDashboard(); }}>
                         <ArrowLeft size={20} /> Voltar
                     </button>
                     <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
