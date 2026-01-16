@@ -21,7 +21,7 @@ import {
   TrendingUp, 
   ShoppingBag,
   User, 
-  Target // 🔥 NOVO ÍCONE
+  Target // ÍCONE RASTREAMENTO
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
@@ -155,7 +155,7 @@ export function Sidebar({ isOpen, onClose }) {
 
           <div className="divider"></div>
 
-          {/* EXTRAS */}
+          {/* EXTRAS (AGORA COM RASTREAMENTO) */}
           <div className="nav-group">
             <div 
               className={`nav-item group-header ${isExtrasMenuOpen ? 'open' : ''}`}
@@ -181,6 +181,11 @@ export function Sidebar({ isOpen, onClose }) {
                 <Link to="/funcoes/free" className={`nav-item ${currentPath === '/funcoes/free' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
                   <Unlock size={16} /> Canal Free
                 </Link>
+
+                {/* 🔥 [CORREÇÃO] RASTREAMENTO DENTRO DE EXTRAS */}
+                <Link to="/rastreamento" className={`nav-item ${currentPath === '/rastreamento' ? 'active' : ''}`} style={{ fontSize: '0.9rem', paddingLeft: '50px' }} onClick={onClose}>
+                  <Target size={16} /> Rastreamento
+                </Link>
               </div>
             )}
           </div>
@@ -189,12 +194,6 @@ export function Sidebar({ isOpen, onClose }) {
           <Link to="/integracoes" className={`nav-item ${currentPath === '/integracoes' ? 'active' : ''}`} onClick={onClose}>
             <Settings size={20} />
             Integrações
-          </Link>
-
-          {/* 🔥 NOVO LINK: RASTREAMENTO */}
-          <Link to="/rastreamento" className={`nav-item ${currentPath === '/rastreamento' ? 'active' : ''}`} onClick={onClose}>
-            <Target size={20} />
-            Rastreamento
           </Link>
 
           {/* MEU PERFIL */}
