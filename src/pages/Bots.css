@@ -5,6 +5,16 @@
   padding: var(--spacing-xl);
   margin-top: var(--header-height);
   margin-left: var(--sidebar-width);
+  transition: margin-left 0.3s ease; /* Suaviza transição */
+}
+
+/* 🔥 CORREÇÃO MOBILE: Remove margem lateral no celular */
+@media (max-width: 768px) {
+  .bots-container {
+    margin-left: 0;
+    padding: 15px;
+    width: 100%;
+  }
 }
 
 .bots-header {
@@ -14,15 +24,27 @@
   margin-bottom: var(--spacing-xl);
 }
 
-.bots-header h1 {
-  font-size: 1.8rem;
-  margin: 0;
-}
-
 .bots-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: var(--spacing-lg);
+}
+
+/* Ajuste do Grid para Celular */
+@media (max-width: 600px) {
+  .bots-grid {
+    grid-template-columns: 1fr; /* 1 coluna no mobile */
+  }
+  
+  .bots-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .bots-header button {
+    width: 100%; /* Botão full width no mobile */
+  }
 }
 
 /* --- CARD DO BOT --- */
@@ -52,16 +74,18 @@
   align-items: center;
 }
 
-.bot-avatar-placeholder {
+.bot-icon {
   width: 48px;
   height: 48px;
-  background: rgba(195, 51, 255, 0.1);
-  color: var(--primary);
-  border-radius: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2aabee, #229ed9); /* Azul Telegram */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  color: white;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(42, 171, 238, 0.3);
+  flex-shrink: 0; /* Impede ícone de amassar */
 }
 
 .bot-info h3 {
@@ -70,57 +94,77 @@
   color: var(--foreground);
 }
 
-.bot-info span {
+.bot-info p {
+  margin: 4px 0 0 0;
   font-size: 0.85rem;
   color: var(--muted-foreground);
 }
 
-/* MENU DE AÇÕES (KEBAB) */
-.bot-actions-menu {
-  position: relative;
-}
-
-.menu-trigger {
+/* --- MENU 3 PONTINHOS (GLASSMORPHISM) --- */
+.icon-btn {
   background: transparent;
   border: none;
-  color: var(--muted-foreground);
   cursor: pointer;
-  padding: 4px;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
 }
 
-.menu-trigger:hover { color: var(--foreground); }
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
 
-.dropdown-menu {
+.dropdown-menu.glass-menu {
   position: absolute;
-  top: 100%; right: 0;
-  background: #1a1a1a;
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  width: 160px;
-  z-index: 10;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  top: 40px;
+  right: 0;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  z-index: 100;
+  min-width: 160px;
   overflow: hidden;
-  animation: fadeIn 0.2s;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .menu-item {
-  display: flex; align-items: center; gap: 8px;
-  width: 100%;
-  padding: 10px 15px;
-  background: transparent;
-  border: none;
-  color: #ccc;
+  padding: 12px 16px;
   cursor: pointer;
-  text-align: left;
   font-size: 0.9rem;
+  color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.menu-item:hover { background: #222; color: #fff; }
+.menu-item:last-child {
+  border-bottom: none;
+}
 
-.menu-item.danger { color: #ef4444; }
-.menu-item.danger:hover { background: rgba(239, 68, 68, 0.1); }
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding-left: 20px;
+}
 
-/* STATUS E MÉTRICAS */
+.menu-item.danger { color: #ff6b6b; }
+.menu-item.danger:hover { background: rgba(239, 68, 68, 0.15); color: #ff4444; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* --- STATUS E METRICAS --- */
 .bot-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -149,11 +193,11 @@
 
 .stat-value.highlight { color: #10b981; }
 
+/* --- FOOTER --- */
 .bot-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: var(--spacing-md);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--card-border);
 }
@@ -163,24 +207,17 @@
   font-size: 0.85rem; font-weight: 500;
 }
 
-.status-indicator .dot {
-  width: 8px; height: 8px; border-radius: 50%;
-}
+.dot { width: 8px; height: 8px; border-radius: 50%; }
 
-.status-indicator.online .dot { background-color: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
 .status-indicator.online { color: #10b981; }
+.status-indicator.online .dot { background-color: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
 
-.status-indicator.offline .dot { background-color: #ef4444; }
 .status-indicator.offline { color: #ef4444; }
+.status-indicator.offline .dot { background-color: #ef4444; }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
 
 /* ============================================================
-   ⚙️ ESTILOS DA PÁGINA DE CONFIGURAÇÃO (BotConfig.jsx)
-   Adicionados para suportar a nova interface de abas e Mini App
+   ⚙️ ESTILOS DA PÁGINA DE CONFIGURAÇÃO (RESPONSIVO)
    ============================================================ */
 
 .bot-config-container {
@@ -190,6 +227,18 @@
   margin-top: 60px;
   margin-left: 260px;
   color: #fff;
+  transition: margin-left 0.3s ease;
+}
+
+/* 🔥 CORREÇÃO MOBILE: Remove margem lateral no celular */
+@media (max-width: 768px) {
+  .bot-config-container {
+    margin-left: 0;
+    padding: 15px;
+    margin-top: 70px;
+    width: 100vw; /* Garante largura total */
+    box-sizing: border-box; /* Garante que padding não estoure */
+  }
 }
 
 .config-header-bar {
@@ -197,19 +246,32 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+  flex-wrap: wrap; /* Permite quebrar linha */
+}
+
+@media (max-width: 600px) {
+  .config-header-bar h1 {
+    font-size: 1.4rem;
+    margin-top: 10px;
+  }
 }
 
 .config-header-bar h1 { margin: 0; font-size: 1.8rem; }
 .highlight { color: #c333ff; }
 
-/* ABAS (TABS) */
+/* --- ABAS (TABS) SCROLLÁVEIS --- */
 .config-tabs-wrapper {
   display: flex;
   gap: 10px;
   border-bottom: 1px solid #333;
   margin-bottom: 25px;
   padding-bottom: 10px;
+  overflow-x: auto; /* Permite scroll horizontal no celular */
+  white-space: nowrap; /* Não quebra linha */
 }
+
+/* Esconde barra de rolagem das abas */
+.config-tabs-wrapper::-webkit-scrollbar { display: none; }
 
 .config-tab-btn {
   background: transparent;
@@ -222,6 +284,7 @@
   border-radius: 8px;
   display: flex; align-items: center; gap: 8px;
   transition: 0.2s;
+  flex-shrink: 0; /* Impede aba de encolher */
 }
 
 .config-tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
@@ -232,18 +295,19 @@
   border: 1px solid rgba(195, 51, 255, 0.2);
 }
 
-/* LAYOUT DE GRID */
+/* --- GRID LAYOUT RESPONSIVO --- */
 .config-grid-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
 
+/* 🔥 CORREÇÃO MOBILE: Vira 1 coluna em telas menores que 900px */
 @media (max-width: 900px) {
   .config-grid-layout { grid-template-columns: 1fr; }
 }
 
-/* INPUTS E CARDS DA CONFIG */
+/* --- CARDS E INPUTS --- */
 .card-header-line {
   display: flex; align-items: center; gap: 10px;
   margin-bottom: 20px; padding-bottom: 10px;
@@ -267,12 +331,13 @@
   border-radius: 6px;
   color: #fff;
   font-size: 0.95rem;
+  box-sizing: border-box; /* Importante para não estourar width */
 }
 
 .input-field:focus { outline: none; border-color: #c333ff; }
 .input-field.disabled { background: #111; color: #666; cursor: not-allowed; }
 
-/* MINI APP: MODE SWITCHER */
+/* --- MINI APP: MODE SWITCHER RESPONSIVO --- */
 .mode-card {
   background: #151515;
   border: 1px solid #333;
@@ -285,6 +350,13 @@
 .mode-header p { color: #888; font-size: 0.9rem; margin: 5px 0 15px 0; }
 
 .mode-options-row { display: flex; gap: 15px; }
+
+/* 🔥 CORREÇÃO MOBILE: Empilha os botões de modo */
+@media (max-width: 600px) {
+  .mode-options-row {
+    flex-direction: column;
+  }
+}
 
 .mode-btn {
   flex: 1;
@@ -312,6 +384,7 @@
   padding: 15px;
   border-radius: 8px;
   text-align: center;
+  word-break: break-all; /* Quebra link longo no celular */
 }
 
 .link-copy-box span { display: block; color: #aaa; font-size: 0.8rem; margin-bottom: 5px; }
@@ -319,6 +392,7 @@
   display: block; background: #222; padding: 8px;
   border-radius: 4px; font-family: monospace; color: #10b981;
   cursor: pointer;
+  font-size: 0.85rem; /* Fonte menor no mobile */
 }
 .link-copy-box small { display: block; color: #666; margin-top: 5px; font-size: 0.75rem; }
 

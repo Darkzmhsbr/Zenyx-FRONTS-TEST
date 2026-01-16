@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 🔗 SEU DOMÍNIO DO RAILWAY
+// 🔗 SEU DOMÍNIO DO RAILWAY (Ajuste se necessário)
 const API_URL = 'https://zenyx-gbs-testes-production.up.railway.app';
 
 const api = axios.create({
