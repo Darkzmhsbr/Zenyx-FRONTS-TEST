@@ -1,0 +1,167 @@
+.tracking-container {
+  padding: var(--spacing-xl);
+  margin-top: var(--header-height);
+  margin-left: var(--sidebar-width);
+  animation: fadeIn 0.3s ease;
+  padding-bottom: 50px;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.chart-title {
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+  color: var(--muted-foreground);
+}
+
+/* --- PASTAS --- */
+.folders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.folder-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.folder-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.03);
+}
+
+.folder-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.folder-info h4 { margin: 0; color: #fff; font-size: 1rem; }
+.folder-info span { font-size: 0.8rem; color: #888; }
+
+.delete-folder-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #444;
+  cursor: pointer;
+  opacity: 0;
+  transition: 0.2s;
+}
+
+.folder-card:hover .delete-folder-btn { opacity: 1; }
+.delete-folder-btn:hover { color: #ef4444; }
+
+/* --- LINKS LIST --- */
+.folder-header-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--card-border);
+    padding-bottom: 20px;
+}
+
+.back-btn {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.back-btn:hover { background: #222; }
+
+.link-item {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.link-main-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 2;
+    min-width: 250px;
+}
+
+.link-icon-wrapper {
+    width: 40px; height: 40px;
+    background: rgba(195, 51, 255, 0.1);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.link-name { font-weight: 600; color: #fff; margin-bottom: 4px; }
+.link-code { font-size: 0.85rem; color: #888; }
+.link-code code { background: #222; padding: 2px 6px; border-radius: 4px; color: #c333ff; }
+
+.link-stats {
+    display: flex;
+    gap: 20px;
+    flex: 3;
+    justify-content: center;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-weight: bold;
+    color: #fff;
+    font-size: 1.1rem;
+}
+.stat-box small { font-size: 0.7rem; color: #666; font-weight: normal; text-transform: uppercase; }
+.stat-box.highlight { color: #3b82f6; }
+.stat-box.success { color: #10b981; }
+.stat-box.money { color: #fbbf24; }
+
+.link-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    border: 1px solid var(--card-border);
+    background: #111;
+    color: #888;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.2s;
+}
+.action-btn.copy:hover { color: #3b82f6; border-color: #3b82f6; }
+.action-btn.delete:hover { color: #ef4444; border-color: #ef4444; }

@@ -45,9 +45,9 @@ export const botService = {
 
 // --- PLANOS ---
 export const planService = {
-  listPlans: async (id) => (await api.get(`/api/admin/plans/${id}`)).data,
+  listPlans: async (id) => (await api.get(`/api/admin/bots/${id}/plans`)).data, // Ajustado para rota correta de bots
   savePlan: async (p) => (await api.post('/api/admin/plans', p)).data,
-  createPlan: async (dados) => (await api.post('/api/admin/plans', dados)).data,
+  createPlan: async (botId, dados) => (await api.post(`/api/admin/bots/${botId}/plans`, dados)).data, // Ajustado assinatura
   updatePlan: async (id, dados) => (await api.put(`/api/admin/plans/${id}`, dados)).data,
   deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
 };
@@ -71,12 +71,12 @@ export const remarketingService = {
       is_test: isTest,
       specific_user_id: specificUserId
     };
-    return (await api.post('/api/admin/remarketing/send', payload)).data;
+    return (await api.post(`/api/admin/bots/${botId}/remarketing/send`, payload)).data;
   },
   
   getHistory: async (id, page = 1, perPage = 10) => {
     try { 
-        return (await api.get(`/api/admin/remarketing/history/${id}?page=${page}&per_page=${perPage}`)).data; 
+        return (await api.get(`/api/admin/bots/${id}/remarketing/history?page=${page}&limit=${perPage}`)).data; 
     } catch { 
         return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 }; 
     }
@@ -89,10 +89,9 @@ export const remarketingService = {
   // 🔥 [CORRIGIDO] Função de envio individual
   sendIndividual: async (botId, telegramId, historyId) => {
     try {
-      const response = await api.post('/api/admin/remarketing/send-individual', {
-        bot_id: parseInt(botId),
-        user_telegram_id: String(telegramId),
-        campaign_history_id: parseInt(historyId)
+      const response = await api.post(`/api/admin/bots/${botId}/remarketing/send-individual`, {
+        user_id: String(telegramId),
+        history_id: parseInt(historyId)
       });
       return response.data;
     } catch (error) {
@@ -225,8 +224,9 @@ export const crmService = {
   }
 };
 
-// --- ADMIN & DASHBOARD & INTEGRATION ---
+// Alias para manter compatibilidade
 export const admin = crmService;
+export const leadService = crmService; // Fallback se alguém usar leadService
 
 export const adminService = {
     listAdmins: async (id) => { 
@@ -246,7 +246,7 @@ export const adminService = {
 
 export const dashboardService = { 
   // Agora aceita startDate e endDate (opcionais)
-  getStats: async (id, startDate, endDate) => {
+  getStats: async (id = null, startDate = null, endDate = null) => {
     // Cria os parâmetros de URL
     const params = new URLSearchParams();
     if (id) params.append('bot_id', id);
@@ -297,6 +297,19 @@ export const profileService = {
   update: async (data) => {
     return (await api.post('/api/admin/profile', data)).data;
   }
+};
+
+// 🔥 [NOVO] SERVIÇO DE RASTREAMENTO (TRACKING LINKS)
+export const trackingService = {
+  // Pastas
+  listFolders: async () => (await api.get('/api/admin/tracking/folders')).data,
+  createFolder: async (data) => (await api.post('/api/admin/tracking/folders', data)).data,
+  deleteFolder: async (folderId) => (await api.delete(`/api/admin/tracking/folders/${folderId}`)).data,
+  
+  // Links
+  listLinks: async (folderId) => (await api.get(`/api/admin/tracking/links/${folderId}`)).data,
+  createLink: async (data) => (await api.post('/api/admin/tracking/links', data)).data,
+  deleteLink: async (linkId) => (await api.delete(`/api/admin/tracking/links/${linkId}`)).data
 };
 
 export default api;
