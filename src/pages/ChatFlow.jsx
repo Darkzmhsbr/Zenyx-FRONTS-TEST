@@ -6,7 +6,8 @@ import { useBot } from '../context/BotContext';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import { Input } from '../components/Input';
-import { TextArea } from '../components/TextArea';
+// import { TextArea } from '../components/TextArea'; // REMOVIDO PARA USAR RICH INPUT
+import { RichInput } from '../components/RichInput'; // 🔥 NOVO COMPONENTE
 import './ChatFlow.css';
 
 export function ChatFlow() {
@@ -220,7 +221,8 @@ export function ChatFlow() {
                   icon={<ImageIcon size={16}/>}
                 />
                 
-                <TextArea 
+                {/* 🔥 ATUALIZADO PARA RICH INPUT */}
+                <RichInput 
                   label="Texto da Mensagem" 
                   value={flow.msg_boas_vindas}
                   onChange={e => setFlow({...flow, msg_boas_vindas: e.target.value})}
@@ -303,8 +305,9 @@ export function ChatFlow() {
                         
                         <div style={{color: '#ccc', fontSize: '0.9rem', marginBottom: '10px'}}>
                             {step.msg_media && <div style={{marginBottom:5}}>🎥 <i>Contém mídia</i></div>}
-                            <div style={{background: '#111', padding: '10px', borderRadius: '6px', border: '1px solid #333'}}>
-                                "{step.msg_texto}"
+                            {/* Renderização simples do HTML no preview (dangerouslySetInnerHTML poderia ser usado com cautela, mas aqui vamos mostrar o texto puro para segurança no preview) */}
+                            <div style={{background: '#111', padding: '10px', borderRadius: '6px', border: '1px solid #333', whiteSpace: 'pre-wrap'}}>
+                                {step.msg_texto}
                             </div>
                             <div style={{marginTop: '10px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'10px'}}>
                                 {step.mostrar_botao ? (
@@ -365,7 +368,8 @@ export function ChatFlow() {
                   icon={<Video size={16}/>}
                 />
                 
-                <TextArea 
+                {/* 🔥 ATUALIZADO PARA RICH INPUT */}
+                <RichInput 
                   label="Texto da Oferta" 
                   value={flow.msg_2_texto}
                   onChange={e => setFlow({...flow, msg_2_texto: e.target.value})}
@@ -407,7 +411,9 @@ export function ChatFlow() {
                         value={modalData.msg_media}
                         onChange={e => setModalData({...modalData, msg_media: e.target.value})}
                     />
-                    <TextArea 
+                    
+                    {/* 🔥 ATUALIZADO PARA RICH INPUT */}
+                    <RichInput 
                         label="Texto da Mensagem" 
                         placeholder="Digite o conteúdo aqui..."
                         value={modalData.msg_texto}

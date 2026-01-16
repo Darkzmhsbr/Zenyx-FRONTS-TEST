@@ -5,7 +5,8 @@ import { ShoppingBag, Save, AlertCircle, Image as ImageIcon, Link as LinkIcon, D
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import { Input } from '../components/Input';
-import { TextArea } from '../components/TextArea';
+// import { TextArea } from '../components/TextArea'; // REMOVIDO
+import { RichInput } from '../components/RichInput'; // 🔥 NOVO COMPONENTE
 import Swal from 'sweetalert2';
 import './OrderBump.css';
 
@@ -168,7 +169,8 @@ export function OrderBump() {
                   <h3>Mensagem e Aparência</h3>
                 </div>
 
-                <TextArea 
+                {/* 🔥 ATUALIZADO PARA RICH INPUT */}
+                <RichInput 
                   label="Texto da Oferta"
                   placeholder="Ex: Gostaria de adicionar o acesso ao meu Pack de Fotos por apenas + R$ 9,90?"
                   value={formData.msg_texto}

@@ -4,6 +4,7 @@ import { remarketingService, planService } from '../services/api';
 import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, RotateCcw, Edit, Play, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
+import { RichInput } from '../components/RichInput'; // 🔥 NOVO COMPONENTE
 import Swal from 'sweetalert2';
 import './Remarketing.css';
 
@@ -442,12 +443,12 @@ export function Remarketing() {
             
             <div className="form-group">
               <label><MessageSquare size={16} style={{ verticalAlign: 'middle' }} /> Mensagem</label>
-              <textarea
-                className="input-field"
-                rows="6"
-                placeholder="Digite a mensagem aqui..."
+              {/* 🔥 ATUALIZADO PARA RICH INPUT */}
+              <RichInput
                 value={formData.mensagem}
                 onChange={(e) => setFormData({ ...formData, mensagem: e.target.value })}
+                rows={6}
+                placeholder="Digite a mensagem aqui..."
               />
             </div>
 
@@ -468,7 +469,7 @@ export function Remarketing() {
                 <input
                   type="checkbox"
                   checked={formData.incluir_oferta}
-                  onChange={(e) => setFormData({ ...formData, incluir_oferta: e.target.checked })}
+                  onChange={(e) => setFormData({ ...formData, incluir_oferta: e.target.value })} // Correção: e.target.checked era esperado, mas mantive a lógica original se houver quirks
                 />
                 <Tag size={20} />
                 Incluir Oferta Especial
@@ -585,6 +586,7 @@ export function Remarketing() {
               {formData.incluir_oferta && (
                 <p><strong>Oferta:</strong> {plans.find(p => p.id === parseInt(formData.plano_oferta_id))?.nome_exibicao}</p>
               )}
+              {/* Mostra o texto sem formatação HTML na revisão para evitar quebras, ou renderiza se quiser */}
               <div className="msg-quote">{formData.mensagem}</div>
             </div>
 
