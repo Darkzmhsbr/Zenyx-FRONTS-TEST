@@ -1,7 +1,7 @@
 /* --- RESET E GERAL --- */
 :root {
   --primary-red: #E10000;
-  --dark-bg: #000000;
+  --dark-bg: #050505;
   --card-bg: #111;
 }
 
@@ -11,16 +11,18 @@
     color: #fff;
     font-family: 'Montserrat', sans-serif;
     padding-bottom: 80px;
+    overflow-x: hidden; /* Evita rolagem lateral */
 }
 
-/* HERO SECTION (Tela Cheia) */
+/* HERO SECTION (Tela Cheia Imersiva) */
 .hero-section {
     position: relative;
-    height: 90vh; /* Ocupa quase toda a tela */
+    height: 85vh; /* Ocupa 85% da tela */
     display: flex;
-    align-items: center;
+    align-items: flex-end; /* Texto embaixo (Estilo TikTok/Reels) */
     justify-content: center;
     overflow: hidden;
+    padding-bottom: 60px;
 }
 
 .video-background {
@@ -31,80 +33,119 @@
 }
 .video-overlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to top, #000 10%, rgba(0,0,0,0.4) 80%);
+    background: linear-gradient(to top, #050505 5%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.3) 100%);
     z-index: 1;
 }
 
 .hero-content {
     position: relative; z-index: 10; text-align: center; padding: 20px;
+    width: 100%; max-width: 600px;
     animation: fadeInUp 0.8s ease-out;
 }
 
 .hero-title {
-    font-size: 2.5rem; font-weight: 900; text-transform: uppercase;
-    line-height: 1.1; margin-bottom: 10px;
-    text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    font-size: 2.2rem; font-weight: 900; text-transform: uppercase;
+    line-height: 1; margin-bottom: 8px;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+    letter-spacing: -1px;
 }
 
 .hero-btn {
     background: var(--primary-red);
-    color: #fff; border: none; padding: 15px 40px;
-    font-size: 1.2rem; font-weight: 800; border-radius: 50px;
-    margin-top: 20px; cursor: pointer;
-    box-shadow: 0 0 20px rgba(225, 0, 0, 0.5);
-    animation: pulse 2s infinite;
+    color: #fff; border: none; padding: 14px 35px;
+    font-size: 1rem; font-weight: 800; border-radius: 50px;
+    margin-top: 15px; cursor: pointer;
+    box-shadow: 0 0 25px rgba(225, 0, 0, 0.6);
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: transform 0.2s;
+    text-transform: uppercase;
 }
+.hero-btn:active { transform: scale(0.95); }
 
-/* CARDS DE CATEGORIA (Estilo Capa Vertical) */
+/* SEÇÃO DE CATEGORIAS (O PROBLEMA ESTAVA AQUI) */
 .categories-section {
-    padding: 20px;
-    margin-top: -50px; /* Sobe um pouco sobre o vídeo */
+    padding: 20px 15px;
+    margin-top: -20px; /* Sobe levemente */
     position: relative; z-index: 20;
+    max-width: 1200px; margin-left: auto; margin-right: auto; /* Centraliza no PC */
 }
 
+.section-title {
+    font-size: 1.1rem; font-weight: 700; color: #ccc;
+    margin-bottom: 15px; padding-left: 5px;
+    border-left: 3px solid var(--primary-red);
+    line-height: 1; margin-left: 5px;
+}
+
+/* GRID CORRIGIDO - AGORA FICA PEQUENO E ELEGANTE */
 .categories-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 colunas lado a lado */
-    gap: 15px;
+    /* Mobile: 2 colunas perfeitas */
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 12px; /* Espaço menor entre cards */
 }
 
+/* Ajuste para Tablet e PC (Para não ficar gigante) */
+@media (min-width: 768px) {
+    .categories-grid {
+        grid-template-columns: repeat(4, 1fr); /* 4 colunas no tablet */
+    }
+}
+@media (min-width: 1024px) {
+    .categories-grid {
+        grid-template-columns: repeat(5, 1fr); /* 5 colunas no PC */
+    }
+}
+
+/* CARD DE CATEGORIA (Estilo Capa Vertical - Poster) */
 .category-card {
     position: relative;
     background: var(--card-bg);
     border-radius: 12px;
     overflow: hidden;
-    aspect-ratio: 3/4; /* Proporção Vertical (Estilo TikTok/Reels) */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    aspect-ratio: 2/3; /* FORMATO RETRATO (POSTER) */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     border: 1px solid #222;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
 }
+
+.category-card:active { transform: scale(0.98); }
 
 .card-image {
     width: 100%; height: 100%;
 }
 .card-image img {
     width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.5s;
 }
+/* Zoom suave na imagem ao clicar/tocar */
+.category-card:hover .card-image img { transform: scale(1.1); }
 
 .card-overlay {
     position: absolute; bottom: 0; left: 0; width: 100%;
-    background: linear-gradient(to top, #000 0%, transparent 100%);
-    padding: 15px;
-    padding-top: 40px;
+    background: linear-gradient(to top, #000 10%, rgba(0,0,0,0.8) 60%, transparent 100%);
+    padding: 12px 10px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    height: 60%;
 }
 
 .card-title {
-    font-size: 1rem; font-weight: 800; text-transform: uppercase;
+    font-size: 0.9rem; font-weight: 800; text-transform: uppercase;
     margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,1);
+    line-height: 1.2;
+    color: #fff;
 }
 
 .card-cta {
-    font-size: 0.7rem; color: #ccc; margin-top: 4px; display: block;
+    font-size: 0.65rem; color: var(--primary-red); 
+    margin-top: 5px; font-weight: 700;
+    display: flex; align-items: center; gap: 3px;
 }
 
 /* FOOTER */
 .simple-footer {
-    text-align: center; padding: 30px; color: #555; font-size: 0.8rem;
+    text-align: center; padding: 40px 20px; color: #444; font-size: 0.75rem;
 }
 
-@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
