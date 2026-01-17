@@ -1,89 +1,54 @@
 .payment-page {
     min-height: 100vh;
-    background-color: #000;
+    background-color: #0d0d0d;
     color: #fff;
-    font-family: 'Inter', sans-serif;
     padding: 20px;
-    display: flex; flex-direction: column; align-items: center;
-}
-
-.payment-navbar {
-    width: 100%;
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 30px;
-}
-
-.payment-navbar button { background: none; border: none; cursor: pointer; }
-.payment-navbar span { font-weight: 600; font-size: 1.1rem; }
-
-/* LOADING */
-.payment-loading {
-    height: 100vh; background: #000; color: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 20px;
+    font-family: 'Montserrat', sans-serif;
 }
-.spin { animation: spin 1s linear infinite; }
 
-/* CARD DE PAGAMENTO */
 .payment-card {
-    background: #111;
-    border: 1px solid #222;
+    background: #1a1a1a;
+    border: 1px solid #333;
     border-radius: 16px;
-    padding: 25px;
-    width: 100%; max-width: 380px;
+    padding: 30px;
+    width: 100%; max-width: 400px;
     text-align: center;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
 }
 
-.pay-title { font-size: 1.2rem; margin-bottom: 20px; font-weight: 700; }
-
-.plan-summary {
-    display: flex; flex-direction: column; gap: 5px;
-    margin-bottom: 20px;
-    background: #1a1a1a; padding: 15px; border-radius: 8px;
-}
-.plan-name { color: #aaa; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
-.plan-price { font-size: 1.8rem; font-weight: 800; color: #10b981; }
-
-.timer-box {
-    color: #ef4444; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;
-    margin-bottom: 20px; font-size: 0.9rem;
-}
+.pay-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; color: #fff; }
 
 .qr-container {
-    background: #fff; padding: 10px; border-radius: 12px;
-    display: inline-block; margin-bottom: 25px;
+    background: #fff; padding: 15px; border-radius: 12px;
+    display: inline-block; margin: 20px 0;
 }
 
-.copy-area { text-align: left; width: 100%; margin-bottom: 20px; }
-.copy-area label { display: block; color: #888; font-size: 0.8rem; margin-bottom: 8px; }
-
+/* O SEGREDO DO CÓDIGO PIX */
 .code-box {
-    background: #000; border: 1px solid #333; color: #666;
-    padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.85rem;
-    margin-bottom: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    background: #000;
+    border: 1px solid #444;
+    color: #ccc;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    margin: 15px 0;
+    word-break: break-all; /* QUEBRA O CÓDIGO LONGO */
+    text-align: left;
+    max-height: 100px;
+    overflow-y: auto;
 }
 
-.btn-copy-pix {
-    width: 100%; background: #10b981; color: #fff;
-    border: none; padding: 14px; border-radius: 8px;
-    font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
-    transition: 0.2s;
+.btn-copy {
+    width: 100%;
+    background: #10b981; /* Verde WhatsApp */
+    color: #fff; border: none; padding: 14px;
+    font-weight: 700; border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-.btn-copy-pix:active { transform: scale(0.98); }
+.btn-copy:active { transform: scale(0.98); }
 
-.waiting-box {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    color: #888; font-size: 0.9rem;
+.timer-box {
+    color: #E10000; font-weight: 600; margin-bottom: 15px;
 }
-
-.pulse-green {
-    width: 10px; height: 10px; background: #10b981; border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-.success-state { text-align: center; padding-top: 50px; }
-.success-state h2 { color: #10b981; margin-top: 20px; }
-
-@keyframes spin { 100% { transform: rotate(360deg); } }
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }

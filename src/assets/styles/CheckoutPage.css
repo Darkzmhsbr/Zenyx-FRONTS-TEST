@@ -1,187 +1,106 @@
-/* --- CHECKOUT PREMIUM DARK --- */
-.checkout-container {
-    min-height: 100vh;
-    background-color: #000;
-    color: #fff;
-    padding: 20px;
-    padding-bottom: 120px; /* Espaço para footer fixo */
-    font-family: 'Inter', sans-serif;
+/* CheckoutPage.css - ESTILO ELITE */
+
+:root {
+  --primary-red: #E10000;
+  --dark-red: #7B0000;
+  --bg-dark: #0d0d0d;
+  --card-bg: #1a1a1a;
+  --text-white: #ffffff;
+  --text-gray: #9ca3af;
+  --text-yellow: #fbbf24;
 }
 
-.checkout-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
+.checkout-page-container {
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-dark);
+  font-family: 'Montserrat', sans-serif, system-ui;
+  color: var(--text-white);
+  padding: 20px;
+  padding-bottom: 50px;
 }
 
+/* HEADER SIMPLES */
 .checkout-header h2 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin: 0;
+  text-align: center; font-size: 1.5rem; font-weight: 800; margin-bottom: 20px;
 }
 
-.checkout-header button {
-    background: transparent; border: none; color: #fff;
-    cursor: pointer;
+/* CARD DE PLANO (O SEGREDO DO DESIGN) */
+.plan-selection-card {
+  background: var(--card-bg);
+  border: 1px solid #333;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  padding: 15px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-/* BANNER DE DESCONTO (Igual ao PDF) */
-.discount-banner {
-    background-color: #10b981; /* Verde Sucesso */
-    color: #fff;
-    padding: 12px;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 0.9rem;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-    animation: slideDown 0.5s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+.plan-selection-card.active {
+  background: linear-gradient(to right, rgba(225, 0, 0, 0.1), transparent);
+  border-color: var(--primary-red);
+  box-shadow: 0 0 15px rgba(225, 0, 0, 0.2);
 }
 
-/* LISTA DE PLANOS */
-.plans-list {
-    display: flex; flex-direction: column; gap: 15px;
+.plan-left { display: flex; align-items: center; gap: 15px; }
+
+/* CHECKBOX CUSTOMIZADO */
+.custom-checkbox {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid #555;
+  display: flex; align-items: center; justify-content: center;
+}
+.plan-selection-card.active .custom-checkbox {
+  background: var(--primary-red); border-color: var(--primary-red);
 }
 
-/* CARD DO PLANO */
-.plan-card-item {
-    background: #fff; /* Fundo Branco conforme PDF */
-    color: #000;      /* Texto Preto */
-    border-radius: 8px;
-    display: flex;
-    overflow: hidden;
-    cursor: pointer;
-    position: relative;
-    border: 2px solid transparent;
-    transition: all 0.2s;
-    height: 100px;
+.plan-info h3 { margin: 0; font-size: 1rem; font-weight: 700; color: #fff; }
+.plan-info p { margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-gray); }
+
+.plan-price { font-size: 1.2rem; font-weight: 800; color: var(--text-yellow); }
+
+/* ORDER BUMP (OFERTA EXTRA) */
+.order-bump-container {
+  margin-top: 30px;
+  background: rgba(251, 191, 36, 0.05); /* Amarelo bem suave */
+  border: 1px dashed var(--text-yellow);
+  padding: 15px;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-.plan-card-item.selected {
-    border-color: #ef4444; /* Borda Vermelha quando selecionado */
-    transform: scale(1.02);
+.bump-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.blink-text { animation: blink 1s infinite; color: var(--primary-red); font-weight: 800; font-size: 0.8rem; }
+.bump-title { font-weight: 700; font-size: 0.95rem; color: #fff; }
+
+/* BOTÃO DE PAGAMENTO */
+.btn-pay-container { margin-top: 30px; }
+
+.btn-pay-now {
+  width: 100%;
+  background: linear-gradient(to bottom, var(--primary-red), var(--dark-red));
+  color: white;
+  border: none;
+  padding: 18px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  border-radius: 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(225, 0, 0, 0.5);
+  animation: pulseBtn 2s infinite;
 }
 
-/* Checkbox lateral */
-.plan-check-area {
-    width: 50px;
-    display: flex; align-items: center; justify-content: center;
-    background: #f3f3f3;
-    border-right: 1px solid #eee;
+/* BENEFÍCIOS */
+.benefits-section {
+  margin-top: 40px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
 }
+.benefit-item { display: flex; align-items: center; gap: 10px; color: #888; font-size: 0.8rem; }
 
-.custom-radio {
-    width: 20px; height: 20px;
-    border: 2px solid #ccc;
-    border-radius: 4px; /* Quadrado arredondado */
-    display: flex; align-items: center; justify-content: center;
-}
-
-.plan-card-item.selected .custom-radio {
-    background: #ef4444;
-    border-color: #ef4444;
-    color: #fff;
-}
-
-/* Info do Plano */
-.plan-content {
-    flex: 1;
-    padding: 12px;
-    display: flex; flex-direction: column;
-    justify-content: center;
-}
-
-.plan-tag {
-    background: #000;
-    color: #fff;
-    font-size: 0.65rem;
-    padding: 3px 8px;
-    border-radius: 4px;
-    text-transform: uppercase;
-    font-weight: 800;
-    width: fit-content;
-    margin-bottom: 4px;
-}
-
-.plan-title {
-    font-weight: 800;
-    font-size: 1rem;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-}
-
-.plan-desc {
-    font-size: 0.75rem;
-    color: #666;
-    line-height: 1.2;
-}
-
-/* Preço (Lado Direito) */
-.plan-price-box {
-    width: 90px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800;
-    font-size: 1.3rem;
-    color: #fff;
-}
-
-/* Cores específicas por plano (baseado no index) */
-/* Plano 1: Laranja/Amarelo */
-.plan-card-item:nth-child(1) .plan-price-box { background: linear-gradient(135deg, #f59e0b, #d97706); }
-/* Plano 2: Vermelho (Destaque) */
-.plan-card-item:nth-child(2) .plan-price-box { background: linear-gradient(135deg, #ef4444, #b91c1c); }
-/* Plano 3: Ouro/Laranja */
-.plan-card-item:nth-child(3) .plan-price-box { background: linear-gradient(135deg, #f59e0b, #d97706); }
-
-/* Aviso Rodapé */
-.footer-note {
-    text-align: center;
-    color: #666;
-    font-size: 0.75rem;
-    margin-top: 20px;
-    font-style: italic;
-}
-
-/* FOOTER FIXO (BOTÃO DE PAGAMENTO) */
-.checkout-fixed-footer {
-    position: fixed;
-    bottom: 0; left: 0; width: 100%;
-    background: linear-gradient(to top, #000 90%, transparent);
-    padding: 20px;
-    z-index: 100;
-    text-align: center;
-}
-
-.btn-pay-premium {
-    width: 100%;
-    background: #ef4444; /* Vermelho */
-    color: #fff;
-    border: none;
-    padding: 16px;
-    border-radius: 8px;
-    font-weight: 900;
-    font-size: 1.1rem;
-    text-transform: uppercase;
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
-    cursor: pointer;
-    display: flex; justify-content: center; align-items: center; gap: 10px;
-    animation: pulseRed 2s infinite;
-}
-
-.security-row {
-    margin-top: 15px;
-    display: flex; justify-content: center; gap: 15px;
-    color: #888;
-    font-size: 0.75rem;
-}
-
-.security-row span { display: flex; align-items: center; gap: 4px; }
-
-@keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+@keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+@keyframes blink { 50% { opacity: 0.5; } }

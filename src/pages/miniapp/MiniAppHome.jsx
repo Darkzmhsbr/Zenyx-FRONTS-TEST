@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { miniappService } from '../../services/api';
-import Swal from 'sweetalert2';
-import { Play, Star, Lock, ShoppingBag } from 'lucide-react';
-import '../../assets/styles/HomePage.css'; // Vamos criar esse CSS no próximo lote
+import { Play } from 'lucide-react';
+import '../../assets/styles/HomePage.css';
 
 export function MiniAppHome() {
   const { botId } = useParams();
@@ -12,56 +11,29 @@ export function MiniAppHome() {
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [showPromoPopup, setShowPromoPopup] = useState(false);
 
   useEffect(() => {
+    const carregarLoja = async () => {
+      try {
+        const data = await miniappService.getPublicData(botId);
+        setConfig(data.config);
+        setCategories(data.categories || []);
+      } catch (error) {
+        console.error("Erro", error);
+      } finally {
+        setLoading(false);
+      }
+    };
     carregarLoja();
   }, [botId]);
 
-  const carregarLoja = async () => {
-    try {
-      setLoading(true);
-      const data = await miniappService.getPublicData(botId);
-      
-      setConfig(data.config);
-      setCategories(data.categories || []);
-
-      // Lógica do Popup (Se ativado no painel)
-      if (data.config.enable_popup) {
-          const hasSeenPromo = sessionStorage.getItem(`promo_shown_${botId}`);
-          if (!hasSeenPromo) {
-              setTimeout(() => {
-                  setShowPromoPopup(true);
-                  sessionStorage.setItem(`promo_shown_${botId}`, 'true');
-              }, 3000);
-          }
-      }
-
-    } catch (error) {
-      console.error("Erro ao carregar loja:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClosePopup = () => {
-      setShowPromoPopup(false);
-      localStorage.setItem('active_coupon', 'OFERTA_POPUP_50');
-      Swal.fire({
-          toast: true, position: 'top', icon: 'success', 
-          title: 'Cupom de desconto ativado!',
-          showConfirmButton: false, timer: 3000,
-          background: '#151515', color: '#fff'
-      });
-  };
-
-  if (loading) return <div className="loading-screen">Carregando loja...</div>;
-  if (!config) return <div className="error-screen">Loja não encontrada.</div>;
+  if (loading) return <div style={{background:'#000', height:'100vh'}}></div>;
+  if (!config) return <div style={{color:'#fff'}}>Loja não encontrada.</div>;
 
   return (
-    <div className="home-container" style={{ background: config.background_value || '#000' }}>
+    <div className="home-container">
       
-      {/* 1. HERO SECTION DINÂMICA */}
+      {/* 1. HERO COM VÍDEO FULL */}
       <section className="hero-section">
           {config.hero_video_url ? (
             <div className="video-background">
@@ -75,21 +47,19 @@ export function MiniAppHome() {
           )}
 
           <div className="hero-content">
-              <h1 className="glitch-text" data-text={config.hero_title}>{config.hero_title}</h1>
-              <p className="hero-subtitle">{config.hero_subtitle}</p>
+              <h1 className="hero-title">{config.hero_title}</h1>
+              <p style={{color:'#ccc', fontSize:'1rem'}}>{config.hero_subtitle}</p>
               
-              <button className="cta-button" onClick={() => {
-                  document.getElementById('categories-section').scrollIntoView({ behavior: 'smooth' });
+              <button className="hero-btn" onClick={() => {
+                  document.getElementById('cat-grid').scrollIntoView({ behavior: 'smooth' });
               }}>
-                  {config.hero_btn_text || "VER CONTEÚDO"} <Play size={18} fill="#fff" />
+                  {config.hero_btn_text} <Play size={18} fill="#fff" style={{marginLeft:5}}/>
               </button>
           </div>
       </section>
 
-      {/* 2. GRID DE CATEGORIAS */}
-      <section id="categories-section" className="categories-section">
-          <h2 className="section-title">SELECIONE UMA CATEGORIA <span className="dot">.</span></h2>
-          
+      {/* 2. GRID DE CATEGORIAS (VERTICAL) */}
+      <section id="cat-grid" className="categories-section">
           <div className="categories-grid">
               {categories.map((cat) => (
                   <div 
@@ -101,53 +71,21 @@ export function MiniAppHome() {
                           {cat.cover_image ? (
                               <img src={cat.cover_image} alt={cat.title} />
                           ) : (
-                              <div className="placeholder-img"><Lock size={40}/></div>
+                              <div style={{width:'100%', height:'100%', background:'#333'}}></div>
                           )}
-                          <div className="card-overlay"></div>
                       </div>
-                      <div className="card-info">
-                          <h3 style={{ color: cat.theme_color || '#fff' }}>{cat.title}</h3>
-                          <p>{cat.description || "Toque para acessar"}</p>
-                          <span className="card-btn" style={{ borderColor: cat.theme_color }}>
-                              ACESSAR <ShoppingBag size={14}/>
-                          </span>
+                      <div className="card-overlay">
+                          <h3 className="card-title" style={{color: cat.theme_color}}>{cat.title}</h3>
+                          <span className="card-cta">VER CONTEÚDO ➜</span>
                       </div>
                   </div>
               ))}
-
-              {categories.length === 0 && (
-                  <p style={{color: '#666', textAlign: 'center', width: '100%'}}>Nenhuma categoria disponível.</p>
-              )}
           </div>
       </section>
 
-      {/* 3. RODAPÉ */}
       <footer className="simple-footer">
           <p>{config.footer_text}</p>
       </footer>
-
-      {/* 4. POPUP PROMO */}
-      {showPromoPopup && (
-          <div className="promo-modal-overlay">
-              <div className="promo-modal-content">
-                  <button className="close-modal" onClick={handleClosePopup}>✖</button>
-                  <div className="modal-video-box">
-                      {config.popup_video_url && (
-                        <video autoPlay loop muted playsInline>
-                            <source src={config.popup_video_url} type="video/mp4" />
-                        </video>
-                      )}
-                      <div className="discount-badge">🎁 PRESENTE</div>
-                  </div>
-                  <div className="modal-text">
-                      <h3>{config.popup_text}</h3>
-                      <button className="btn-claim-discount" onClick={handleClosePopup}>
-                          PEGAR MEU DESCONTO
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
     </div>
   );
 }
