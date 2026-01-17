@@ -1,7 +1,7 @@
-/* RESET PARA GARANTIR TELA CHEIA */
+/* RESET OBRIGATÓRIO PARA TELA CHEIA */
 html, body {
-    margin: 0; padding: 0; width: 100%; height: 100%; overflow-x: hidden;
-    background-color: #000;
+    margin: 0; padding: 0; width: 100%; height: 100%; 
+    background-color: #000; overflow-x: hidden;
 }
 
 .home-page-container { 
@@ -12,10 +12,10 @@ html, body {
   font-family: 'Montserrat', sans-serif;
 }
 
-/* ================= HERO SECTION ================= */
+/* ================= HERO SECTION (TELA CHEIA) ================= */
 .hero-section-elite {
     position: relative;
-    height: 100vh; /* FORÇA TELA CHEIA */
+    height: 100vh;
     width: 100%;
     overflow: hidden;
     display: flex;
@@ -23,136 +23,78 @@ html, body {
     padding: 0;
 }
 
-/* VÍDEO DE FUNDO */
 .video-background {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 0;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
 }
 .video-background video {
-    width: 100%; height: 100%; 
-    object-fit: cover; /* ESSENCIAL: Preenche sem distorcer */
+    width: 100%; height: 100%; object-fit: cover;
 }
 .video-overlay-gradient {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.8) 100%);
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%);
     z-index: 1;
 }
 
-/* CONTEÚDO CENTRALIZADO */
 .hero-content-center {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-    width: 100%;
-    max-width: 700px;
-    padding: 20px;
-    margin: 0 auto;
+    position: relative; z-index: 10; text-align: center;
+    width: 100%; max-width: 800px; padding: 20px; margin: 0 auto;
 }
 
 .hero-title-large {
-    font-size: 3rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    line-height: 1;
-    margin-bottom: 15px;
-    text-shadow: 0 4px 30px rgba(0,0,0,0.9);
-    letter-spacing: -1px;
+    font-size: 3.5rem; font-weight: 900; text-transform: uppercase;
+    line-height: 1; margin-bottom: 20px;
+    text-shadow: 0 4px 40px rgba(0,0,0,1);
+    letter-spacing: -2px;
 }
 
 .btn-hero-action {
-    background: #E10000;
-    color: #fff;
-    border: none;
-    padding: 18px 45px;
-    font-size: 1.2rem;
-    font-weight: 800;
-    border-radius: 50px;
-    margin-top: 25px;
-    cursor: pointer;
-    box-shadow: 0 0 30px rgba(225, 0, 0, 0.6);
-    text-transform: uppercase;
-    transition: transform 0.2s;
+    background: #E10000; color: #fff; border: none; padding: 20px 50px;
+    font-size: 1.2rem; font-weight: 800; border-radius: 50px; margin-top: 30px;
+    cursor: pointer; box-shadow: 0 0 40px rgba(225, 0, 0, 0.6);
+    text-transform: uppercase; transition: transform 0.2s;
 }
-.btn-hero-action:hover {
-    transform: scale(1.05);
-}
+.btn-hero-action:hover { transform: scale(1.05); }
 
 /* ================= GRID DE CATEGORIAS ================= */
 .categories-container {
-    padding: 20px;
-    margin-top: -100px; /* Sobe por cima do vídeo */
-    position: relative;
-    z-index: 20;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
+    padding: 20px; margin-top: -120px; /* Sobe por cima do vídeo */
+    position: relative; z-index: 20;
+    max-width: 1200px; margin-left: auto; margin-right: auto;
 }
 
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 colunas no mobile */
+    grid-template-columns: repeat(2, 1fr); /* 2 colunas no celular */
     gap: 15px;
 }
 
-/* Responsividade para PC */
 @media (min-width: 768px) {
-    .cards-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
-    .hero-title-large { font-size: 4rem; }
+    .cards-grid { grid-template-columns: repeat(4, 1fr); }
+    .hero-title-large { font-size: 5rem; }
 }
 
-/* CARD ESTILO ELITE (Baseado no seu arquivo) */
+/* CARD ESTILO POSTER (VERTICAL) */
 .category-card-elite {
-    background: #111;
-    border-radius: 12px;
-    overflow: hidden;
-    position: relative;
-    aspect-ratio: 2/3; /* Formato Poster Vertical */
+    background: #111; border-radius: 12px; overflow: hidden; position: relative;
+    aspect-ratio: 2/3; /* Proporção exata de poster */
     border: 1px solid #222;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    cursor: pointer;
-    transition: transform 0.3s;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    cursor: pointer; transition: transform 0.3s;
 }
-.category-card-elite:hover {
-    transform: translateY(-5px);
-    border-color: #E10000;
-}
+.category-card-elite:hover { transform: translateY(-10px); border-color: #E10000; }
 
-.card-img-wrapper {
-    width: 100%; height: 100%;
-}
-.card-img-wrapper img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-}
+.card-img-wrapper { width: 100%; height: 100%; }
+.card-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
 
 .card-gradient-overlay {
-    position: absolute;
-    bottom: 0; left: 0; width: 100%;
-    height: 100%;
-    background: linear-gradient(to top, #000 10%, rgba(0,0,0,0) 60%);
-    padding: 15px;
-    display: flex;
-    align-items: flex-end;
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to top, #000 5%, rgba(0,0,0,0) 60%);
+    padding: 15px; display: flex; align-items: flex-end;
 }
 
 .card-title-text {
-    font-size: 1rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    margin: 0;
-    color: #fff;
-    text-shadow: 0 2px 4px #000;
+    font-size: 1.1rem; font-weight: 800; text-transform: uppercase;
+    margin: 0; color: #fff; text-shadow: 0 2px 10px #000;
 }
 
-/* FOOTER SIMPLES */
-.simple-footer {
-    text-align: center;
-    padding: 40px;
-    color: #444;
-    font-size: 0.8rem;
-}
-.footer-links span { margin: 0 5px; cursor: pointer; }
+.simple-footer { text-align: center; padding: 50px; color: #666; font-size: 0.8rem; }
