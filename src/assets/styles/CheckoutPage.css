@@ -1,14 +1,24 @@
+/* --- CHECKOUT PREMIUM DARK --- */
 .checkout-container {
     min-height: 100vh;
-    padding: 20px;
-    padding-bottom: 100px;
+    background-color: #000;
     color: #fff;
+    padding: 20px;
+    padding-bottom: 120px; /* Espaço para footer fixo */
     font-family: 'Inter', sans-serif;
 }
 
 .checkout-header {
-    display: flex; align-items: center; gap: 15px;
-    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.checkout-header h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
 }
 
 .checkout-header button {
@@ -16,11 +26,22 @@
     cursor: pointer;
 }
 
-.section-label {
-    font-size: 0.8rem;
-    color: #888;
-    margin-bottom: 15px;
-    letter-spacing: 1px;
+/* BANNER DE DESCONTO (Igual ao PDF) */
+.discount-banner {
+    background-color: #10b981; /* Verde Sucesso */
+    color: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    animation: slideDown 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 /* LISTA DE PLANOS */
@@ -28,135 +49,139 @@
     display: flex; flex-direction: column; gap: 15px;
 }
 
+/* CARD DO PLANO */
 .plan-card-item {
-    background: #151515;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 15px;
+    background: #fff; /* Fundo Branco conforme PDF */
+    color: #000;      /* Texto Preto */
+    border-radius: 8px;
     display: flex;
-    align-items: center;
-    gap: 15px;
+    overflow: hidden;
     cursor: pointer;
+    position: relative;
+    border: 2px solid transparent;
     transition: all 0.2s;
+    height: 100px;
 }
 
 .plan-card-item.selected {
-    background: rgba(195, 51, 255, 0.1);
-    box-shadow: 0 0 15px rgba(195, 51, 255, 0.2);
+    border-color: #ef4444; /* Borda Vermelha quando selecionado */
+    transform: scale(1.02);
 }
 
-.plan-radio {
+/* Checkbox lateral */
+.plan-check-area {
+    width: 50px;
+    display: flex; align-items: center; justify-content: center;
+    background: #f3f3f3;
+    border-right: 1px solid #eee;
+}
+
+.custom-radio {
     width: 20px; height: 20px;
-    border: 2px solid #555;
-    border-radius: 50%;
+    border: 2px solid #ccc;
+    border-radius: 4px; /* Quadrado arredondado */
     display: flex; align-items: center; justify-content: center;
 }
 
-.plan-card-item.selected .plan-radio {
-    border-color: #c333ff;
-}
-
-.radio-dot {
-    width: 10px; height: 10px;
-    background: #c333ff;
-    border-radius: 50%;
-}
-
-.plan-info { flex: 1; }
-.plan-info h4 { margin: 0; font-size: 1rem; }
-.plan-desc { font-size: 0.8rem; color: #888; }
-
-.plan-price {
-    font-weight: 700;
-    font-size: 1.1rem;
+.plan-card-item.selected .custom-radio {
+    background: #ef4444;
+    border-color: #ef4444;
     color: #fff;
 }
 
-/* ORDER BUMP */
-.order-bump-box {
-    margin-top: 30px;
-    background: #1a1a1a;
-    border: 2px dashed #444;
-    border-radius: 12px;
-    padding: 15px;
-    cursor: pointer;
-    transition: 0.3s;
+/* Info do Plano */
+.plan-content {
+    flex: 1;
+    padding: 12px;
+    display: flex; flex-direction: column;
+    justify-content: center;
 }
 
-.order-bump-box.active {
-    border-color: #ef4444; /* Vermelho destaque */
-    background: rgba(239, 68, 68, 0.05);
-}
-
-.bump-header {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 10px;
-}
-
-.bump-check {
-    width: 20px; height: 20px;
-    border: 2px solid #666;
-    border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
+.plan-tag {
     background: #000;
-}
-
-.order-bump-box.active .bump-check {
-    background: #ef4444;
-    border-color: #ef4444;
-}
-
-.bump-blink {
-    color: #ef4444;
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
     font-weight: 800;
-    font-size: 0.8rem;
-    animation: blink 1.5s infinite;
+    width: fit-content;
+    margin-bottom: 4px;
 }
 
-.bump-body p { margin: 0; font-size: 0.9rem; line-height: 1.4; color: #ccc; }
-.bump-body strong { color: #fff; }
+.plan-title {
+    font-weight: 800;
+    font-size: 1rem;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
 
-/* FOOTER CHECKOUT */
-.checkout-footer {
+.plan-desc {
+    font-size: 0.75rem;
+    color: #666;
+    line-height: 1.2;
+}
+
+/* Preço (Lado Direito) */
+.plan-price-box {
+    width: 90px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: #fff;
+}
+
+/* Cores específicas por plano (baseado no index) */
+/* Plano 1: Laranja/Amarelo */
+.plan-card-item:nth-child(1) .plan-price-box { background: linear-gradient(135deg, #f59e0b, #d97706); }
+/* Plano 2: Vermelho (Destaque) */
+.plan-card-item:nth-child(2) .plan-price-box { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+/* Plano 3: Ouro/Laranja */
+.plan-card-item:nth-child(3) .plan-price-box { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+/* Aviso Rodapé */
+.footer-note {
+    text-align: center;
+    color: #666;
+    font-size: 0.75rem;
+    margin-top: 20px;
+    font-style: italic;
+}
+
+/* FOOTER FIXO (BOTÃO DE PAGAMENTO) */
+.checkout-fixed-footer {
     position: fixed;
     bottom: 0; left: 0; width: 100%;
-    background: #111;
-    border-top: 1px solid #333;
+    background: linear-gradient(to top, #000 90%, transparent);
     padding: 20px;
-    z-index: 99;
+    z-index: 100;
+    text-align: center;
 }
 
-.total-row {
-    display: flex; justify-content: space-between;
-    margin-bottom: 15px;
-    font-size: 1.1rem;
-}
-
-.total-val {
-    color: #10b981; /* Verde Dinheiro */
-    font-weight: 800;
-}
-
-.btn-pay-now {
+.btn-pay-premium {
     width: 100%;
-    background: #10b981;
-    color: #000;
+    background: #ef4444; /* Vermelho */
+    color: #fff;
     border: none;
     padding: 16px;
     border-radius: 8px;
-    font-weight: 800;
+    font-weight: 900;
     font-size: 1.1rem;
-    display: flex; justify-content: center; align-items: center; gap: 10px;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
     cursor: pointer;
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+    animation: pulseRed 2s infinite;
 }
 
-.security-badges {
-    display: flex; justify-content: center; gap: 20px;
+.security-row {
     margin-top: 15px;
-    font-size: 0.7rem;
-    color: #666;
+    display: flex; justify-content: center; gap: 15px;
+    color: #888;
+    font-size: 0.75rem;
 }
 
-.security-badges span { display: flex; align-items: center; gap: 5px; }
+.security-row span { display: flex; align-items: center; gap: 4px; }
 
-@keyframes blink { 50% { opacity: 0.5; } }
+@keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Copy, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { Copy, Clock, CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Swal from 'sweetalert2';
-import '../../assets/styles/PaymentPage.css'; // Criaremos no lote 4
+import '../../assets/styles/PaymentPage.css';
 
 export function MiniAppPayment() {
   const { botId } = useParams();
@@ -16,26 +16,25 @@ export function MiniAppPayment() {
 
   const [loading, setLoading] = useState(true);
   const [pixData, setPixData] = useState(null);
-  const [status, setStatus] = useState('pending'); // pending, paid
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
+  const [status, setStatus] = useState('pending'); 
+  const [timeLeft, setTimeLeft] = useState(900); // 15 minutos
   
   const hasGeneratedRef = useRef(false);
   const pollIntervalRef = useRef(null);
 
-  // 🔗 SEU DOMÍNIO DO RAILWAY (Hardcoded para garantir funcionamento na loja pública)
+  // 🔗 URL DA API (Certifique-se que no main.py a rota /api/pagamento/pix existe)
   const API_URL = 'https://zenyx-gbs-testes-production.up.railway.app';
 
   useEffect(() => {
-    if (!plan || !finalPrice) {
+    if (!plan) {
       navigate(`/loja/${botId}`);
       return;
     }
     gerarPix();
-
     return () => clearInterval(pollIntervalRef.current);
   }, []);
 
-  // Timer Regressivo
+  // Timer
   useEffect(() => {
     if (timeLeft > 0 && status === 'pending') {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -48,34 +47,31 @@ export function MiniAppPayment() {
     hasGeneratedRef.current = true;
 
     try {
-      // Pega dados do usuário do Telegram (salvos no localStorage pelo App.jsx que vamos ajustar)
       const tgUser = JSON.parse(localStorage.getItem('telegram_user') || '{}');
-
+      
       const payload = {
         bot_id: parseInt(botId),
         valor: parseFloat(finalPrice),
         plano_id: plan.id,
         plano_nome: plan.nome_exibicao,
-        telegram_id: tgUser.id?.toString() || '000000', // Fallback se abrir no navegador
-        first_name: tgUser.first_name || 'Visitante Web',
-        username: tgUser.username || 'visitante',
+        telegram_id: tgUser.id?.toString() || '000000',
+        first_name: tgUser.first_name || 'Visitante',
+        username: tgUser.username || 'anonimo',
         tem_order_bump: !!bump
       };
 
-      // Chama a rota de criação de PIX (Ajuste a rota conforme seu backend real de geração)
-      // Se não tiver rota pública específica, usaremos a rota padrão de webhook simulation ou create_pix
       const response = await axios.post(`${API_URL}/api/pagamento/pix`, payload);
       
       if (response.data) {
-        setPixData(response.data); // Espera { qr_code, copia_cola, txid }
+        setPixData(response.data);
         setLoading(false);
         iniciarMonitoramento(response.data.txid);
       }
 
     } catch (error) {
-      console.error("Erro ao gerar PIX:", error);
-      Swal.fire('Erro', 'Falha ao gerar pagamento. Tente novamente.', 'error');
-      navigate(`/loja/${botId}`);
+      console.error("Erro PIX:", error);
+      Swal.fire('Erro', 'Falha ao gerar PIX. Tente novamente.', 'error');
+      navigate(-1);
     }
   };
 
@@ -88,10 +84,8 @@ export function MiniAppPayment() {
           clearInterval(pollIntervalRef.current);
           setTimeout(() => navigate(`/loja/${botId}/obrigado`), 1500);
         }
-      } catch (e) {
-        // Ignora erros de polling
-      }
-    }, 5000); // Verifica a cada 5s
+      } catch (e) {}
+    }, 5000);
   };
 
   const copyPix = () => {
@@ -99,76 +93,72 @@ export function MiniAppPayment() {
       navigator.clipboard.writeText(pixData.copia_cola);
       Swal.fire({
         toast: true, position: 'top', icon: 'success',
-        title: 'Código PIX copiado!', showConfirmButton: false, timer: 2000,
-        background: '#151515', color: '#fff'
+        title: 'Copiado!', showConfirmButton: false, timer: 1500,
+        background: '#333', color: '#fff'
       });
     }
   };
 
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  const formatTime = (s) => {
+    const min = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
   };
 
-  if (loading) {
-    return (
+  if (loading) return (
       <div className="payment-loading">
-        <Loader2 size={48} className="spin-anim" color="#c333ff" />
-        <p>Gerando seu QR Code exclusivo...</p>
+          <Loader2 className="spin" size={50} color="#10b981"/>
+          <p>Gerando seu PIX...</p>
       </div>
-    );
-  }
+  );
 
   return (
     <div className="payment-page">
-      <div className="payment-card">
-        
-        {status === 'paid' ? (
-          <div className="success-state">
-            <CheckCircle size={64} color="#10b981" />
-            <h2>Pagamento Aprovado!</h2>
-            <p>Redirecionando...</p>
-          </div>
-        ) : (
-          <>
-            <div className="payment-header">
-              <h3>Pagamento via PIX</h3>
-              <div className="amount-display">
-                <small>Total a pagar</small>
-                <span>R$ {finalPrice.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="qr-section">
-              <div className="qr-wrapper">
-                {pixData?.copia_cola && (
-                    <QRCodeSVG value={pixData.copia_cola} size={200} level="M" />
-                )}
-              </div>
-              <div className="timer-box">
-                <Clock size={14} /> 
-                <span>Expira em: {formatTime(timeLeft)}</span>
-              </div>
-            </div>
-
-            <div className="copy-section">
-              <label>Código Copia e Cola:</label>
-              <div className="code-box">
-                {pixData?.copia_cola?.substring(0, 25)}...
-              </div>
-              <button className="btn-copy" onClick={copyPix}>
-                <Copy size={18} /> COPIAR CÓDIGO
-              </button>
-            </div>
-
-            <div className="loader-status">
-              <div className="pulse-dot"></div>
-              <p>Aguardando confirmação do banco...</p>
-            </div>
-          </>
-        )}
+      <div className="payment-navbar">
+        <button onClick={() => navigate(-1)}><ArrowLeft color="#fff"/></button>
+        <span>Pagamento Seguro</span>
+        <div style={{width:24}}></div>
       </div>
+
+      {status === 'paid' ? (
+          <div className="success-state">
+              <CheckCircle size={80} color="#10b981" />
+              <h2>Pagamento Recebido!</h2>
+              <p>Redirecionando você...</p>
+          </div>
+      ) : (
+          <div className="payment-card">
+              <h3 className="pay-title">Pagamento via PIX</h3>
+              
+              <div className="plan-summary">
+                  <span className="plan-name">{plan.nome_exibicao}</span>
+                  <span className="plan-price">R$ {finalPrice.toFixed(2)}</span>
+              </div>
+
+              <div className="timer-box">
+                  <Clock size={16}/> Expira em: {formatTime(timeLeft)}
+              </div>
+
+              <div className="qr-container">
+                  {pixData?.copia_cola && <QRCodeSVG value={pixData.copia_cola} size={220} level="M" />}
+              </div>
+
+              <div className="copy-area">
+                  <label>Código Pix Copia e Cola:</label>
+                  <div className="code-box">
+                      {pixData?.copia_cola?.substring(0, 40)}...
+                  </div>
+                  <button className="btn-copy-pix" onClick={copyPix}>
+                      <Copy size={18}/> COPIAR CÓDIGO
+                  </button>
+              </div>
+
+              <div className="waiting-box">
+                  <div className="pulse-green"></div>
+                  <span>Aguardando pagamento...</span>
+              </div>
+          </div>
+      )}
     </div>
   );
 }

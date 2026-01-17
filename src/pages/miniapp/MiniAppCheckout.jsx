@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { planService, orderBumpService, miniappService } from '../../services/api';
-import { Check, ShieldCheck, Zap, ArrowLeft, Plus } from 'lucide-react';
-import '../../assets/styles/CheckoutPage.css'; // Criaremos no próximo lote
+import { planService, orderBumpService } from '../../services/api';
+import { Check, ShieldCheck, Lock, ArrowRight, Zap } from 'lucide-react';
+import '../../assets/styles/CheckoutPage.css';
 
 export function MiniAppCheckout() {
   const { botId } = useParams();
@@ -10,35 +10,23 @@ export function MiniAppCheckout() {
   
   const [loading, setLoading] = useState(true);
   const [plans, setPlans] = useState([]);
-  const [bump, setBump] = useState(null);
-  const [config, setConfig] = useState(null);
-  
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [isBumpSelected, setIsBumpSelected] = useState(false);
 
   useEffect(() => {
-    carregarCheckout();
+    carregarDados();
   }, [botId]);
 
-  const carregarCheckout = async () => {
+  const carregarDados = async () => {
     try {
-      setLoading(true);
-      // Busca Planos, OrderBump e Config Visual em paralelo
-      const [plansData, bumpData, appData] = await Promise.all([
-          planService.listPlans(botId),
-          orderBumpService.get(botId),
-          miniappService.getPublicData(botId)
-      ]);
-
+      const plansData = await planService.listPlans(botId);
       setPlans(plansData);
-      setBump(bumpData && bumpData.ativo ? bumpData : null);
-      setConfig(appData.config);
-
-      // Seleciona o primeiro plano por padrão
-      if (plansData.length > 0) setSelectedPlan(plansData[0]);
-
+      // Tenta selecionar o plano "Popular" ou o do meio
+      if (plansData.length > 0) {
+          // Lógica simples: seleciona o segundo se existir, senão o primeiro
+          setSelectedPlan(plansData[1] || plansData[0]);
+      }
     } catch (error) {
-      console.error("Erro checkout", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -46,93 +34,90 @@ export function MiniAppCheckout() {
 
   const handlePayment = () => {
       if (!selectedPlan) return;
-
-      let finalPrice = parseFloat(selectedPlan.preco_atual);
-      if (isBumpSelected && bump) {
-          finalPrice += parseFloat(bump.preco);
-      }
-
-      // Redireciona para a página de pagamento (Pix Generator)
       navigate(`/loja/${botId}/pagamento`, {
           state: {
               plan: selectedPlan,
-              bump: isBumpSelected ? bump : null,
-              finalPrice: finalPrice,
+              finalPrice: parseFloat(selectedPlan.preco_atual),
               botId: botId
           }
       });
   };
 
-  if (loading) return <div className="loading-screen">Carregando ofertas...</div>;
+  if (loading) return <div style={{background:'#000', height:'100vh', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center'}}>Carregando ofertas...</div>;
 
   return (
-    <div className="checkout-container" style={{background: config?.background_value || '#000'}}>
+    <div className="checkout-container">
       
       <div className="checkout-header">
-        <button onClick={() => navigate(-1)}><ArrowLeft/></button>
-        <h2>Finalizar Assinatura</h2>
+        <h2>Selecione seu plano</h2>
       </div>
 
-      <div className="checkout-content">
-        <h3 className="section-label">ESCOLHA SEU PLANO</h3>
-        
-        <div className="plans-list">
-            {plans.map(plan => (
+      {/* BANNER VERDE */}
+      <div className="discount-banner">
+        <Zap size={18} fill="#fff" />
+        PARABÉNS! SEU DESCONTO DE 50% FOI ATIVADO
+      </div>
+
+      <div className="plans-list">
+        {plans.map((plan, index) => {
+            const isSelected = selectedPlan?.id === plan.id;
+            // Define tag baseada no índice (simulação do PDF)
+            let tag = "";
+            if (index === 0) tag = "POUCAS VAGAS";
+            if (index === 1) tag = "POPULAR";
+            if (index === 2) tag = "MELHOR OFERTA";
+
+            return (
                 <div 
                     key={plan.id} 
-                    className={`plan-card-item ${selectedPlan?.id === plan.id ? 'selected' : ''}`}
+                    className={`plan-card-item ${isSelected ? 'selected' : ''}`}
                     onClick={() => setSelectedPlan(plan)}
-                    style={{borderColor: selectedPlan?.id === plan.id ? '#c333ff' : '#333'}}
                 >
-                    <div className="plan-radio">
-                        {selectedPlan?.id === plan.id && <div className="radio-dot"></div>}
+                    {/* Checkbox Lateral */}
+                    <div className="plan-check-area">
+                        <div className="custom-radio">
+                            {isSelected && <Check size={14} strokeWidth={4} />}
+                        </div>
                     </div>
-                    <div className="plan-info">
-                        <h4>{plan.nome_exibicao}</h4>
-                        <span className="plan-desc">{plan.dias_duracao} dias de acesso total</span>
+
+                    {/* Conteúdo */}
+                    <div className="plan-content">
+                        {tag && <span className="plan-tag">{tag}</span>}
+                        <span className="plan-title">{plan.nome_exibicao}</span>
+                        <span className="plan-desc">{plan.descricao || "Acesso imediato ao grupo VIP"}</span>
+                        <span className="plan-desc" style={{textDecoration:'line-through', marginTop: 5, color:'#999'}}>
+                            De R$ {(parseFloat(plan.preco_atual) * 2).toFixed(2)}
+                        </span>
                     </div>
-                    <div className="plan-price">
-                        R$ {parseFloat(plan.preco_atual).toFixed(2)}
+
+                    {/* Preço Colorido */}
+                    <div className="plan-price-box">
+                        <div style={{display:'flex', flexDirection:'column', alignItems:'center', lineHeight:1}}>
+                            <span style={{fontSize:'0.8rem', fontWeight:400}}>R$</span>
+                            {Math.floor(plan.preco_atual)},<small style={{fontSize:'0.8rem'}}>{(plan.preco_atual % 1).toFixed(2).substring(2)}</small>
+                        </div>
                     </div>
                 </div>
-            ))}
-        </div>
-
-        {/* ORDER BUMP */}
-        {bump && (
-            <div className={`order-bump-box ${isBumpSelected ? 'active' : ''}`} onClick={() => setIsBumpSelected(!isBumpSelected)}>
-                <div className="bump-header">
-                    <div className="bump-check">
-                        {isBumpSelected && <Check size={14} color="#fff"/>}
-                    </div>
-                    <span className="bump-blink">OFERTA ESPECIAL 🔥</span>
-                </div>
-                <div className="bump-body">
-                    <p>Adicionar <strong>{bump.nome_produto}</strong> por apenas <strong>R$ {parseFloat(bump.preco).toFixed(2)}</strong>?</p>
-                </div>
-            </div>
-        )}
-
-        {/* RESUMO */}
-        <div className="checkout-footer">
-            <div className="total-row">
-                <span>Total a pagar:</span>
-                <span className="total-val">
-                    R$ {(parseFloat(selectedPlan?.preco_atual || 0) + (isBumpSelected ? parseFloat(bump?.preco || 0) : 0)).toFixed(2)}
-                </span>
-            </div>
-            
-            <button className="btn-pay-now" onClick={handlePayment}>
-                PAGAR COM PIX <Zap size={18} fill="#000" />
-            </button>
-            
-            <div className="security-badges">
-                <span><ShieldCheck size={12}/> Pagamento Seguro</span>
-                <span><Check size={12}/> Acesso Imediato</span>
-            </div>
-        </div>
-
+            );
+        })}
       </div>
+
+      <p className="footer-note">
+        * Os planos serão contados a partir da data de confirmação do pagamento.
+      </p>
+
+      {/* FOOTER FIXO */}
+      <div className="checkout-fixed-footer">
+          <button className="btn-pay-premium" onClick={handlePayment}>
+              IR PARA O PAGAMENTO <ArrowRight size={20} strokeWidth={3} />
+          </button>
+          
+          <div className="security-row">
+              <span><ShieldCheck size={14}/> Compra Segura</span>
+              <span><Lock size={14}/> Dados Protegidos</span>
+          </div>
+      </div>
+
     </div>
   );
 }
