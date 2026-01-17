@@ -1,24 +1,61 @@
-/* PaymentPage.css - IGUAL AO SEU */
+/* PaymentPage.css - BASEADO NO SEU ARQUIVO */
 .payment-page-container {
-    min-height: 100vh; background-color: #0d0d0d; color: #fff;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
+    min-height: 100vh;
+    background-color: #0d0d0d;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
     font-family: 'Montserrat', sans-serif;
 }
+
 .payment-card {
-    background: #151515; border: 1px solid #333; border-radius: 16px;
-    padding: 30px; width: 100%; max-width: 400px; text-align: center;
+    background: #151515;
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 30px;
+    width: 100%; max-width: 400px;
+    text-align: center;
     box-shadow: 0 10px 40px rgba(0,0,0,0.6);
 }
-.qr-code-wrapper {
-    background: #fff; padding: 15px; border-radius: 12px; display: inline-block; margin: 20px 0;
+
+.payment-header h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; color: #fff; }
+
+.plan-summary {
+    background: #222; padding: 15px; border-radius: 8px; margin-bottom: 20px;
 }
+.plan-value { font-size: 1.8rem; font-weight: 800; color: #10b981; display: block; margin-top: 5px; }
+
+/* QR CODE E CÓDIGO */
+.qr-container {
+    background: #fff; padding: 15px; border-radius: 12px;
+    display: inline-block; margin-bottom: 20px;
+}
+
 .pix-code-box {
-    background: #000; border: 1px solid #444; color: #ccc;
-    padding: 12px; border-radius: 6px; font-family: monospace; font-size: 0.8rem;
-    margin: 15px 0; word-break: break-all; /* ESSENCIAL PARA APARECER TUDO */
-    text-align: left; max-height: 100px; overflow-y: auto;
+    background: #000;
+    border: 1px solid #444;
+    color: #ccc;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    margin: 15px 0;
+    word-break: break-all; /* ISSO CORRIGE O TEXTO CORTADO */
+    text-align: left;
+    max-height: 100px;
+    overflow-y: auto;
 }
+
 .btn-action-main {
-    width: 100%; background: #10b981; color: #fff; border: none; padding: 15px;
-    font-size: 1.1rem; font-weight: 800; border-radius: 8px; cursor: pointer;
+    width: 100%;
+    background: #10b981; /* Verde WhatsApp */
+    color: #fff;
+    border: none;
+    padding: 15px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
 }

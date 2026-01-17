@@ -1,44 +1,91 @@
-/* CheckoutPage.css - IDÊNTICO AO SEU */
+/* CheckoutPage.css - IDÊNTICO AO SEU ARQUIVO */
+
 :root {
   --primary-red: #E10000;
+  --dark-red: #7B0000;
   --bg-dark: #0d0d0d;
   --card-bg: #1a1a1a;
+  --text-white: #ffffff;
+  --text-gray: #9ca3af;
+  --text-yellow: #fbbf24;
 }
 
 .checkout-page-container {
-  min-height: 100vh; background-color: var(--bg-dark); color: #fff;
-  font-family: 'Montserrat', sans-serif; padding: 20px; padding-bottom: 50px;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-dark);
+  font-family: 'Montserrat', sans-serif, system-ui;
+  color: var(--text-white);
+  padding: 20px;
+  padding-bottom: 50px;
 }
 
-.checkout-header h2 { text-align: center; font-size: 1.4rem; margin-bottom: 20px; text-transform: uppercase; }
+.checkout-header h2 {
+  text-align: center; font-size: 1.4rem; margin-bottom: 25px; font-weight: 800; text-transform: uppercase;
+}
 
-/* CARD DE PLANO (Igual ao seu projeto base) */
+/* CARD DE PLANO */
 .plan-selection-card {
-  background: var(--card-bg); border: 1px solid #333; border-radius: 12px;
-  margin-bottom: 12px; padding: 15px; display: flex; align-items: center; justify-content: space-between;
+  background: var(--card-bg);
+  border: 1px solid #333;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   cursor: pointer;
+  transition: all 0.2s;
 }
+
 .plan-selection-card.active {
-  background: rgba(225, 0, 0, 0.1); border-color: var(--primary-red);
+  background: rgba(225, 0, 0, 0.1);
+  border-color: var(--primary-red);
+  box-shadow: 0 0 15px rgba(225, 0, 0, 0.2);
 }
 
-.plan-info h3 { margin: 0; font-size: 1rem; color: #fff; }
-.plan-info p { margin: 0; font-size: 0.8rem; color: #888; }
-.plan-price { font-size: 1.2rem; font-weight: 800; color: #fbbf24; }
+.plan-left { display: flex; align-items: center; gap: 15px; }
 
-/* BOTÃO VERMELHO GRADIENTE */
+/* CHECKBOX */
+.custom-checkbox {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid #555;
+  display: flex; align-items: center; justify-content: center;
+}
+.plan-selection-card.active .custom-checkbox {
+  background: var(--primary-red); border-color: var(--primary-red);
+}
+
+.plan-info h3 { margin: 0; font-size: 1rem; font-weight: 700; color: #fff; }
+.plan-info p { margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-gray); }
+
+.plan-price { font-size: 1.1rem; font-weight: 800; color: var(--text-yellow); }
+
+/* BOTÃO DE PAGAMENTO */
+.btn-pay-container { margin-top: 30px; }
+
 .btn-pay-now {
-  width: 100%; margin-top: 25px;
-  background: linear-gradient(to bottom, #E10000, #7B0000);
-  color: #fff; border: none; padding: 18px; font-size: 1.2rem; font-weight: 800;
-  border-radius: 8px; cursor: pointer; text-transform: uppercase;
+  width: 100%;
+  background: linear-gradient(to bottom, var(--primary-red), var(--dark-red));
+  color: white;
+  border: none;
+  padding: 18px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  border-radius: 8px;
+  cursor: pointer;
+  text-transform: uppercase;
   box-shadow: 0 4px 20px rgba(225, 0, 0, 0.5);
   animation: pulseBtn 2s infinite;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
 }
-@keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
-/* BENEFÍCIOS (Ícones embaixo) */
+/* BENEFÍCIOS */
 .benefits-section {
-    margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+  margin-top: 40px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
 }
-.benefit-item { font-size: 0.8rem; color: #aaa; display: flex; align-items: center; gap: 8px; }
+.benefit-item { display: flex; align-items: center; gap: 10px; color: #888; font-size: 0.75rem; }
+
+@keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
