@@ -1,61 +1,122 @@
-/* PaymentPage.css - BASEADO NO SEU ARQUIVO */
+/* PaymentPage.css - BASEADO 100% NO SEU ARQUIVO */
+
+:root {
+  --primary-red: #E10000;
+  --bg-dark: #0d0d0d;
+  --card-bg: #1a1a1a;
+  --text-white: #ffffff;
+}
+
 .payment-page-container {
-    min-height: 100vh;
-    background-color: #0d0d0d;
-    color: #fff;
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
-    font-family: 'Montserrat', sans-serif;
+  min-height: 100vh;
+  background-color: var(--bg-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .payment-card {
-    background: #151515;
-    border: 1px solid #333;
-    border-radius: 16px;
-    padding: 30px;
-    width: 100%; max-width: 400px;
-    text-align: center;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  background: #151515; 
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 30px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  color: var(--text-white);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  position: relative;
 }
 
-.payment-header h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; color: #fff; }
+/* HEADER */
+.payment-header h2 { font-size: 1.4rem; margin-bottom: 20px; font-weight: 700; }
 
 .plan-summary {
-    background: #222; padding: 15px; border-radius: 8px; margin-bottom: 20px;
+  background: #222;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
-.plan-value { font-size: 1.8rem; font-weight: 800; color: #10b981; display: block; margin-top: 5px; }
+.plan-label { font-size: 0.9rem; color: #aaa; display: block; text-transform: uppercase; }
+.plan-value { font-size: 1.5rem; font-weight: 800; color: #10b981; margin-top: 5px; display: block; }
 
-/* QR CODE E CÓDIGO */
+/* QR CODE */
+.qr-section { margin-bottom: 20px; }
 .qr-container {
-    background: #fff; padding: 15px; border-radius: 12px;
-    display: inline-block; margin-bottom: 20px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 10px;
 }
+.timer-badge {
+  color: #ef4444; font-weight: 600; font-size: 0.9rem;
+}
+
+/* COPIA E COLA */
+.copy-paste-section { text-align: left; margin-bottom: 20px; }
+.copy-paste-section label { font-size: 0.85rem; color: #888; margin-bottom: 5px; display: block; }
 
 .pix-code-box {
-    background: #000;
-    border: 1px solid #444;
-    color: #ccc;
-    padding: 12px;
-    border-radius: 6px;
-    font-family: monospace;
-    font-size: 0.8rem;
-    margin: 15px 0;
-    word-break: break-all; /* ISSO CORRIGE O TEXTO CORTADO */
-    text-align: left;
-    max-height: 100px;
-    overflow-y: auto;
+  background: #000;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 10px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  margin-bottom: 10px;
+  word-break: break-all; /* ESSENCIAL PARA O CÓDIGO NÃO CORTAR */
+  max-height: 80px;
+  overflow-y: auto;
 }
 
+/* SCROLLBAR CUSTOMIZADA (DO SEU ARQUIVO) */
+.pix-code-box::-webkit-scrollbar { width: 4px; }
+.pix-code-box::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+/* BOTÃO VERDE COM GRADIENTE */
 .btn-action-main {
-    width: 100%;
-    background: #10b981; /* Verde WhatsApp */
-    color: #fff;
-    border: none;
-    padding: 15px;
-    font-size: 1.1rem;
-    font-weight: 800;
-    border-radius: 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+  width: 100%;
+  background: linear-gradient(to right, #25D366, #128c7e);
+  color: #fff;
+  border: none;
+  padding: 15px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  border-radius: 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+  transition: transform 0.2s;
+  display: flex; justify-content: center; align-items: center; gap: 8px;
 }
+.btn-action-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5); }
+
+/* STATUS DE ESPERA */
+.waiting-status {
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+.pulse-dot {
+  width: 8px; height: 8px; background: #10b981; border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+/* LOADER GERAL */
+.loader-container {
+    height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background-color: var(--bg-dark); color: #fff;
+}
+.spin { animation: spin 1s linear infinite; }
+
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+@keyframes spin { 100% { transform: rotate(360deg); } }

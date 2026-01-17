@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { QRCodeSVG } from 'qrcode.react'; 
-import { Copy, Loader2, CheckCircle, Clock } from 'lucide-react';
+import { Copy, Loader2, Clock, CheckCircle } from 'lucide-react';
 import Swal from 'sweetalert2';
 import '../../assets/styles/PaymentPage.css';
 
@@ -10,10 +10,10 @@ export function MiniAppPayment() {
   const { botId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  
-  // Dados vindos do Checkout
-  const { plan, bump, finalPrice } = location.state || {};
 
+  // Recebe dados do Checkout (Mapeando para variáveis que seu layout usa)
+  const { plan, bump, finalPrice } = location.state || {};
+  
   const [loading, setLoading] = useState(true);
   const [pixData, setPixData] = useState(null);
   const [status, setStatus] = useState('pending');
@@ -22,7 +22,7 @@ export function MiniAppPayment() {
   const generatedRef = useRef(false);
   const pollRef = useRef(null);
 
-  // 🔗 SEU BACKEND REAL
+  // SEU BACKEND
   const API_URL = 'https://zenyx-gbs-testes-production.up.railway.app';
 
   useEffect(() => {
@@ -33,6 +33,7 @@ export function MiniAppPayment() {
         generatedRef.current = true;
 
         try {
+            // Payload para o Backend Railway
             const payload = {
                 bot_id: parseInt(botId),
                 valor: parseFloat(finalPrice),
@@ -45,7 +46,7 @@ export function MiniAppPayment() {
             };
 
             const res = await axios.post(`${API_URL}/api/pagamento/pix`, payload);
-            setPixData(res.data); // O backend retorna { copia_cola, qr_code, txid }
+            setPixData(res.data);
             setLoading(false);
             iniciarMonitoramento(res.data.txid);
 
@@ -60,7 +61,7 @@ export function MiniAppPayment() {
     return () => clearInterval(pollRef.current);
   }, [plan]);
 
-  // Timer Regressivo
+  // Timer
   useEffect(() => {
     if (timeLeft > 0 && status === 'pending') {
         const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -68,6 +69,7 @@ export function MiniAppPayment() {
     }
   }, [timeLeft, status]);
 
+  // Monitoramento de Status
   const iniciarMonitoramento = (txid) => {
       pollRef.current = setInterval(async () => {
           try {
@@ -82,13 +84,13 @@ export function MiniAppPayment() {
   };
 
   const copyPix = () => {
-      if (pixData?.copia_cola) {
-          navigator.clipboard.writeText(pixData.copia_cola);
+      // CORREÇÃO: O backend retorna "copia_cola", não "pixCode"
+      const code = pixData?.copia_cola || pixData?.qr_code;
+      if (code) {
+          navigator.clipboard.writeText(code);
           Swal.fire({toast:true, position:'top', icon:'success', title:'Copiado!', timer:1500, showConfirmButton:false, background:'#333', color:'#fff'});
-      } else {
-          Swal.fire('Erro', 'Código não disponível', 'error');
       }
-  }
+  };
 
   const formatTime = (s) => {
       const m = Math.floor(s / 60);
@@ -97,9 +99,9 @@ export function MiniAppPayment() {
   };
 
   if(loading) return (
-      <div className="payment-page-container">
+      <div className="loader-container">
           <Loader2 className="spin" size={50} color="#10b981"/>
-          <p style={{marginTop: 15, color: '#aaa'}}>Gerando QR Code...</p>
+          <p style={{marginTop: 15, color: '#aaa'}}>Gerando pagamento...</p>
       </div>
   );
 
@@ -107,48 +109,60 @@ export function MiniAppPayment() {
     <div className="payment-page-container">
       <div className="payment-card">
         
-        {/* HEADER IGUAL AO SEU PROJETO */}
-        <div className="payment-header">
-          <h2>Pagamento via PIX</h2>
-          <div className="plan-summary">
-            <span style={{color:'#aaa', fontSize:'0.9rem', textTransform:'uppercase'}}>{plan.nome_exibicao}</span>
-            <span style={{color:'#10b981', fontSize:'1.8rem', fontWeight:'800', display:'block', marginTop:5}}>
-                R$ {finalPrice.toFixed(2).replace('.', ',')}
-            </span>
-          </div>
-        </div>
+        {status === 'paid' ? (
+             <div className="success-state" style={{padding: '40px 0'}}>
+                <CheckCircle size={80} color="#10b981" style={{marginBottom: 20}} />
+                <h2 style={{color: '#10b981'}}>Pagamento Aprovado!</h2>
+                <p style={{color: '#888'}}>Redirecionando...</p>
+             </div>
+        ) : (
+             <>
+                {/* HEADER IGUAL AO BASE */}
+                <div className="payment-header">
+                  <h2>Pagamento via PIX</h2>
+                </div>
 
-        {/* QR CODE CONTAINER */}
-        <div className="qr-container">
-           {/* Usa o copia_cola para gerar o QR se a imagem não vier */}
-           {(pixData?.copia_cola || pixData?.qr_code) && (
-               <QRCodeSVG value={pixData.copia_cola} size={200} level="M" />
-           )}
-        </div>
+                <div className="plan-summary">
+                    <span className="plan-label">{plan.nome_exibicao}</span>
+                    <span className="plan-value">R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
+                </div>
 
-        <div className="timer-badge" style={{color:'#ef4444', fontWeight:'bold', marginBottom:15}}>
-            <Clock size={16} style={{display:'inline', marginRight:5, marginBottom:-2}}/>
-            Expira em: {formatTime(timeLeft)}
-        </div>
+                {/* QR CODE SECTION */}
+                <div className="qr-section">
+                    <div className="qr-container">
+                        {/* Se tiver QR Image (base64) usa img, senão gera SVG do copia e cola */}
+                        {pixData?.qr_code && pixData.qr_code.startsWith('http') ? (
+                            <img src={pixData.qr_code} alt="QR Code" style={{width: 200, height: 200}} />
+                        ) : (
+                            pixData?.copia_cola && <QRCodeSVG value={pixData.copia_cola} size={200} level="M" />
+                        )}
+                    </div>
+                    <div className="timer-badge">
+                        <Clock size={14} style={{display:'inline', marginRight:5, marginBottom:-2}}/>
+                        Expira em: {formatTime(timeLeft)}
+                    </div>
+                </div>
 
-        {/* CÓDIGO PIX (CORRIGIDO O NULL) */}
-        <div style={{textAlign:'left', width:'100%'}}>
-            <label style={{fontSize:'0.8rem', color:'#888', marginBottom:5, display:'block'}}>Código Pix Copia e Cola:</label>
-            <div className="pix-code-box">
-                {pixData?.copia_cola || "Erro ao carregar código"}
-            </div>
-        </div>
+                {/* COPY PASTE SECTION (CORRIGIDO NULL) */}
+                <div className="copy-paste-section">
+                    <label>Código Pix Copia e Cola:</label>
+                    <div className="pix-code-box">
+                        {/* AQUI ESTAVA O ERRO: Mapeamos copia_cola aqui */}
+                        {pixData?.copia_cola || "Carregando código..."}
+                    </div>
 
-        {/* BOTÃO VERDE */}
-        <button className="btn-action-main" onClick={copyPix}>
-            <Copy size={18} style={{marginRight:8}}/> COPIAR CÓDIGO PIX
-        </button>
+                    <button onClick={copyPix} className="btn-action-main">
+                        <Copy size={18} /> COPIAR CÓDIGO PIX
+                    </button>
+                </div>
 
-        {/* STATUS */}
-        <div className="waiting-status" style={{marginTop:20, display:'flex', alignItems:'center', justifyContent:'center', gap:10, color:'#666'}}>
-            <div className="pulse-dot" style={{background:'#10b981', width:10, height:10, borderRadius:'50%'}}></div>
-            <span>Aguardando pagamento...</span>
-        </div>
+                {/* STATUS FOOTER */}
+                <div className="waiting-status">
+                    <div className="pulse-dot"></div>
+                    <span>Aguardando confirmação...</span>
+                </div>
+             </>
+        )}
 
       </div>
     </div>
