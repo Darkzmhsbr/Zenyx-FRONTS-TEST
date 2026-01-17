@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Save, ArrowLeft, MessageSquare, Key, 
-  Smartphone, Layout, PlayCircle, Type, Plus, Trash2, Edit, Image as ImageIcon, Link
+  Smartphone, Layout, PlayCircle, Type, Plus, Trash2, Edit, Image as ImageIcon, Link, User, Palette
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
@@ -18,12 +18,8 @@ export function BotConfig() {
   
   // --- CONFIGURAÇÃO GERAL ---
   const [config, setConfig] = useState({
-    nome: '',
-    token: '',
-    id_canal_vip: '',
-    admin_principal_id: '',
-    suporte_username: '',
-    status: 'desconectado'
+    nome: '', token: '', id_canal_vip: '', admin_principal_id: '',
+    suporte_username: '', status: 'desconectado'
   });
 
   // --- CONFIGURAÇÃO MINI APP ---
@@ -107,21 +103,21 @@ export function BotConfig() {
   // --- CATEGORIAS ---
   const openNewCategory = () => {
       setCurrentCat({
-          id: null, // Garante que é novo
+          id: null, 
           bot_id: id,
-          title: '',
-          description: '',
-          cover_image: '',
-          banner_mob_url: '',
-          theme_color: '#c333ff',
-          is_direct_checkout: false,
-          content_json: '[]'
+          title: '', description: '', 
+          cover_image: '', // Card Img
+          banner_mob_url: '', banner_desk_url: '',
+          bg_color: '#000000', theme_color: '#ffffff',
+          video_preview_url: '',
+          model_img_url: '', model_name: '', model_desc: '',
+          footer_banner_url: '', deco_lines_url: '',
+          is_direct_checkout: false, content_json: '[]'
       });
       setIsEditingCat(true);
   };
 
   const handleEditCategory = (cat) => {
-      // Clona o objeto para evitar referência direta
       setCurrentCat({ ...cat }); 
       setIsEditingCat(true);
   };
@@ -130,13 +126,10 @@ export function BotConfig() {
       if (!currentCat.title) return Swal.fire('Erro', 'Digite um título', 'warning');
 
       try {
-          // O backend agora detecta se tem 'id' para fazer update ou create
           await miniappService.createCategory({ ...currentCat, bot_id: id });
-          
           setIsEditingCat(false);
           setCurrentCat(null);
           
-          // Recarrega lista
           const appData = await miniappService.getPublicData(id);
           setCategories(appData.categories || []);
           
@@ -239,13 +232,13 @@ export function BotConfig() {
         {activeTab === 'miniapp' && (
             <div className="miniapp-layout">
                 
-                {/* 1. CONFIGURAÇÃO VISUAL */}
+                {/* 1. CONFIGURAÇÃO VISUAL GLOBAL (HOME + EXTRAS) */}
                 <div className="config-grid-layout" style={{marginBottom: 30}}>
                     <Card>
                         <CardContent>
                             <div className="card-header-line"><Layout size={20}/> Aparência da Home</div>
                             <div className="form-group">
-                                <label>Cor de Fundo</label>
+                                <label>Cor de Fundo Global</label>
                                 <div style={{display:'flex', gap:10}}>
                                     <input type="color" value={miniAppConfig.background_value} onChange={(e) => setMiniAppConfig({...miniAppConfig, background_value: e.target.value})} style={{height:42, width:50, padding:0, border:'none', background:'none', cursor:'pointer'}} />
                                     <input className="input-field" value={miniAppConfig.background_value} onChange={(e) => setMiniAppConfig({...miniAppConfig, background_value: e.target.value})} />
@@ -266,9 +259,10 @@ export function BotConfig() {
                         </CardContent>
                     </Card>
 
+                    {/* ESTE CARD ESTAVA FALTANDO NA MINHA SUGESTÃO ANTERIOR 👇 */}
                     <Card>
                         <CardContent>
-                            <div className="card-header-line"><Smartphone size={20}/> Extras</div>
+                            <div className="card-header-line"><Smartphone size={20}/> Extras (Popup & Footer)</div>
                             <div className="form-group checkbox-row">
                                 <input type="checkbox" id="chk_popup" checked={miniAppConfig.enable_popup} onChange={(e) => setMiniAppConfig({...miniAppConfig, enable_popup: e.target.checked})} />
                                 <label htmlFor="chk_popup" style={{marginBottom:0, cursor:'pointer'}}>Ativar Popup Promo</label>
@@ -287,7 +281,7 @@ export function BotConfig() {
                     </Card>
                 </div>
 
-                {/* 2. GESTÃO DE CATEGORIAS (CORRIGIDO) */}
+                {/* 2. GESTÃO DE CATEGORIAS (NOVA VERSÃO RICA) */}
                 <div className="categories-section">
                     <div className="section-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 20}}>
                         <h2>📂 Gestão de Categorias</h2>
@@ -303,26 +297,73 @@ export function BotConfig() {
                             <CardContent>
                                 <h3>{currentCat.id ? 'Editar Categoria' : 'Nova Categoria'}</h3>
                                 <div className="config-grid-layout">
+                                    {/* 1. BÁSICO */}
                                     <div className="form-group">
                                         <label>Título da Categoria</label>
                                         <input className="input-field" value={currentCat.title} onChange={(e) => setCurrentCat({...currentCat, title: e.target.value})} placeholder="Ex: Packs Premium" />
                                     </div>
                                     <div className="form-group">
-                                        <label>Descrição Curta</label>
+                                        <label>Descrição Curta (Slug)</label>
                                         <input className="input-field" value={currentCat.description} onChange={(e) => setCurrentCat({...currentCat, description: e.target.value})} placeholder="Ex: As melhores fotos..." />
                                     </div>
+                                    
+                                    {/* 2. VISUAL E CORES */}
                                     <div className="form-group">
-                                        <label><ImageIcon size={16}/> Imagem de Capa (1560x390)</label>
+                                        <label><Palette size={16}/> Cor de Fundo (Página)</label>
+                                        <div style={{display:'flex', gap:5}}>
+                                            <input type="color" value={currentCat.bg_color || '#000000'} onChange={(e) => setCurrentCat({...currentCat, bg_color: e.target.value})} style={{height:40}} />
+                                            <input className="input-field" value={currentCat.bg_color} onChange={(e) => setCurrentCat({...currentCat, bg_color: e.target.value})} />
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label><Palette size={16}/> Cor do Tema (Botões)</label>
+                                        <div style={{display:'flex', gap:5}}>
+                                            <input type="color" value={currentCat.theme_color || '#ffffff'} onChange={(e) => setCurrentCat({...currentCat, theme_color: e.target.value})} style={{height:40}} />
+                                            <input className="input-field" value={currentCat.theme_color} onChange={(e) => setCurrentCat({...currentCat, theme_color: e.target.value})} />
+                                        </div>
+                                    </div>
+
+                                    {/* 3. IMAGENS */}
+                                    <div className="form-group">
+                                        <label><ImageIcon size={16}/> Imagem Card (Home)</label>
                                         <input className="input-field" value={currentCat.cover_image} onChange={(e) => setCurrentCat({...currentCat, cover_image: e.target.value})} placeholder="https://..." />
                                         <small style={{color:'#aaa'}}>Ideal: 1560x390px (Banner Horizontal)</small>
                                     </div>
                                     <div className="form-group">
-                                        <label><Link size={16}/> Banner Interno (URL)</label>
+                                        <label><Layout size={16}/> Banner Mobile (Topo)</label>
                                         <input className="input-field" value={currentCat.banner_mob_url} onChange={(e) => setCurrentCat({...currentCat, banner_mob_url: e.target.value})} placeholder="https://..." />
                                     </div>
                                     <div className="form-group">
-                                        <label>Cor do Tema</label>
-                                        <input type="color" value={currentCat.theme_color} onChange={(e) => setCurrentCat({...currentCat, theme_color: e.target.value})} />
+                                        <label><Layout size={16}/> Banner Desktop</label>
+                                        <input className="input-field" value={currentCat.banner_desk_url} onChange={(e) => setCurrentCat({...currentCat, banner_desk_url: e.target.value})} placeholder="https://..." />
+                                    </div>
+
+                                    {/* 4. CONTEÚDO RICO (MODELO) */}
+                                    <div className="form-group">
+                                        <label><User size={16}/> Nome da Modelo</label>
+                                        <input className="input-field" value={currentCat.model_name} onChange={(e) => setCurrentCat({...currentCat, model_name: e.target.value})} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label><User size={16}/> Foto da Modelo (Redonda)</label>
+                                        <input className="input-field" value={currentCat.model_img_url} onChange={(e) => setCurrentCat({...currentCat, model_img_url: e.target.value})} />
+                                    </div>
+                                    <div className="form-group" style={{gridColumn: 'span 2'}}>
+                                        <label>Descrição Completa da Cena</label>
+                                        <textarea className="input-field" rows={3} value={currentCat.model_desc} onChange={(e) => setCurrentCat({...currentCat, model_desc: e.target.value})} />
+                                    </div>
+
+                                    {/* 5. EXTRAS */}
+                                    <div className="form-group">
+                                        <label><PlayCircle size={16}/> Vídeo Preview</label>
+                                        <input className="input-field" value={currentCat.video_preview_url} onChange={(e) => setCurrentCat({...currentCat, video_preview_url: e.target.value})} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Linhas Decorativas (URL)</label>
+                                        <input className="input-field" value={currentCat.deco_lines_url} onChange={(e) => setCurrentCat({...currentCat, deco_lines_url: e.target.value})} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Banner Rodapé</label>
+                                        <input className="input-field" value={currentCat.footer_banner_url} onChange={(e) => setCurrentCat({...currentCat, footer_banner_url: e.target.value})} />
                                     </div>
                                 </div>
 

@@ -1,33 +1,80 @@
-/* CategoryPage.css - BASEADO NO SEU ARQUIVO */
 .category-page-container {
-    width: 100%; min-height: 100vh; background: #000; color: #fff;
-    font-family: 'Montserrat', sans-serif; padding-bottom: 100px;
+    width: 100%; min-height: 100vh;
+    font-family: 'Montserrat', sans-serif;
+    padding-bottom: 80px;
+    overflow-x: hidden;
 }
 
-/* HERO (O Segredo do Zoom) */
-.cat-hero-section { width: 100%; position: relative; line-height: 0; }
+.back-btn {
+    background: rgba(0,0,0,0.5); border: none; 
+    border-radius: 50%; padding: 10px; color: #fff; cursor: pointer;
+    backdrop-filter: blur(5px);
+}
+
+/* HERO */
+.cat-hero-section { width: 100%; line-height: 0; }
 .hero-banner-img {
-    width: 100%; 
-    height: auto; /* IMPORTANTE: Mantém a proporção original */
+    width: 100%; height: auto; /* Mantém proporção original */
     display: block;
-    max-height: 60vh; /* Limite para não ocupar tudo */
-    object-fit: contain; /* Garante que aparece inteira */
+    max-height: 60vh; object-fit: contain;
+    background: #000; /* Fundo preto se a imagem for menor */
 }
 
-/* CONTEÚDO */
-.content-feed { padding: 20px; }
-.description-text { font-size: 0.9rem; color: #ccc; margin-bottom: 20px; line-height: 1.5; }
+/* PERFIL DA MODELO */
+.content-feed { padding: 25px 20px; }
 
-/* BOTÃO PULSANTE (Do seu arquivo) */
+.model-profile-section {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    margin-bottom: 30px;
+}
+
+.model-avatar {
+    width: 120px; height: 120px; border-radius: 50%; 
+    object-fit: cover; border: 3px solid #fff;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    margin-bottom: 15px;
+}
+
+.model-info h2 {
+    font-size: 1.5rem; text-transform: uppercase; margin: 0 0 10px 0;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+.model-info p { font-size: 0.95rem; line-height: 1.5; margin: 0; }
+
+/* EXTRAS */
+.deco-line {
+    width: 100%; max-width: 300px; display: block; margin: 20px auto; opacity: 0.8;
+}
+
+.video-preview-box {
+    margin-top: 30px; position: relative;
+    border-radius: 12px; overflow: hidden;
+    border: 1px solid #333;
+}
+
+.video-label {
+    position: absolute; top: 10px; left: 10px; z-index: 10;
+    padding: 5px 10px; border-radius: 4px; font-weight: 800; font-size: 0.7rem;
+    display: flex; align-items: center; gap: 5px;
+}
+
+.preview-player { width: 100%; display: block; }
+
+.footer-banner-box { width: 100%; margin-top: -20px; }
+.footer-img { width: 100%; height: auto; display: block; }
+
+/* BOTÃO FIXO */
 .cta-fixed-bottom {
     position: fixed; bottom: 0; left: 0; width: 100%;
-    padding: 15px; background: rgba(0,0,0,0.9); border-top: 1px solid #333;
+    padding: 15px; background: linear-gradient(to top, #000 80%, transparent);
     display: flex; justify-content: center; z-index: 100;
 }
+
 .btn-pulse-main {
     width: 100%; max-width: 400px; padding: 16px; border: none; border-radius: 50px;
-    font-weight: 900; font-size: 1.1rem; text-transform: uppercase; color: #fff;
-    cursor: pointer; animation: pulseRed 1.5s infinite;
-    background: #E10000; /* Cor padrão, será sobrescrita pelo inline style */
+    font-weight: 900; font-size: 1.1rem; text-transform: uppercase;
+    cursor: pointer; animation: pulse 2s infinite;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
 }
-@keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(225,0,0, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(225,0,0, 0); } 100% { box-shadow: 0 0 0 0 rgba(225,0,0, 0); } }
+
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
