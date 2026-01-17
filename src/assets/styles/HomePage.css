@@ -1,151 +1,64 @@
-/* --- RESET E GERAL --- */
-:root {
-  --primary-red: #E10000;
-  --dark-bg: #050505;
-  --card-bg: #111;
+/* RESET E BASE */
+.home-page-container { 
+  background-color: #000; 
+  color: #fff; 
+  width: 100%; 
+  min-height: 100vh;
+  font-family: 'Montserrat', sans-serif;
+  overflow-x: hidden;
 }
 
-.home-container {
-    background-color: var(--dark-bg);
-    min-height: 100vh;
-    color: #fff;
-    font-family: 'Montserrat', sans-serif;
-    padding-bottom: 80px;
-    overflow-x: hidden; /* Evita rolagem lateral */
-}
-
-/* HERO SECTION (Tela Cheia Imersiva) */
-.hero-section {
+/* HERO SECTION ELITE (Do seu arquivo) */
+.hero-section-elite {
     position: relative;
-    height: 85vh; /* Ocupa 85% da tela */
-    display: flex;
-    align-items: flex-end; /* Texto embaixo (Estilo TikTok/Reels) */
-    justify-content: center;
+    height: 100vh; /* TELA CHEIA */
+    width: 100%;
     overflow: hidden;
-    padding-bottom: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.video-background {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
-}
-.video-background video {
-    width: 100%; height: 100%; object-fit: cover;
-}
-.video-overlay {
+.video-background { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+.video-background video { width: 100%; height: 100%; object-fit: cover; }
+.video-overlay-gradient {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to top, #050505 5%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.3) 100%);
+    background: linear-gradient(to top, #000 5%, rgba(0,0,0,0.5) 100%);
     z-index: 1;
 }
 
-.hero-content {
-    position: relative; z-index: 10; text-align: center; padding: 20px;
-    width: 100%; max-width: 600px;
-    animation: fadeInUp 0.8s ease-out;
+.hero-content-center {
+    position: relative; z-index: 10; text-align: center; width: 100%; max-width: 600px; padding: 20px;
 }
-
-.hero-title {
-    font-size: 2.2rem; font-weight: 900; text-transform: uppercase;
-    line-height: 1; margin-bottom: 8px;
-    text-shadow: 0 4px 20px rgba(0,0,0,0.9);
-    letter-spacing: -1px;
+.hero-title-large {
+    font-size: 2.5rem; font-weight: 900; text-transform: uppercase; line-height: 1;
+    margin-bottom: 10px; text-shadow: 0 4px 30px rgba(0,0,0,0.9);
 }
-
-.hero-btn {
-    background: var(--primary-red);
-    color: #fff; border: none; padding: 14px 35px;
-    font-size: 1rem; font-weight: 800; border-radius: 50px;
-    margin-top: 15px; cursor: pointer;
-    box-shadow: 0 0 25px rgba(225, 0, 0, 0.6);
-    display: inline-flex; align-items: center; gap: 8px;
-    transition: transform 0.2s;
+.btn-hero-action {
+    background: #E10000; color: #fff; border: none; padding: 16px 40px;
+    font-size: 1.1rem; font-weight: 800; border-radius: 50px; margin-top: 20px;
+    cursor: pointer; box-shadow: 0 0 30px rgba(225, 0, 0, 0.6);
     text-transform: uppercase;
 }
-.hero-btn:active { transform: scale(0.95); }
 
-/* SEÇÃO DE CATEGORIAS (O PROBLEMA ESTAVA AQUI) */
-.categories-section {
-    padding: 20px 15px;
-    margin-top: -20px; /* Sobe levemente */
-    position: relative; z-index: 20;
-    max-width: 1200px; margin-left: auto; margin-right: auto; /* Centraliza no PC */
+/* CARDS (Ajuste para não cortar) */
+.categories-container {
+    padding: 20px; margin-top: -80px; position: relative; z-index: 20;
 }
-
-.section-title {
-    font-size: 1.1rem; font-weight: 700; color: #ccc;
-    margin-bottom: 15px; padding-left: 5px;
-    border-left: 3px solid var(--primary-red);
-    line-height: 1; margin-left: 5px;
+.cards-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px; /* 2 por linha no mobile */
 }
-
-/* GRID CORRIGIDO - AGORA FICA PEQUENO E ELEGANTE */
-.categories-grid {
-    display: grid;
-    /* Mobile: 2 colunas perfeitas */
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 12px; /* Espaço menor entre cards */
-}
-
-/* Ajuste para Tablet e PC (Para não ficar gigante) */
-@media (min-width: 768px) {
-    .categories-grid {
-        grid-template-columns: repeat(4, 1fr); /* 4 colunas no tablet */
-    }
-}
-@media (min-width: 1024px) {
-    .categories-grid {
-        grid-template-columns: repeat(5, 1fr); /* 5 colunas no PC */
-    }
-}
-
-/* CARD DE CATEGORIA (Estilo Capa Vertical - Poster) */
-.category-card {
-    position: relative;
-    background: var(--card-bg);
-    border-radius: 12px;
-    overflow: hidden;
-    aspect-ratio: 2/3; /* FORMATO RETRATO (POSTER) */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+.category-card-elite {
+    background: #111; border-radius: 12px; overflow: hidden; position: relative;
+    aspect-ratio: 2/3; /* Proporção de Poster (Vertical) */
     border: 1px solid #222;
-    cursor: pointer;
-    transition: transform 0.2s, border-color 0.2s;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
-
-.category-card:active { transform: scale(0.98); }
-
-.card-image {
-    width: 100%; height: 100%;
-}
-.card-image img {
-    width: 100%; height: 100%; object-fit: cover;
-    transition: transform 0.5s;
-}
-/* Zoom suave na imagem ao clicar/tocar */
-.category-card:hover .card-image img { transform: scale(1.1); }
-
-.card-overlay {
+.card-img-wrapper { width: 100%; height: 100%; }
+.card-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+.card-gradient-overlay {
     position: absolute; bottom: 0; left: 0; width: 100%;
-    background: linear-gradient(to top, #000 10%, rgba(0,0,0,0.8) 60%, transparent 100%);
-    padding: 12px 10px;
-    display: flex; flex-direction: column; justify-content: flex-end;
-    height: 60%;
+    background: linear-gradient(to top, #000 0%, transparent 100%);
+    padding: 15px; padding-top: 50px;
 }
-
-.card-title {
-    font-size: 0.9rem; font-weight: 800; text-transform: uppercase;
-    margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,1);
-    line-height: 1.2;
-    color: #fff;
-}
-
-.card-cta {
-    font-size: 0.65rem; color: var(--primary-red); 
-    margin-top: 5px; font-weight: 700;
-    display: flex; align-items: center; gap: 3px;
-}
-
-/* FOOTER */
-.simple-footer {
-    text-align: center; padding: 40px 20px; color: #444; font-size: 0.75rem;
-}
-
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.card-title-text { font-size: 0.9rem; font-weight: 800; text-transform: uppercase; margin: 0; }
