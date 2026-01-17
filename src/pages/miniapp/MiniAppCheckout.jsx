@@ -8,101 +8,76 @@ export function MiniAppCheckout() {
   const { botId } = useParams();
   const navigate = useNavigate();
   
-  const [loading, setLoading] = useState(true);
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
-  
-  // Bump
   const [bump, setBump] = useState(null);
   const [isBumpSelected, setIsBumpSelected] = useState(false);
 
   useEffect(() => {
     const carregar = async () => {
-      try {
         const [pData, bData] = await Promise.all([
             planService.listPlans(botId),
             orderBumpService.get(botId)
         ]);
         setPlans(pData);
-        if (bData && bData.ativo) setBump(bData);
-        if (pData.length > 0) setSelectedPlan(pData[0]); // Seleciona o primeiro por padrão
-      } catch (e) { console.error(e); } finally { setLoading(false); }
+        if(bData && bData.ativo) setBump(bData);
+        if(pData.length > 0) setSelectedPlan(pData[0]);
     };
     carregar();
   }, [botId]);
 
-  const handlePayment = () => {
-    if (!selectedPlan) return;
-    let total = parseFloat(selectedPlan.preco_atual);
-    if (isBumpSelected && bump) total += parseFloat(bump.preco);
-
-    navigate(`/loja/${botId}/pagamento`, {
-        state: { plan: selectedPlan, bump: isBumpSelected ? bump : null, finalPrice: total, botId }
-    });
-  };
-
-  if (loading) return <div className="checkout-page-container"></div>;
+  const handlePay = () => {
+      if(!selectedPlan) return;
+      let total = parseFloat(selectedPlan.preco_atual);
+      if(isBumpSelected && bump) total += parseFloat(bump.preco);
+      
+      navigate(`/loja/${botId}/pagamento`, { state: { plan: selectedPlan, bump: isBumpSelected ? bump : null, finalPrice: total } });
+  }
 
   return (
     <div className="checkout-page-container">
-      <div className="checkout-header">
-        <h2>FINALIZAR ASSINATURA</h2>
-      </div>
+      <div className="checkout-header"><h2>FINALIZAR ASSINATURA</h2></div>
 
-      <div style={{display:'flex', flexDirection:'column', gap: 10}}>
-        {plans.map((plan) => (
-            <div 
-                key={plan.id}
-                className={`plan-selection-card ${selectedPlan?.id === plan.id ? 'active' : ''}`}
-                onClick={() => setSelectedPlan(plan)}
-            >
+      <div style={{display:'flex', flexDirection:'column', gap: 15}}>
+        {plans.map(plan => (
+            <div key={plan.id} className={`plan-selection-card ${selectedPlan?.id === plan.id ? 'active' : ''}`} onClick={() => setSelectedPlan(plan)}>
                 <div className="plan-left">
                     <div className="custom-checkbox">
-                        {selectedPlan?.id === plan.id && <Check size={16} color="#fff" strokeWidth={4} />}
+                        {selectedPlan?.id === plan.id && <Check size={18} color="#fff" strokeWidth={3}/>}
                     </div>
                     <div className="plan-info">
                         <h3>{plan.nome_exibicao}</h3>
-                        <p>{plan.dias_duracao} dias de acesso</p>
+                        <p>{plan.dias_duracao} dias de acesso VIP</p>
                     </div>
                 </div>
-                <div className="plan-price">
-                    R$ {parseFloat(plan.preco_atual).toFixed(2)}
-                </div>
+                <div className="plan-price">R$ {parseFloat(plan.preco_atual).toFixed(2)}</div>
             </div>
         ))}
       </div>
 
-      {/* ORDER BUMP (Se houver) */}
       {bump && (
-          <div 
-            style={{marginTop: 20, background: 'rgba(251, 191, 36, 0.05)', border: '1px dashed #fbbf24', padding: 15, borderRadius: 8, cursor: 'pointer'}} 
-            onClick={() => setIsBumpSelected(!isBumpSelected)}
-          >
-              <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:5}}>
-                  <div style={{width:20, height:20, border:'2px solid #555', display:'flex', alignItems:'center', justifyContent:'center', background: isBumpSelected ? '#E10000' : 'transparent', borderColor: isBumpSelected ? '#E10000' : '#555'}}>
+          <div className="order-bump-container" onClick={() => setIsBumpSelected(!isBumpSelected)}>
+              <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:8}}>
+                  <div className={`custom-checkbox`} style={{width:20, height:20, background: isBumpSelected ? '#E10000' : 'transparent', borderColor: isBumpSelected ? '#E10000' : '#fbbf24'}}>
                       {isBumpSelected && <Check size={14} color="#fff"/>}
                   </div>
-                  <span style={{color: '#E10000', fontWeight:800, fontSize:'0.8rem'}}>OFERTA ESPECIAL 🔥</span>
+                  <span style={{color: '#E10000', fontWeight:800}}>OFERTA ESPECIAL 🔥</span>
               </div>
-              <div style={{color:'#fff', fontWeight:700, fontSize:'0.9rem'}}>
-                  Levar {bump.nome_produto} por + R$ {parseFloat(bump.preco).toFixed(2)}
-              </div>
+              <p style={{margin:0, color:'#fff'}}>Adicione <strong>{bump.nome_produto}</strong> por apenas <span style={{color:'#fbbf24'}}>R$ {parseFloat(bump.preco).toFixed(2)}</span></p>
           </div>
       )}
 
-      {/* BOTÃO */}
       <div className="btn-pay-container">
-          <button className="btn-pay-now" onClick={handlePayment}>
-              PAGAR COM PIX <ArrowRight size={20} />
+          <button className="btn-pay-now" onClick={handlePay}>
+              PAGAR COM PIX <ArrowRight size={24} style={{marginLeft:10}}/>
           </button>
       </div>
 
-      {/* BENEFÍCIOS */}
       <div className="benefits-section">
-          <div className="benefit-item"><ShieldCheck size={18} color="#555"/> 100% Seguro</div>
-          <div className="benefit-item"><Zap size={18} color="#555"/> Acesso Imediato</div>
-          <div className="benefit-item"><Lock size={18} color="#555"/> Sigilo Total</div>
-          <div className="benefit-item"><Smartphone size={18} color="#555"/> Qualquer Aparelho</div>
+          <div className="benefit-item"><ShieldCheck size={20} color="#555"/> Pagamento Seguro</div>
+          <div className="benefit-item"><Zap size={20} color="#555"/> Acesso Imediato</div>
+          <div className="benefit-item"><Lock size={20} color="#555"/> Sigilo Total</div>
+          <div className="benefit-item"><Smartphone size={20} color="#555"/> Qualquer Aparelho</div>
       </div>
     </div>
   );
