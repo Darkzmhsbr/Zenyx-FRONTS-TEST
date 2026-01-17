@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { QRCodeSVG } from 'qrcode.react'; 
-import { Copy, Loader2, Clock, CheckCircle } from 'lucide-react';
+import { Copy, Loader2, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import Swal from 'sweetalert2';
 import '../../assets/styles/PaymentPage.css';
 
@@ -11,7 +11,7 @@ export function MiniAppPayment() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Recebe dados do Checkout
+  // Dados vindos do Checkout
   const { plan, bump, finalPrice } = location.state || {};
   
   const [loading, setLoading] = useState(true);
@@ -26,18 +26,13 @@ export function MiniAppPayment() {
   const API_URL = 'https://zenyx-gbs-testes-production.up.railway.app';
 
   useEffect(() => {
-    // Se não tiver plano selecionado, volta pro checkout
-    if (!plan) { 
-        navigate(`/loja/${botId}`); 
-        return; 
-    }
+    if (!plan) { navigate(`/loja/${botId}`); return; }
     
     const gerarPix = async () => {
         if (generatedRef.current) return;
         generatedRef.current = true;
 
         try {
-            // Payload para o Backend
             const payload = {
                 bot_id: parseInt(botId),
                 valor: parseFloat(finalPrice),
@@ -50,14 +45,23 @@ export function MiniAppPayment() {
             };
 
             const res = await axios.post(`${API_URL}/api/pagamento/pix`, payload);
-            setPixData(res.data);
-            iniciarMonitoramento(res.data.txid);
+            console.log("PIX RESPONSE:", res.data); // Debug no console
+            
+            if (res.data) {
+                setPixData(res.data);
+            } else {
+                throw new Error("Resposta vazia do servidor");
+            }
 
         } catch (error) {
-            console.error(error);
-            Swal.fire('Erro', 'Erro ao gerar Pix. Tente novamente.', 'error');
+            console.error("Erro Pix:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro ao gerar Pix',
+                text: 'Tente novamente em instantes.',
+                background: '#222', color: '#fff'
+            });
         } finally {
-            // GARANTE QUE O LOADING PARA
             setLoading(false);
         }
     };
@@ -74,26 +78,32 @@ export function MiniAppPayment() {
     }
   }, [timeLeft, status]);
 
-  // Monitoramento
-  const iniciarMonitoramento = (txid) => {
-      pollRef.current = setInterval(async () => {
-          try {
-              const res = await axios.get(`${API_URL}/api/pagamento/status/${txid}`);
-              if (res.data.status === 'approved' || res.data.status === 'paid') {
-                  setStatus('paid');
-                  clearInterval(pollRef.current);
-                  setTimeout(() => navigate(`/loja/${botId}/obrigado`), 1500);
-              }
-          } catch (e) {}
-      }, 5000);
-  };
+  // Monitoramento (Só inicia se tiver txid)
+  useEffect(() => {
+      if (pixData?.txid && status === 'pending') {
+          pollRef.current = setInterval(async () => {
+              try {
+                  const res = await axios.get(`${API_URL}/api/pagamento/status/${pixData.txid}`);
+                  if (res.data.status === 'approved' || res.data.status === 'paid') {
+                      setStatus('paid');
+                      clearInterval(pollRef.current);
+                      setTimeout(() => navigate(`/loja/${botId}/obrigado`), 1500);
+                  }
+              } catch (e) {}
+          }, 5000);
+      }
+      return () => clearInterval(pollRef.current);
+  }, [pixData, status]);
 
   const copyPix = () => {
-      // Tenta pegar o código de todas as formas possíveis
+      // Tenta pegar o código com segurança
       const code = pixData?.copia_cola || pixData?.qr_code;
-      if (code) {
+      
+      if (code && code !== "null") {
           navigator.clipboard.writeText(code);
           Swal.fire({toast:true, position:'top', icon:'success', title:'Copiado!', timer:1500, showConfirmButton:false, background:'#333', color:'#fff'});
+      } else {
+          Swal.fire({toast:true, position:'top', icon:'error', title:'Código indisponível', background:'#333', color:'#fff'});
       }
   };
 
@@ -105,10 +115,16 @@ export function MiniAppPayment() {
 
   if(loading) return (
       <div className="payment-page-container">
-          <Loader2 className="spin" size={50} color="#10b981"/>
-          <p style={{marginTop: 15, color: '#aaa'}}>Gerando pagamento...</p>
+          <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+            <Loader2 className="spin" size={50} color="#10b981"/>
+            <p style={{marginTop: 15, color: '#aaa', fontSize:'0.9rem'}}>Conectando ao banco...</p>
+          </div>
       </div>
   );
+
+  // Valor seguro para exibição
+  const safeCode = pixData?.copia_cola || pixData?.qr_code || "";
+  const displayCode = safeCode.length > 10 ? safeCode : "Erro ao carregar código Pix.";
 
   return (
     <div className="payment-page-container">
@@ -117,8 +133,8 @@ export function MiniAppPayment() {
         {status === 'paid' ? (
              <div className="success-state" style={{padding: '40px 0'}}>
                 <CheckCircle size={80} color="#10b981" style={{marginBottom: 20}} />
-                <h2 style={{color: '#10b981'}}>Pagamento Aprovado!</h2>
-                <p style={{color: '#888'}}>Redirecionando...</p>
+                <h2 style={{color: '#10b981', marginBottom: 10}}>Pagamento Aprovado!</h2>
+                <p style={{color: '#888'}}>Redirecionando para seu acesso...</p>
              </div>
         ) : (
              <>
@@ -131,14 +147,16 @@ export function MiniAppPayment() {
                     <span className="plan-value">R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
                 </div>
 
+                {/* QR CODE */}
                 <div className="qr-section">
                     <div className="qr-container">
-                        {/* Se tiver QR Image (base64 ou url) usa img, senão gera SVG do copia e cola */}
-                        {(pixData?.qr_code && pixData.qr_code.length > 200) ? (
-                            <img src={pixData.qr_code} alt="QR Code" style={{width: 200, height: 200}} />
-                        ) : (pixData?.copia_cola && (
-                            <QRCodeSVG value={pixData.copia_cola} size={200} level="M" />
-                        ))}
+                        {safeCode.length > 10 ? (
+                            <QRCodeSVG value={safeCode} size={200} level="M" />
+                        ) : (
+                            <div style={{width:200, height:200, display:'flex', alignItems:'center', justifyContent:'center', color:'#555'}}>
+                                <AlertTriangle size={40}/>
+                            </div>
+                        )}
                     </div>
                     <div className="timer-badge">
                         <Clock size={14} style={{display:'inline', marginRight:5, marginBottom:-2}}/>
@@ -146,13 +164,15 @@ export function MiniAppPayment() {
                     </div>
                 </div>
 
+                {/* CÓDIGO COPIA E COLA */}
                 <div className="copy-paste-section">
                     <label>Código Pix Copia e Cola:</label>
+                    
                     <div className="pix-code-box">
-                        {pixData?.copia_cola || "Erro ao carregar código"}
+                        {displayCode}
                     </div>
 
-                    <button onClick={copyPix} className="btn-action-main">
+                    <button onClick={copyPix} className="btn-action-main" disabled={safeCode.length < 10}>
                         <Copy size={18} /> COPIAR CÓDIGO PIX
                     </button>
                 </div>

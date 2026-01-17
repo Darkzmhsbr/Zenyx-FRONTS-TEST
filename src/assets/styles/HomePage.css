@@ -10,12 +10,13 @@ html, body {
   width: 100%; 
   min-height: 100vh;
   font-family: 'Montserrat', sans-serif;
+  padding-bottom: 80px;
 }
 
 /* ================= HERO SECTION (TELA CHEIA) ================= */
 .hero-section-elite {
     position: relative;
-    height: 100vh;
+    height: 90vh; /* Ocupa 90% da tela para mostrar um pedaço dos cards */
     width: 100%;
     overflow: hidden;
     display: flex;
@@ -31,74 +32,84 @@ html, body {
 }
 .video-overlay-gradient {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%);
+    background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.9) 100%);
     z-index: 1;
 }
 
 .hero-content-center {
     position: relative; z-index: 10; text-align: center;
     width: 100%; max-width: 800px; padding: 20px; margin: 0 auto;
+    margin-top: 10%;
 }
 
 .hero-title-large {
-    font-size: 3.5rem; font-weight: 900; text-transform: uppercase;
-    line-height: 1; margin-bottom: 20px;
-    text-shadow: 0 4px 40px rgba(0,0,0,1);
+    font-size: 2.8rem; font-weight: 900; text-transform: uppercase;
+    line-height: 1; margin-bottom: 15px;
+    text-shadow: 0 4px 30px rgba(0,0,0,1);
     letter-spacing: -2px;
 }
 
 .btn-hero-action {
-    background: #E10000; color: #fff; border: none; padding: 20px 50px;
-    font-size: 1.2rem; font-weight: 800; border-radius: 50px; margin-top: 30px;
+    background: #E10000; color: #fff; border: none; padding: 16px 40px;
+    font-size: 1.1rem; font-weight: 800; border-radius: 50px; margin-top: 20px;
     cursor: pointer; box-shadow: 0 0 40px rgba(225, 0, 0, 0.6);
     text-transform: uppercase; transition: transform 0.2s;
+    display: inline-flex; align-items: center; gap: 10px;
 }
 .btn-hero-action:hover { transform: scale(1.05); }
 
-/* ================= GRID DE CATEGORIAS ================= */
+/* ================= GRID DE CATEGORIAS (POSTER STYLE) ================= */
 .categories-container {
-    padding: 20px; margin-top: -120px; /* Sobe por cima do vídeo */
+    padding: 20px 15px;
+    margin-top: -80px; /* Sobe por cima do vídeo */
     position: relative; z-index: 20;
     max-width: 1200px; margin-left: auto; margin-right: auto;
 }
 
+.section-title {
+    font-size: 1.2rem; font-weight: 800; margin-bottom: 20px;
+    border-left: 4px solid #E10000; padding-left: 10px; text-transform: uppercase;
+}
+
 .cards-grid {
     display: grid;
-    /* ALTERAÇÃO CRÍTICA: 1 Coluna no Mobile para banner WIDE (1560x390) */
-    grid-template-columns: 1fr; 
-    gap: 20px;
+    /* VOLTAMOS PARA 2 COLUNAS NO MOBILE (VISUAL POSTER) */
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 15px;
 }
 
 @media (min-width: 768px) {
-    /* No PC, pode ser 2 colunas largas */
-    .cards-grid { grid-template-columns: 1fr 1fr; }
+    .cards-grid { grid-template-columns: repeat(4, 1fr); }
     .hero-title-large { font-size: 5rem; }
 }
 
-/* CARD ESTILO WIDE (HORIZONTAL) */
+/* CARD ESTILO POSTER (VERTICAL 2:3) */
 .category-card-elite {
-    background: #111; border-radius: 12px; overflow: hidden; position: relative;
-    /* PROPORÇÃO 4:1 (1560x390) */
-    aspect-ratio: 4/1; 
+    background: #111; border-radius: 8px; overflow: hidden; position: relative;
+    /* PROPORÇÃO DE CAPA DE FILME (VERTICAL) */
+    aspect-ratio: 2/3; 
     border: 1px solid #222;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-    cursor: pointer; transition: transform 0.3s;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    cursor: pointer; transition: transform 0.2s;
 }
-.category-card-elite:hover { transform: translateY(-5px); border-color: #E10000; }
+.category-card-elite:hover { transform: scale(1.03); border-color: #E10000; }
 
 .card-img-wrapper { width: 100%; height: 100%; }
-.card-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+.card-img-wrapper img { 
+    width: 100%; height: 100%; 
+    object-fit: cover; /* Centraliza a imagem 1560x390 cortando as laterais para focar no meio */
+}
 
-/* Gradiente lateral para texto legível no banner horizontal */
 .card-gradient-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to right, #000 10%, rgba(0,0,0,0) 60%);
-    padding: 20px; display: flex; align-items: center;
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to top, #000 10%, rgba(0,0,0,0) 50%);
+    padding: 10px; display: flex; align-items: flex-end;
 }
 
 .card-title-text {
-    font-size: 1.5rem; font-weight: 900; text-transform: uppercase;
-    margin: 0; color: #fff; text-shadow: 0 2px 10px #000; letter-spacing: 1px;
+    font-size: 0.9rem; font-weight: 800; text-transform: uppercase;
+    margin: 0; color: #fff; text-shadow: 0 2px 4px #000;
+    line-height: 1.2;
 }
 
 .simple-footer { text-align: center; padding: 50px; color: #666; font-size: 0.8rem; }
