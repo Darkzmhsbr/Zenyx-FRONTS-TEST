@@ -14,7 +14,7 @@ export function BotConfig() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('geral'); // 'geral' ou 'miniapp'
+  const [activeTab, setActiveTab] = useState('geral');
   
   // --- CONFIGURAÇÃO GERAL ---
   const [config, setConfig] = useState({
@@ -27,7 +27,6 @@ export function BotConfig() {
   });
 
   // --- CONFIGURAÇÃO MINI APP ---
-  const [appMode, setAppMode] = useState('tradicional');
   const [miniAppConfig, setMiniAppConfig] = useState({
     hero_title: 'ACERVO PREMIUM',
     hero_subtitle: 'O maior acervo da internet.',
@@ -44,7 +43,7 @@ export function BotConfig() {
   // --- CATEGORIAS ---
   const [categories, setCategories] = useState([]);
   const [isEditingCat, setIsEditingCat] = useState(false);
-  const [currentCat, setCurrentCat] = useState(null); // Dados da categoria sendo editada
+  const [currentCat, setCurrentCat] = useState(null);
 
   useEffect(() => {
     carregarDados();
@@ -105,9 +104,10 @@ export function BotConfig() {
     }
   };
 
-  // --- CATEGORIAS: EDITAR/CRIAR ---
+  // --- CATEGORIAS ---
   const openNewCategory = () => {
       setCurrentCat({
+          id: null, // Garante que é novo
           bot_id: id,
           title: '',
           description: '',
@@ -115,8 +115,14 @@ export function BotConfig() {
           banner_mob_url: '',
           theme_color: '#c333ff',
           is_direct_checkout: false,
-          content_json: '[]' // Inicialmente vazio
+          content_json: '[]'
       });
+      setIsEditingCat(true);
+  };
+
+  const handleEditCategory = (cat) => {
+      // Clona o objeto para evitar referência direta
+      setCurrentCat({ ...cat }); 
       setIsEditingCat(true);
   };
 
@@ -124,14 +130,19 @@ export function BotConfig() {
       if (!currentCat.title) return Swal.fire('Erro', 'Digite um título', 'warning');
 
       try {
+          // O backend agora detecta se tem 'id' para fazer update ou create
           await miniappService.createCategory({ ...currentCat, bot_id: id });
+          
           setIsEditingCat(false);
           setCurrentCat(null);
+          
           // Recarrega lista
           const appData = await miniappService.getPublicData(id);
           setCategories(appData.categories || []);
+          
           Swal.fire('Sucesso', 'Categoria salva!', 'success');
       } catch (error) {
+          console.error(error);
           Swal.fire('Erro', 'Erro ao salvar categoria', 'error');
       }
   };
@@ -141,6 +152,7 @@ export function BotConfig() {
       try {
           await miniappService.deleteCategory(catId);
           setCategories(prev => prev.filter(c => c.id !== catId));
+          Swal.fire('Sucesso', 'Categoria removida.', 'success');
       } catch (error) {
           Swal.fire('Erro', 'Erro ao excluir', 'error');
       }
@@ -275,7 +287,7 @@ export function BotConfig() {
                     </Card>
                 </div>
 
-                {/* 2. GESTÃO DE CATEGORIAS (NOVO!!!) */}
+                {/* 2. GESTÃO DE CATEGORIAS (CORRIGIDO) */}
                 <div className="categories-section">
                     <div className="section-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 20}}>
                         <h2>📂 Gestão de Categorias</h2>
@@ -300,14 +312,13 @@ export function BotConfig() {
                                         <input className="input-field" value={currentCat.description} onChange={(e) => setCurrentCat({...currentCat, description: e.target.value})} placeholder="Ex: As melhores fotos..." />
                                     </div>
                                     <div className="form-group">
-                                        <label><ImageIcon size={16}/> Imagem de Capa (URL)</label>
+                                        <label><ImageIcon size={16}/> Imagem de Capa (1560x390)</label>
                                         <input className="input-field" value={currentCat.cover_image} onChange={(e) => setCurrentCat({...currentCat, cover_image: e.target.value})} placeholder="https://..." />
-                                        <small style={{color:'#666'}}>Aparece na Home da Loja</small>
+                                        <small style={{color:'#aaa'}}>Ideal: 1560x390px (Banner Horizontal)</small>
                                     </div>
                                     <div className="form-group">
                                         <label><Link size={16}/> Banner Interno (URL)</label>
                                         <input className="input-field" value={currentCat.banner_mob_url} onChange={(e) => setCurrentCat({...currentCat, banner_mob_url: e.target.value})} placeholder="https://..." />
-                                        <small style={{color:'#666'}}>Aparece ao abrir a categoria</small>
                                     </div>
                                     <div className="form-group">
                                         <label>Cor do Tema</label>
@@ -332,7 +343,7 @@ export function BotConfig() {
                                     <p style={{fontSize:'0.8rem', color:'#888', margin:0}}>{cat.description || 'Sem descrição'}</p>
                                     
                                     <div style={{display:'flex', gap: 10, marginTop: 15}}>
-                                        <button onClick={() => { setCurrentCat(cat); setIsEditingCat(true); }} style={{flex:1, background: '#333', border:'none', color:'#fff', padding: 8, borderRadius: 4, cursor:'pointer'}}><Edit size={16}/></button>
+                                        <button onClick={() => handleEditCategory(cat)} style={{flex:1, background: '#333', border:'none', color:'#fff', padding: 8, borderRadius: 4, cursor:'pointer'}}><Edit size={16}/></button>
                                         <button onClick={() => handleDeleteCategory(cat.id)} style={{flex:1, background: '#3f1111', border:'none', color:'#ef4444', padding: 8, borderRadius: 4, cursor:'pointer'}}><Trash2 size={16}/></button>
                                     </div>
                                 </div>

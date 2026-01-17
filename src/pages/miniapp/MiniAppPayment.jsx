@@ -11,7 +11,7 @@ export function MiniAppPayment() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Recebe dados do Checkout (Mapeando para variáveis que seu layout usa)
+  // Recebe dados do Checkout
   const { plan, bump, finalPrice } = location.state || {};
   
   const [loading, setLoading] = useState(true);
@@ -26,14 +26,18 @@ export function MiniAppPayment() {
   const API_URL = 'https://zenyx-gbs-testes-production.up.railway.app';
 
   useEffect(() => {
-    if (!plan) { navigate(`/loja/${botId}`); return; }
+    // Se não tiver plano selecionado, volta pro checkout
+    if (!plan) { 
+        navigate(`/loja/${botId}`); 
+        return; 
+    }
     
     const gerarPix = async () => {
         if (generatedRef.current) return;
         generatedRef.current = true;
 
         try {
-            // Payload para o Backend Railway
+            // Payload para o Backend
             const payload = {
                 bot_id: parseInt(botId),
                 valor: parseFloat(finalPrice),
@@ -47,12 +51,13 @@ export function MiniAppPayment() {
 
             const res = await axios.post(`${API_URL}/api/pagamento/pix`, payload);
             setPixData(res.data);
-            setLoading(false);
             iniciarMonitoramento(res.data.txid);
 
         } catch (error) {
             console.error(error);
-            Swal.fire('Erro', 'Erro ao gerar Pix', 'error');
+            Swal.fire('Erro', 'Erro ao gerar Pix. Tente novamente.', 'error');
+        } finally {
+            // GARANTE QUE O LOADING PARA
             setLoading(false);
         }
     };
@@ -69,7 +74,7 @@ export function MiniAppPayment() {
     }
   }, [timeLeft, status]);
 
-  // Monitoramento de Status
+  // Monitoramento
   const iniciarMonitoramento = (txid) => {
       pollRef.current = setInterval(async () => {
           try {
@@ -84,7 +89,7 @@ export function MiniAppPayment() {
   };
 
   const copyPix = () => {
-      // CORREÇÃO: O backend retorna "copia_cola", não "pixCode"
+      // Tenta pegar o código de todas as formas possíveis
       const code = pixData?.copia_cola || pixData?.qr_code;
       if (code) {
           navigator.clipboard.writeText(code);
@@ -99,7 +104,7 @@ export function MiniAppPayment() {
   };
 
   if(loading) return (
-      <div className="loader-container">
+      <div className="payment-page-container">
           <Loader2 className="spin" size={50} color="#10b981"/>
           <p style={{marginTop: 15, color: '#aaa'}}>Gerando pagamento...</p>
       </div>
@@ -117,7 +122,6 @@ export function MiniAppPayment() {
              </div>
         ) : (
              <>
-                {/* HEADER IGUAL AO BASE */}
                 <div className="payment-header">
                   <h2>Pagamento via PIX</h2>
                 </div>
@@ -127,15 +131,14 @@ export function MiniAppPayment() {
                     <span className="plan-value">R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
                 </div>
 
-                {/* QR CODE SECTION */}
                 <div className="qr-section">
                     <div className="qr-container">
-                        {/* Se tiver QR Image (base64) usa img, senão gera SVG do copia e cola */}
-                        {pixData?.qr_code && pixData.qr_code.startsWith('http') ? (
+                        {/* Se tiver QR Image (base64 ou url) usa img, senão gera SVG do copia e cola */}
+                        {(pixData?.qr_code && pixData.qr_code.length > 200) ? (
                             <img src={pixData.qr_code} alt="QR Code" style={{width: 200, height: 200}} />
-                        ) : (
-                            pixData?.copia_cola && <QRCodeSVG value={pixData.copia_cola} size={200} level="M" />
-                        )}
+                        ) : (pixData?.copia_cola && (
+                            <QRCodeSVG value={pixData.copia_cola} size={200} level="M" />
+                        ))}
                     </div>
                     <div className="timer-badge">
                         <Clock size={14} style={{display:'inline', marginRight:5, marginBottom:-2}}/>
@@ -143,12 +146,10 @@ export function MiniAppPayment() {
                     </div>
                 </div>
 
-                {/* COPY PASTE SECTION (CORRIGIDO NULL) */}
                 <div className="copy-paste-section">
                     <label>Código Pix Copia e Cola:</label>
                     <div className="pix-code-box">
-                        {/* AQUI ESTAVA O ERRO: Mapeamos copia_cola aqui */}
-                        {pixData?.copia_cola || "Carregando código..."}
+                        {pixData?.copia_cola || "Erro ao carregar código"}
                     </div>
 
                     <button onClick={copyPix} className="btn-action-main">
@@ -156,7 +157,6 @@ export function MiniAppPayment() {
                     </button>
                 </div>
 
-                {/* STATUS FOOTER */}
                 <div className="waiting-status">
                     <div className="pulse-dot"></div>
                     <span>Aguardando confirmação...</span>
