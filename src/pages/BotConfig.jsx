@@ -105,12 +105,13 @@ export function BotConfig() {
       setCurrentCat({
           id: null, 
           bot_id: id,
-          title: '', description: '', 
+          title: '', slug: '', description: '', 
           cover_image: '', // Card Img
           banner_mob_url: '', banner_desk_url: '',
           bg_color: '#000000', theme_color: '#ffffff',
           video_preview_url: '',
           model_img_url: '', model_name: '', model_desc: '',
+          model_name_color: '#ffffff', model_desc_color: '#cccccc', // NOVAS CORES
           footer_banner_url: '', deco_lines_url: '',
           is_direct_checkout: false, content_json: '[]'
       });
@@ -130,6 +131,7 @@ export function BotConfig() {
           setIsEditingCat(false);
           setCurrentCat(null);
           
+          // Recarrega lista
           const appData = await miniappService.getPublicData(id);
           setCategories(appData.categories || []);
           
@@ -232,7 +234,7 @@ export function BotConfig() {
         {activeTab === 'miniapp' && (
             <div className="miniapp-layout">
                 
-                {/* 1. CONFIGURAÇÃO VISUAL GLOBAL (HOME + EXTRAS) */}
+                {/* 1. CONFIGURAÇÃO VISUAL GLOBAL */}
                 <div className="config-grid-layout" style={{marginBottom: 30}}>
                     <Card>
                         <CardContent>
@@ -259,7 +261,6 @@ export function BotConfig() {
                         </CardContent>
                     </Card>
 
-                    {/* ESTE CARD ESTAVA FALTANDO NA MINHA SUGESTÃO ANTERIOR 👇 */}
                     <Card>
                         <CardContent>
                             <div className="card-header-line"><Smartphone size={20}/> Extras (Popup & Footer)</div>
@@ -281,7 +282,7 @@ export function BotConfig() {
                     </Card>
                 </div>
 
-                {/* 2. GESTÃO DE CATEGORIAS (NOVA VERSÃO RICA) */}
+                {/* 2. GESTÃO DE CATEGORIAS */}
                 <div className="categories-section">
                     <div className="section-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 20}}>
                         <h2>📂 Gestão de Categorias</h2>
@@ -303,8 +304,13 @@ export function BotConfig() {
                                         <input className="input-field" value={currentCat.title} onChange={(e) => setCurrentCat({...currentCat, title: e.target.value})} placeholder="Ex: Packs Premium" />
                                     </div>
                                     <div className="form-group">
-                                        <label>Descrição Curta (Slug)</label>
-                                        <input className="input-field" value={currentCat.description} onChange={(e) => setCurrentCat({...currentCat, description: e.target.value})} placeholder="Ex: As melhores fotos..." />
+                                        <label>Slug (URL Amigável)</label>
+                                        <input className="input-field" value={currentCat.slug} onChange={(e) => setCurrentCat({...currentCat, slug: e.target.value})} placeholder="ex: praia-de-nudismo" />
+                                        <small style={{color:'#666'}}>Deixe vazio para gerar automático</small>
+                                    </div>
+                                    <div className="form-group" style={{gridColumn:'span 2'}}>
+                                        <label>Descrição SEO (Opcional)</label>
+                                        <input className="input-field" value={currentCat.description} onChange={(e) => setCurrentCat({...currentCat, description: e.target.value})} placeholder="Descrição curta para o Google..." />
                                     </div>
                                     
                                     {/* 2. VISUAL E CORES */}
@@ -324,19 +330,9 @@ export function BotConfig() {
                                     </div>
 
                                     {/* 3. IMAGENS */}
-                                    <div className="form-group">
-                                        <label><ImageIcon size={16}/> Imagem Card (Home)</label>
-                                        <input className="input-field" value={currentCat.cover_image} onChange={(e) => setCurrentCat({...currentCat, cover_image: e.target.value})} placeholder="https://..." />
-                                        <small style={{color:'#aaa'}}>Ideal: 1560x390px (Banner Horizontal)</small>
-                                    </div>
-                                    <div className="form-group">
-                                        <label><Layout size={16}/> Banner Mobile (Topo)</label>
-                                        <input className="input-field" value={currentCat.banner_mob_url} onChange={(e) => setCurrentCat({...currentCat, banner_mob_url: e.target.value})} placeholder="https://..." />
-                                    </div>
-                                    <div className="form-group">
-                                        <label><Layout size={16}/> Banner Desktop</label>
-                                        <input className="input-field" value={currentCat.banner_desk_url} onChange={(e) => setCurrentCat({...currentCat, banner_desk_url: e.target.value})} placeholder="https://..." />
-                                    </div>
+                                    <div className="form-group"><label><ImageIcon size={16}/> Imagem Card (Home)</label><input className="input-field" value={currentCat.cover_image} onChange={(e) => setCurrentCat({...currentCat, cover_image: e.target.value})} placeholder="https://..." /></div>
+                                    <div className="form-group"><label><Layout size={16}/> Banner Mobile (Topo)</label><input className="input-field" value={currentCat.banner_mob_url} onChange={(e) => setCurrentCat({...currentCat, banner_mob_url: e.target.value})} placeholder="https://..." /></div>
+                                    <div className="form-group"><label><Layout size={16}/> Banner Desktop</label><input className="input-field" value={currentCat.banner_desk_url} onChange={(e) => setCurrentCat({...currentCat, banner_desk_url: e.target.value})} placeholder="https://..." /></div>
 
                                     {/* 4. CONTEÚDO RICO (MODELO) */}
                                     <div className="form-group">
@@ -344,27 +340,30 @@ export function BotConfig() {
                                         <input className="input-field" value={currentCat.model_name} onChange={(e) => setCurrentCat({...currentCat, model_name: e.target.value})} />
                                     </div>
                                     <div className="form-group">
-                                        <label><User size={16}/> Foto da Modelo (Redonda)</label>
-                                        <input className="input-field" value={currentCat.model_img_url} onChange={(e) => setCurrentCat({...currentCat, model_img_url: e.target.value})} />
+                                        <label>Cor do Nome</label>
+                                        <div style={{display:'flex', gap:5}}>
+                                            <input type="color" value={currentCat.model_name_color || '#ffffff'} onChange={(e) => setCurrentCat({...currentCat, model_name_color: e.target.value})} style={{height:40}} />
+                                            <input className="input-field" value={currentCat.model_name_color} onChange={(e) => setCurrentCat({...currentCat, model_name_color: e.target.value})} />
+                                        </div>
                                     </div>
-                                    <div className="form-group" style={{gridColumn: 'span 2'}}>
+
+                                    <div className="form-group" style={{gridColumn:'span 2'}}>
                                         <label>Descrição Completa da Cena</label>
                                         <textarea className="input-field" rows={3} value={currentCat.model_desc} onChange={(e) => setCurrentCat({...currentCat, model_desc: e.target.value})} />
                                     </div>
+                                    <div className="form-group">
+                                        <label>Cor da Descrição</label>
+                                        <div style={{display:'flex', gap:5}}>
+                                            <input type="color" value={currentCat.model_desc_color || '#cccccc'} onChange={(e) => setCurrentCat({...currentCat, model_desc_color: e.target.value})} style={{height:40}} />
+                                            <input className="input-field" value={currentCat.model_desc_color} onChange={(e) => setCurrentCat({...currentCat, model_desc_color: e.target.value})} />
+                                        </div>
+                                    </div>
+                                    <div className="form-group"><label><User size={16}/> Foto da Modelo (Redonda)</label><input className="input-field" value={currentCat.model_img_url} onChange={(e) => setCurrentCat({...currentCat, model_img_url: e.target.value})} /></div>
 
                                     {/* 5. EXTRAS */}
-                                    <div className="form-group">
-                                        <label><PlayCircle size={16}/> Vídeo Preview</label>
-                                        <input className="input-field" value={currentCat.video_preview_url} onChange={(e) => setCurrentCat({...currentCat, video_preview_url: e.target.value})} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Linhas Decorativas (URL)</label>
-                                        <input className="input-field" value={currentCat.deco_lines_url} onChange={(e) => setCurrentCat({...currentCat, deco_lines_url: e.target.value})} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Banner Rodapé</label>
-                                        <input className="input-field" value={currentCat.footer_banner_url} onChange={(e) => setCurrentCat({...currentCat, footer_banner_url: e.target.value})} />
-                                    </div>
+                                    <div className="form-group"><label><PlayCircle size={16}/> Vídeo Preview</label><input className="input-field" value={currentCat.video_preview_url} onChange={(e) => setCurrentCat({...currentCat, video_preview_url: e.target.value})} /></div>
+                                    <div className="form-group"><label>Linhas Decorativas (URL)</label><input className="input-field" value={currentCat.deco_lines_url} onChange={(e) => setCurrentCat({...currentCat, deco_lines_url: e.target.value})} /></div>
+                                    <div className="form-group"><label>Banner Rodapé</label><input className="input-field" value={currentCat.footer_banner_url} onChange={(e) => setCurrentCat({...currentCat, footer_banner_url: e.target.value})} /></div>
                                 </div>
 
                                 <div style={{display:'flex', gap: 10, marginTop: 20}}>

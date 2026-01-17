@@ -26,7 +26,6 @@ export function MiniAppCategory() {
 
     // Estilos dinâmicos do banco
     const bgStyle = { backgroundColor: category.bg_color || '#000000' };
-    const textStyle = { color: category.theme_color || '#ffffff' };
     const btnStyle = { backgroundColor: category.theme_color || '#E10000', color: category.theme_color === '#ffffff' ? '#000' : '#fff' };
 
     return (
@@ -57,8 +56,13 @@ export function MiniAppCategory() {
                             <img src={category.model_img_url} className="model-avatar" alt="Modelo" />
                         )}
                         <div className="model-info">
-                            <h2 style={textStyle}>{category.model_name}</h2>
-                            <p style={{color: '#ccc'}}>{category.model_desc || category.description}</p>
+                            {/* APLICANDO AS CORES PERSONALIZADAS AQUI 👇 */}
+                            <h2 style={{ color: category.model_name_color || '#ffffff' }}>
+                                {category.model_name}
+                            </h2>
+                            <p style={{ color: category.model_desc_color || '#cccccc' }}>
+                                {category.model_desc || category.description}
+                            </p>
                         </div>
                     </div>
                 )}
