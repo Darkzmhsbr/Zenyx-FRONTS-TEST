@@ -53,7 +53,7 @@ export const planService = {
 };
 
 // ============================================================
-// 📢 SERVIÇO DE REMARKETING
+// 📢 SERVIÇO DE REMARKETING (ATUALIZADO COM FUNIL)
 // ============================================================
 export const remarketingService = {
   send: async (botId, data, isTest = false, specificUserId = null) => {
@@ -71,32 +71,29 @@ export const remarketingService = {
       is_test: isTest,
       specific_user_id: specificUserId
     };
-    return (await api.post(`/api/admin/bots/${botId}/remarketing/send`, payload)).data;
+    return (await api.post('/api/admin/remarketing/send', payload)).data;
   },
   
+  // [MODIFICADO] Adiciona paginação
   getHistory: async (id, page = 1, perPage = 10) => {
     try { 
-        return (await api.get(`/api/admin/bots/${id}/remarketing/history?page=${page}&limit=${perPage}`)).data; 
+        return (await api.get(`/api/admin/remarketing/history/${id}?page=${page}&per_page=${perPage}`)).data; 
     } catch { 
         return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 }; 
     }
   },
   
+  // [NOVO] Função para deletar histórico
   deleteHistory: async (historyId) => {
     return (await api.delete(`/api/admin/remarketing/history/${historyId}`)).data;
   },
   
   sendIndividual: async (botId, telegramId, historyId) => {
-    try {
-      const response = await api.post(`/api/admin/bots/${botId}/remarketing/send-individual`, {
-        user_id: String(telegramId),
-        history_id: parseInt(historyId)
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao enviar remarketing individual:', error.response?.data || error.message);
-      throw error;
-    }
+    return (await api.post('/api/admin/remarketing/send-individual', {
+        bot_id: botId,
+        user_telegram_id: telegramId,
+        campaign_history_id: historyId
+    })).data;
   }
 };
 
