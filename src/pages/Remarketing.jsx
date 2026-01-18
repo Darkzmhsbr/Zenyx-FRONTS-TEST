@@ -15,13 +15,13 @@ export function Remarketing() {
   const [plans, setPlans] = useState([]);
   const [history, setHistory] = useState([]);
   
-  // Estados de paginação
+  // Paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [perPage] = useState(10);
   
-  // Estado do Formulário
+  // Formulário
   const [formData, setFormData] = useState({
     target: 'todos', 
     mensagem: '',
@@ -61,15 +61,11 @@ export function Remarketing() {
   const carregarHistorico = async () => {
       if (!selectedBot?.id) return;
       try {
-          // CORREÇÃO: Passa os params de paginação corretamente
-          const response = await remarketingService.getHistory(selectedBot.id, currentPage, perPage);
-          setHistory(response.data || []);
-          setTotalCount(response.total || 0);
-          setTotalPages(response.total_pages || 1);
-      } catch (e) { 
-          console.error(e); 
-          setHistory([]);
-      }
+          const data = await remarketingService.getHistory(selectedBot.id, currentPage, perPage);
+          setHistory(data.data || []);
+          setTotalCount(data.total || 0);
+          setTotalPages(data.total_pages || 1); // Correção: total_pages
+      } catch (e) { console.error(e); setHistory([]); }
   };
 
   const handleDeleteHistory = async (id) => {
@@ -90,6 +86,47 @@ export function Remarketing() {
               Swal.fire({title:'Excluído!', icon:'success', timer:1500, showConfirmButton:false, background:'#151515', color:'#fff'});
           } catch (e) { Swal.fire('Erro', 'Falha ao excluir', 'error'); }
       }
+  };
+
+  // 🔥 [CORREÇÃO CRÍTICA] REUTILIZAR DADOS
+  const handleReusar = (item) => {
+    try {
+      // 1. Garante que config é objeto
+      const config = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
+      
+      // 2. Mapeamento Inteligente (Backend vs Frontend)
+      // O backend salva como 'msg', 'media', 'offer'. O form usa 'mensagem', 'media_url'.
+      const msg = config.msg || config.mensagem || '';
+      const media = config.media || config.media_url || '';
+      const offer = config.offer !== undefined ? config.offer : (config.incluir_oferta || false);
+      const pid = config.plano_id || config.plano_oferta_id || '';
+      const customPrice = config.custom_price || '';
+
+      setFormData({
+        target: item.target || 'todos',
+        mensagem: msg,
+        media_url: media,
+        incluir_oferta: offer,
+        plano_oferta_id: pid,
+        price_mode: customPrice ? 'custom' : 'original',
+        custom_price: customPrice,
+        expiration_mode: config.expiration_mode || 'none',
+        expiration_value: config.expiration_value || '',
+        tipo_envio: 'massivo',
+        agendar: false
+      });
+
+      setStep(1); // Vai para o passo 1
+      window.scrollTo(0, 0); // Sobe a tela
+      
+      // Feedback visual rápido
+      const Toast = Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true});
+      Toast.fire({icon: 'success', title: 'Dados carregados do histórico!'});
+
+    } catch (error) {
+      console.error("Erro ao reusar:", error);
+      Swal.fire('Erro', 'Dados da campanha corrompidos.', 'error');
+    }
   };
 
   const handleResendIndividual = async (campaignId) => {
@@ -119,32 +156,8 @@ export function Remarketing() {
       }
   };
 
-  const handleReusar = (item) => {
-    try {
-      const config = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
-      setFormData({
-        target: item.target || 'todos',
-        mensagem: config.msg || '', // Ajustado para ler 'msg' do json
-        media_url: config.media || '', // Ajustado para ler 'media' do json
-        incluir_oferta: config.offer || false,
-        plano_oferta_id: config.plano_id || '',
-        price_mode: config.custom_price ? 'custom' : 'original',
-        custom_price: config.custom_price || '',
-        expiration_mode: 'none',
-        expiration_value: ''
-      });
-      setStep(1); // Volta para a edição
-      window.scrollTo(0, 0);
-    } catch (error) {
-      console.error("Erro ao reusar:", error);
-      Swal.fire('Erro', 'Dados corrompidos.', 'error');
-    }
-  };
-
   const handleEnviar = async () => {
     if (!selectedBot?.id) return;
-    
-    // Validações básicas
     if (!formData.mensagem) return Swal.fire('Atenção', 'Escreva uma mensagem.', 'warning');
     if (formData.incluir_oferta && !formData.plano_oferta_id) return Swal.fire('Atenção', 'Selecione um plano.', 'warning');
 
@@ -166,7 +179,7 @@ export function Remarketing() {
         background: '#151515', color: '#fff'
       });
 
-      setStep(4); // Vai para o histórico
+      setStep(4);
       carregarHistorico();
     } catch (error) {
       console.error(error);
@@ -176,14 +189,12 @@ export function Remarketing() {
     }
   };
 
-  // Navegação
   const nextPage = () => currentPage < totalPages && setCurrentPage(p => p + 1);
   const prevPage = () => currentPage > 1 && setCurrentPage(p => p - 1);
 
   return (
     <div className="remarketing-container">
       
-      {/* HEADER TABS */}
       <div className="tabs-header">
           <button className={`tab-btn ${step < 4 ? 'active' : ''}`} onClick={() => setStep(1)}>
               <Send size={18}/> Nova Campanha
@@ -193,15 +204,15 @@ export function Remarketing() {
           </button>
       </div>
 
-      {/* HISTÓRICO */}
       {step === 4 ? (
           <div className="history-section">
               <div className="history-list">
                   {history.map(h => {
-                      // Parse do Config JSON para exibir
                       let cfg = {};
                       try { cfg = typeof h.config === 'string' ? JSON.parse(h.config) : h.config; } catch (e) {}
                       
+                      // Fallback para exibir mensagem mesmo se chaves mudarem
+                      const displayMsg = cfg.msg || cfg.mensagem || "Sem texto";
                       const targetName = targetOptions.find(t => t.id === h.target)?.title || h.target;
 
                       return (
@@ -211,7 +222,7 @@ export function Remarketing() {
                                 <span className={`h-badge ${h.target}`}>{targetName}</span>
                             </div>
                             <div className="h-body">
-                                <p className="h-msg" dangerouslySetInnerHTML={{__html: cfg.msg?.substring(0, 100) + '...'}}></p>
+                                <div className="h-msg" dangerouslySetInnerHTML={{__html: displayMsg.substring(0, 100) + '...'}} />
                                 <div className="h-stats">
                                     <span>✅ {h.sent_success || 0} Enviados</span>
                                     <span>🚫 {h.blocked_count || 0} Bloqueados</span>
@@ -234,7 +245,6 @@ export function Remarketing() {
                   {history.length === 0 && <p style={{textAlign:'center', color:'#666', padding: 40}}>Nenhum disparo recente.</p>}
               </div>
               
-              {/* Paginação */}
               {totalPages > 1 && (
                   <div className="pagination-controls-remarketing">
                       <button onClick={prevPage} disabled={currentPage === 1}><ChevronLeft size={16}/></button>
@@ -244,10 +254,9 @@ export function Remarketing() {
               )}
           </div>
       ) : (
-          /* WIZARD (Passos 1, 2, 3) */
           <div className="wizard-container">
-            
-            {/* STEP 1: PÚBLICO */}
+            <div className="wizard-step-indicator">Passo {step} de 3</div>
+
             {step === 1 && (
               <>
                 <h2 className="wizard-title">Quem deve receber?</h2>
@@ -270,7 +279,6 @@ export function Remarketing() {
               </>
             )}
 
-            {/* STEP 2: CONTEÚDO */}
             {step === 2 && (
               <>
                 <h2 className="wizard-title">Conteúdo da Mensagem</h2>
@@ -358,7 +366,6 @@ export function Remarketing() {
               </>
             )}
 
-            {/* STEP 3: REVISÃO */}
             {step === 3 && (
                 <>
                     <h2 className="wizard-title">Confirmar Disparo</h2>
