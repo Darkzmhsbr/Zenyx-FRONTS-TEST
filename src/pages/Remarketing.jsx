@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
-// CORREÇÃO DOS CAMINHOS DE IMPORTAÇÃO (DE ../../ PARA ../)
 import { useBot } from '../context/BotContext';
 import { remarketingService, planService } from '../services/api';
-import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, RotateCcw, Edit, Play, Trash2, ChevronLeft, ChevronRight, Zap, Loader2 } from 'lucide-react';
+import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, RotateCcw, Edit, Play, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
-import { RichInput } from '../components/RichInput';
 import Swal from 'sweetalert2';
-// Ajuste o caminho do CSS conforme onde você salvou o arquivo. 
-// Se estiver em assets/styles: '../assets/styles/Remarketing.css'
-// Se estiver na mesma pasta: './Remarketing.css'
-import '../assets/styles/Remarketing.css'; 
+import './Remarketing.css';
+import { RichInput } from '../components/RichInput';
+import { Loader2 } from '../components/Loader';
+
 
 export function Remarketing() {
   const { selectedBot } = useBot();
