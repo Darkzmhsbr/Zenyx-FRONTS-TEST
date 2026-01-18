@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useBot } from '../../context/BotContext';
-import { remarketingService, planService } from '../../services/api';
+// CORREÇÃO DOS CAMINHOS DE IMPORTAÇÃO (DE ../../ PARA ../)
+import { useBot } from '../context/BotContext';
+import { remarketingService, planService } from '../services/api';
 import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, RotateCcw, Edit, Play, Trash2, ChevronLeft, ChevronRight, Zap, Loader2 } from 'lucide-react';
-import { Button } from '../../components/Button';
-import { Card, CardContent } from '../../components/Card';
-import { RichInput } from '../../components/RichInput';
+import { Button } from '../components/Button';
+import { Card, CardContent } from '../components/Card';
+import { RichInput } from '../components/RichInput';
 import Swal from 'sweetalert2';
-import './Remarketing.css';
+// Ajuste o caminho do CSS conforme onde você salvou o arquivo. 
+// Se estiver em assets/styles: '../assets/styles/Remarketing.css'
+// Se estiver na mesma pasta: './Remarketing.css'
+import '../assets/styles/Remarketing.css'; 
 
 export function Remarketing() {
   const { selectedBot } = useBot();
@@ -64,7 +68,7 @@ export function Remarketing() {
           const data = await remarketingService.getHistory(selectedBot.id, currentPage, perPage);
           setHistory(data.data || []);
           setTotalCount(data.total || 0);
-          setTotalPages(data.total_pages || 1); // Correção: total_pages
+          setTotalPages(data.total_pages || 1);
       } catch (e) { console.error(e); setHistory([]); }
   };
 
@@ -88,14 +92,12 @@ export function Remarketing() {
       }
   };
 
-  // 🔥 [CORREÇÃO CRÍTICA] REUTILIZAR DADOS
+  // REUTILIZAR DADOS (Lógica Blindada)
   const handleReusar = (item) => {
     try {
-      // 1. Garante que config é objeto
       const config = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
       
-      // 2. Mapeamento Inteligente (Backend vs Frontend)
-      // O backend salva como 'msg', 'media', 'offer'. O form usa 'mensagem', 'media_url'.
+      // Mapeamento Inteligente
       const msg = config.msg || config.mensagem || '';
       const media = config.media || config.media_url || '';
       const offer = config.offer !== undefined ? config.offer : (config.incluir_oferta || false);
@@ -116,10 +118,9 @@ export function Remarketing() {
         agendar: false
       });
 
-      setStep(1); // Vai para o passo 1
-      window.scrollTo(0, 0); // Sobe a tela
+      setStep(1); 
+      window.scrollTo(0, 0); 
       
-      // Feedback visual rápido
       const Toast = Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true});
       Toast.fire({icon: 'success', title: 'Dados carregados do histórico!'});
 
@@ -211,7 +212,6 @@ export function Remarketing() {
                       let cfg = {};
                       try { cfg = typeof h.config === 'string' ? JSON.parse(h.config) : h.config; } catch (e) {}
                       
-                      // Fallback para exibir mensagem mesmo se chaves mudarem
                       const displayMsg = cfg.msg || cfg.mensagem || "Sem texto";
                       const targetName = targetOptions.find(t => t.id === h.target)?.title || h.target;
 
