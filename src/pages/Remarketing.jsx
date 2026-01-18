@@ -7,7 +7,6 @@ import { Card, CardContent } from '../components/Card';
 import Swal from 'sweetalert2';
 import './Remarketing.css';
 import { RichInput } from '../components/RichInput';
-import { Loader2 } from '../components/Loader';
 
 
 export function Remarketing() {
