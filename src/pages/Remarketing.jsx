@@ -16,13 +16,13 @@ export function Remarketing() {
   const [plans, setPlans] = useState([]);
   const [history, setHistory] = useState([]);
   
-  // Paginação
+  // Estados de paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [perPage] = useState(10);
   
-  // Formulário
+  // Estado do Formulário
   const [formData, setFormData] = useState({
     target: 'todos', 
     mensagem: '',
@@ -32,374 +32,581 @@ export function Remarketing() {
     price_mode: 'original',
     custom_price: '',
     expiration_mode: 'none',
-    expiration_value: '',
-    agendar: false,
-    data_agendamento: '',
-    tipo_envio: 'massivo'
+    expiration_value: ''
   });
 
-  const targetOptions = [
-    { id: 'todos', title: 'Todos os Contatos', desc: 'Envia para toda a base (Leads + Clientes).', icon: <Users size={20} color="#3b82f6"/> },
-    { id: 'pendentes', title: 'Leads Pendentes', desc: 'Apenas quem iniciou mas NÃO comprou.', icon: <Clock size={20} color="#f59e0b"/> },
-    { id: 'ativos', title: 'Assinantes Ativos', desc: 'Clientes com plano em dia (Upsell).', icon: <CheckCircle size={20} color="#10b981"/> },
-    { id: 'expirados', title: 'Ex-Assinantes', desc: 'Clientes que não renovaram (Winback).', icon: <RotateCcw size={20} color="#ef4444"/> }
-  ];
-
   useEffect(() => {
-    if (selectedBot?.id) {
-      loadPlans();
+    if (selectedBot) {
+      planService.listPlans(selectedBot.id).then(setPlans).catch(console.error);
       carregarHistorico();
     }
   }, [selectedBot, currentPage]);
 
-  const loadPlans = async () => {
-    try {
-      const data = await planService.listPlans(selectedBot.id);
-      setPlans(data);
-    } catch (e) { console.error(e); }
-  };
-
   const carregarHistorico = async () => {
-      if (!selectedBot?.id) return;
-      try {
-          const data = await remarketingService.getHistory(selectedBot.id, currentPage, perPage);
-          setHistory(data.data || []);
-          setTotalCount(data.total || 0);
-          setTotalPages(data.total_pages || 1);
-      } catch (e) { console.error(e); setHistory([]); }
-  };
-
-  const handleDeleteHistory = async (id) => {
-      const result = await Swal.fire({
-          title: 'Excluir registro?',
-          text: "Isso removerá apenas do histórico.",
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#d33',
-          confirmButtonText: 'Sim, excluir',
-          background: '#151515', color: '#fff'
-      });
-
-      if (result.isConfirmed) {
-          try {
-              await remarketingService.deleteHistory(selectedBot.id, id);
-              carregarHistorico();
-              Swal.fire({title:'Excluído!', icon:'success', timer:1500, showConfirmButton:false, background:'#151515', color:'#fff'});
-          } catch (e) { Swal.fire('Erro', 'Falha ao excluir', 'error'); }
-      }
-  };
-
-  // REUTILIZAR DADOS (Lógica Blindada)
-  const handleReusar = (item) => {
+    if (!selectedBot) return;
+    
     try {
-      const config = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
-      
-      // Mapeamento Inteligente
-      const msg = config.msg || config.mensagem || '';
-      const media = config.media || config.media_url || '';
-      const offer = config.offer !== undefined ? config.offer : (config.incluir_oferta || false);
-      const pid = config.plano_id || config.plano_oferta_id || '';
-      const customPrice = config.custom_price || '';
-
-      setFormData({
-        target: item.target || 'todos',
-        mensagem: msg,
-        media_url: media,
-        incluir_oferta: offer,
-        plano_oferta_id: pid,
-        price_mode: customPrice ? 'custom' : 'original',
-        custom_price: customPrice,
-        expiration_mode: config.expiration_mode || 'none',
-        expiration_value: config.expiration_value || '',
-        tipo_envio: 'massivo',
-        agendar: false
-      });
-
-      setStep(1); 
-      window.scrollTo(0, 0); 
-      
-      const Toast = Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true});
-      Toast.fire({icon: 'success', title: 'Dados carregados do histórico!'});
-
+      const response = await remarketingService.getHistory(selectedBot.id, currentPage, perPage);
+      setHistory(Array.isArray(response.data) ? response.data : []);
+      setTotalCount(response.total || 0);
+      setTotalPages(response.total_pages || 1);
     } catch (error) {
-      console.error("Erro ao reusar:", error);
-      Swal.fire('Erro', 'Dados da campanha corrompidos.', 'error');
+      console.error("Erro ao carregar histórico:", error);
+      setHistory([]);
     }
   };
 
-  const handleResendIndividual = async (campaignId) => {
-      const { value: userId } = await Swal.fire({
-          title: 'Teste Rápido',
-          input: 'text',
-          inputLabel: 'Digite o ID do Telegram (User ID)',
-          inputPlaceholder: '123456789',
-          showCancelButton: true,
-          background: '#151515', color: '#fff'
-      });
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
-      if (userId) {
-          try {
-              setLoading(true);
-              await remarketingService.sendIndividual({
-                  bot_id: selectedBot.id,
-                  user_telegram_id: userId,
-                  campaign_history_id: campaignId
-              });
-              Swal.fire({title:'Sucesso', text:'Teste enviado!', icon:'success', timer:2000, background:'#151515', color:'#fff'});
-          } catch (e) {
-              Swal.fire('Erro', 'Falha ao reenviar', 'error');
-          } finally {
-              setLoading(false);
-          }
+  const nextPage = () => goToPage(currentPage + 1);
+  const prevPage = () => goToPage(currentPage - 1);
+
+  const handleDelete = async (historyId) => {
+    const result = await Swal.fire({
+      title: 'Deletar campanha?',
+      text: "Esta ação não pode ser desfeita.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sim, deletar',
+      cancelButtonText: 'Cancelar',
+      background: '#151515',
+      color: '#fff'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await remarketingService.deleteHistory(historyId);
+        Swal.fire({
+          title: 'Deletado!',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+          background: '#151515',
+          color: '#fff'
+        });
+        carregarHistorico();
+      } catch (error) {
+        console.error('Erro ao deletar:', error);
+        Swal.fire({
+          title: 'Erro',
+          text: 'Falha ao deletar campanha.',
+          icon: 'error',
+          background: '#151515',
+          color: '#fff'
+        });
       }
+    }
+  };
+
+  const handleReusar = (item) => {
+    try {
+      const config = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
+      setFormData({
+        target: item.target || 'todos',
+        mensagem: config.mensagem || '',
+        media_url: config.media_url || '',
+        incluir_oferta: config.incluir_oferta || false,
+        plano_oferta_id: config.plano_oferta_id || '',
+        price_mode: config.price_mode || 'original',
+        custom_price: config.custom_price || '',
+        expiration_mode: config.expiration_mode || 'none',
+        expiration_value: config.expiration_value || ''
+      });
+      setStep(1);
+      window.scrollTo(0, 0);
+    } catch (error) {
+      console.error("Erro ao reusar campanha:", error);
+      Swal.fire({
+        title: 'Erro',
+        text: 'Falha ao carregar configuração da campanha.',
+        icon: 'error',
+        background: '#151515',
+        color: '#fff'
+      });
+    }
+  };
+
+  // 🔥 [CORRIGIDO] Função de teste individual
+  const handleTestarIndividual = async (item) => {
+    const { value: telegramId } = await Swal.fire({
+      title: 'Testar Envio Individual',
+      input: 'text',
+      inputLabel: 'Digite o Telegram ID para receber o teste:',
+      inputPlaceholder: 'Ex: 123456789',
+      showCancelButton: true,
+      confirmButtonText: 'Enviar Teste',
+      cancelButtonText: 'Cancelar',
+      background: '#151515',
+      color: '#fff',
+      inputValidator: (value) => {
+        if (!value) return 'Por favor, digite um Telegram ID';
+        if (!/^\d+$/.test(value)) return 'Telegram ID deve conter apenas números';
+      }
+    });
+
+    if (telegramId) {
+      try {
+        setLoading(true);
+        
+        Swal.fire({
+          title: 'Enviando...',
+          text: 'Aguarde enquanto o teste é enviado.',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+        
+        await remarketingService.sendIndividual(
+          selectedBot.id, 
+          telegramId, 
+          item.id
+        );
+        
+        Swal.fire({
+          title: 'Teste Enviado!',
+          text: `Mensagem enviada para o ID ${telegramId}`,
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false,
+          background: '#151515',
+          color: '#fff'
+        });
+      } catch (error) {
+        console.error('Erro ao enviar teste:', error);
+        Swal.fire({
+          title: 'Erro',
+          text: error.response?.data?.detail || 'Falha ao enviar teste.',
+          icon: 'error',
+          background: '#151515',
+          color: '#fff'
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const handleEnviar = async () => {
-    if (!selectedBot?.id) return;
-    if (!formData.mensagem) return Swal.fire('Atenção', 'Escreva uma mensagem.', 'warning');
-    if (formData.incluir_oferta && !formData.plano_oferta_id) return Swal.fire('Atenção', 'Selecione um plano.', 'warning');
+    // Validações
+    if (!formData.mensagem.trim()) {
+      Swal.fire({
+        title: 'Atenção',
+        text: 'Por favor, escreva uma mensagem.',
+        icon: 'warning',
+        background: '#151515',
+        color: '#fff'
+      });
+      return;
+    }
+
+    if (formData.incluir_oferta && !formData.plano_oferta_id) {
+      Swal.fire({
+        title: 'Atenção',
+        text: 'Selecione um plano para a oferta.',
+        icon: 'warning',
+        background: '#151515',
+        color: '#fff'
+      });
+      return;
+    }
 
     setLoading(true);
     
+    Swal.fire({
+      title: 'Enviando...',
+      text: 'Aguarde enquanto a campanha é enviada.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+    
     try {
-      const result = await remarketingService.send(selectedBot.id, formData);
+      const result = await remarketingService.send(selectedBot.id, formData, false, null);
       
       Swal.fire({
         title: 'Enviado com Sucesso!',
         html: `
-          <div style="text-align:left; color:#ccc;">
-            <p>✅ Enviados: <b>${result.sent_success || 0}</b></p>
-            <p>🚫 Bloqueados: <b>${result.blocked_count || 0}</b></p>
-            <p>📊 Total Processado: <b>${result.total_leads || 0}</b></p>
+          <div style="text-align: left; padding: 10px;">
+            <p><strong>✅ Enviados:</strong> ${result.sent_success || 0}</p>
+            <p><strong>❌ Bloqueados:</strong> ${result.blocked_count || 0}</p>
+            <p><strong>👥 Total:</strong> ${result.total_leads || 0}</p>
           </div>
         `,
         icon: 'success',
-        background: '#151515', color: '#fff'
+        confirmButtonText: 'OK',
+        background: '#151515',
+        color: '#fff'
       });
 
-      setStep(4);
+      // Reset form
+      setFormData({
+        target: 'todos',
+        mensagem: '',
+        media_url: '',
+        incluir_oferta: false,
+        plano_oferta_id: '',
+        price_mode: 'original',
+        custom_price: '',
+        expiration_mode: 'none',
+        expiration_value: ''
+      });
+      setStep(1);
       carregarHistorico();
     } catch (error) {
-      console.error(error);
-      Swal.fire('Erro', 'Falha ao enviar campanha', 'error');
+      console.error("Erro ao enviar campanha:", error);
+      Swal.fire({
+        title: 'Erro',
+        text: error.response?.data?.detail || 'Falha ao enviar campanha.',
+        icon: 'error',
+        background: '#151515',
+        color: '#fff'
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const nextPage = () => currentPage < totalPages && setCurrentPage(p => p + 1);
-  const prevPage = () => currentPage > 1 && setCurrentPage(p => p - 1);
+  const targetOptions = [
+    { id: 'todos', icon: '👥', title: 'Todos', desc: 'Envia para todos os contatos' },
+    { id: 'topo', icon: '🎯', title: 'TOPO - Leads Frios', desc: 'Usuários que só deram /start' },
+    { id: 'meio', icon: '🔥', title: 'MEIO - Leads Quentes', desc: 'Usuários que geraram PIX' },
+    { id: 'fundo', icon: '✅', title: 'FUNDO - Clientes', desc: 'Usuários que pagaram' },
+    { id: 'expirado', icon: '⏰', title: 'Expirados', desc: 'PIX venceu sem pagamento' }
+  ];
 
-  return (
-    <div className="remarketing-container">
-      
-      <div className="tabs-header">
-          <button className={`tab-btn ${step < 4 ? 'active' : ''}`} onClick={() => setStep(1)}>
-              <Send size={18}/> Nova Campanha
-          </button>
-          <button className={`tab-btn ${step === 4 ? 'active' : ''}`} onClick={() => setStep(4)}>
-              <History size={18}/> Histórico
-          </button>
-      </div>
+  // ============================================================
+  // RENDER - HISTÓRICO
+  // ============================================================
+  if (step === 0) {
+    return (
+      <div className="remarketing-container">
+        <div className="wizard-container">
+          <h2 className="wizard-title">
+            <History size={28} style={{ verticalAlign: 'middle', marginRight: '10px' }} />
+            Histórico de Campanhas
+          </h2>
 
-      {step === 4 ? (
-          <div className="history-section">
-              <div className="history-list">
-                  {history.map(h => {
-                      let cfg = {};
-                      try { cfg = typeof h.config === 'string' ? JSON.parse(h.config) : h.config; } catch (e) {}
-                      
-                      const displayMsg = cfg.msg || cfg.mensagem || "Sem texto";
-                      const targetName = targetOptions.find(t => t.id === h.target)?.title || h.target;
+          <Button 
+            onClick={() => setStep(1)} 
+            style={{ marginBottom: '20px' }}
+          >
+            Nova Campanha <Send size={16} />
+          </Button>
 
-                      return (
-                        <div key={h.id} className="history-card">
-                            <div className="h-header">
-                                <span className="h-date">{h.data}</span>
-                                <span className={`h-badge ${h.target}`}>{targetName}</span>
-                            </div>
-                            <div className="h-body">
-                                <div className="h-msg" dangerouslySetInnerHTML={{__html: displayMsg.substring(0, 100) + '...'}} />
-                                <div className="h-stats">
-                                    <span>✅ {h.sent_success || 0} Enviados</span>
-                                    <span>🚫 {h.blocked_count || 0} Bloqueados</span>
-                                </div>
-                            </div>
-                            <div className="h-actions">
-                                <button onClick={() => handleReusar(h)} className="btn-icon" title="Reutilizar">
-                                    <Edit size={16}/>
-                                </button>
-                                <button onClick={() => handleResendIndividual(h.id)} className="btn-icon" title="Testar Envio">
-                                    <Play size={16}/>
-                                </button>
-                                <button onClick={() => handleDeleteHistory(h.id)} className="btn-icon danger" title="Excluir">
-                                    <Trash2 size={16}/>
-                                </button>
-                            </div>
-                        </div>
-                      );
-                  })}
-                  {history.length === 0 && <p style={{textAlign:'center', color:'#666', padding: 40}}>Nenhum disparo recente.</p>}
+          <div className="history-list">
+            {history.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '30px', color: '#666' }}>
+                Nenhuma campanha enviada ainda.
+              </p>
+            ) : (
+              history.map(item => {
+                let config = {};
+                try {
+                  config = typeof item.config === 'string' ? JSON.parse(item.config) : item.config;
+                } catch (e) {
+                  console.error('Erro ao parsear config:', e);
+                }
+
+                const targetLabel = targetOptions.find(t => t.id === item.target)?.title || 'Desconhecido';
+                const dataFormatada = item.data_envio 
+                  ? new Date(item.data_envio).toLocaleString('pt-BR')
+                  : 'Data desconhecida';
+
+                return (
+                  <div key={item.id} className="history-item">
+                    <div>
+                      <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                        {targetLabel}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                        {dataFormatada}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '5px' }}>
+                        ✅ {item.sent_success || 0} enviados • 
+                        ❌ {item.blocked_count || 0} bloqueados
+                      </div>
+                    </div>
+                    <div className="history-actions">
+                      <button 
+                        className="btn-small primary" 
+                        onClick={() => handleReusar(item)}
+                        title="Reutilizar esta campanha"
+                      >
+                        <RotateCcw size={14} /> Reusar
+                      </button>
+                      <button 
+                        className="btn-small primary" 
+                        onClick={() => handleTestarIndividual(item)}
+                        title="Testar envio individual"
+                      >
+                        <Play size={14} /> Testar
+                      </button>
+                      <button 
+                        className="btn-small danger" 
+                        onClick={() => handleDelete(item.id)}
+                        title="Deletar esta campanha"
+                      >
+                        <Trash2 size={14} /> Deletar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="pagination-controls-remarketing">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={prevPage} 
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={16} /> Anterior
+              </Button>
+              
+              <div className="page-info">
+                Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
               </div>
               
-              {totalPages > 1 && (
-                  <div className="pagination-controls-remarketing">
-                      <button onClick={prevPage} disabled={currentPage === 1}><ChevronLeft size={16}/></button>
-                      <span>Página {currentPage} de {totalPages}</span>
-                      <button onClick={nextPage} disabled={currentPage === totalPages}><ChevronRight size={16}/></button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={nextPage} 
+                disabled={currentPage === totalPages}
+              >
+                Próxima <ChevronRight size={16} />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // RENDER - WIZARD (STEPS 1-3)
+  // ============================================================
+  return (
+    <div className="remarketing-container">
+      <div className="wizard-container">
+        
+        <h2 className="wizard-title">
+          <Send size={28} style={{ verticalAlign: 'middle', marginRight: '10px' }} />
+          Campanha de Remarketing
+        </h2>
+
+        <div className="wizard-step-indicator">
+          Passo {step} de 3
+        </div>
+
+        {/* STEP 1: PÚBLICO */}
+        {step === 1 && (
+          <>
+            <h3 style={{ marginBottom: '20px' }}>Quem vai receber esta campanha?</h3>
+            <div className="wizard-options-grid">
+              {targetOptions.map(opt => (
+                <div
+                  key={opt.id}
+                  className={`option-card ${formData.target === opt.id ? 'selected' : ''}`}
+                  onClick={() => setFormData({ ...formData, target: opt.id })}
+                >
+                  <div className="option-icon">{opt.icon}</div>
+                  <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{opt.title}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#aaa' }}>{opt.desc}</div>
+                </div>
+              ))}
+            </div>
+            <div className="wizard-actions">
+              <button className="btn-back" onClick={() => setStep(0)}>
+                <History size={18} /> Ver Histórico
+              </button>
+              <button className="btn-next" onClick={() => setStep(2)}>
+                Próximo <Send size={18} />
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* STEP 2: MENSAGEM */}
+        {step === 2 && (
+          <>
+            <h3 style={{ marginBottom: '20px' }}>Monte sua mensagem</h3>
+            
+            <div className="form-group">
+              <label><MessageSquare size={16} style={{ verticalAlign: 'middle' }} /> Mensagem</label>
+              <textarea
+                className="input-field"
+                rows="6"
+                placeholder="Digite a mensagem aqui..."
+                value={formData.mensagem}
+                onChange={(e) => setFormData({ ...formData, mensagem: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Image size={16} style={{ verticalAlign: 'middle' }} /> URL da Mídia (Opcional)</label>
+              <input
+                className="input-field"
+                type="text"
+                placeholder="https://exemplo.com/imagem.jpg"
+                value={formData.media_url}
+                onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
+              />
+            </div>
+
+            {/* OFERTA ESPECIAL */}
+            <div className="offer-section">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.incluir_oferta}
+                  onChange={(e) => setFormData({ ...formData, incluir_oferta: e.target.checked })}
+                />
+                <Tag size={20} />
+                Incluir Oferta Especial
+              </label>
+
+              {formData.incluir_oferta && (
+                <div className="offer-details-box">
+                  <div className="form-group">
+                    <label>Plano da Oferta</label>
+                    <select
+                      className="input-field"
+                      value={formData.plano_oferta_id}
+                      onChange={(e) => setFormData({ ...formData, plano_oferta_id: e.target.value })}
+                    >
+                      <option value="">Selecione um plano</option>
+                      {plans.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.nome_exibicao} - R$ {p.preco_atual}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+
+                  <div className="form-group">
+                    <label>Preço</label>
+                    <div className="toggle-buttons">
+                      <button
+                        type="button"
+                        className={formData.price_mode === 'original' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, price_mode: 'original' })}
+                      >
+                        Original
+                      </button>
+                      <button
+                        type="button"
+                        className={formData.price_mode === 'custom' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, price_mode: 'custom' })}
+                      >
+                        Personalizado
+                      </button>
+                    </div>
+                    {formData.price_mode === 'custom' && (
+                      <input
+                        className="input-field"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 9.90"
+                        value={formData.custom_price}
+                        onChange={(e) => setFormData({ ...formData, custom_price: e.target.value })}
+                        style={{ marginTop: '10px' }}
+                      />
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label><Clock size={16} /> Expiração da Oferta</label>
+                    <div className="toggle-buttons">
+                      <button
+                        type="button"
+                        className={formData.expiration_mode === 'none' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, expiration_mode: 'none' })}
+                      >
+                        Sem Expiração
+                      </button>
+                      <button
+                        type="button"
+                        className={formData.expiration_mode === 'minutes' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, expiration_mode: 'minutes' })}
+                      >
+                        Minutos
+                      </button>
+                      <button
+                        type="button"
+                        className={formData.expiration_mode === 'hours' ? 'active' : ''}
+                        onClick={() => setFormData({ ...formData, expiration_mode: 'hours' })}
+                      >
+                        Horas
+                      </button>
+                    </div>
+                    {formData.expiration_mode !== 'none' && (
+                      <input
+                        className="input-field"
+                        type="number"
+                        placeholder="Quantidade"
+                        value={formData.expiration_value}
+                        onChange={(e) => setFormData({ ...formData, expiration_value: e.target.value })}
+                        style={{ marginTop: '10px' }}
+                      />
+                    )}
+                  </div>
+                </div>
               )}
-          </div>
-      ) : (
-          <div className="wizard-container">
-            <div className="wizard-step-indicator">Passo {step} de 3</div>
+            </div>
 
-            {step === 1 && (
-              <>
-                <h2 className="wizard-title">Quem deve receber?</h2>
-                <div className="wizard-options-grid">
-                    {targetOptions.map(opt => (
-                        <div 
-                            key={opt.id} 
-                            className={`option-card ${formData.target === opt.id ? 'selected' : ''}`}
-                            onClick={() => setFormData({...formData, target: opt.id})}
-                        >
-                            <div className="opt-icon">{opt.icon}</div>
-                            <h4>{opt.title}</h4>
-                            <p>{opt.desc}</p>
-                        </div>
-                    ))}
-                </div>
-                <div className="wizard-footer">
-                    <button className="btn-next" onClick={() => setStep(2)}>Próximo <ChevronRight size={18}/></button>
-                </div>
-              </>
-            )}
+            <div className="wizard-actions">
+              <button className="btn-back" onClick={() => setStep(1)}>
+                Voltar
+              </button>
+              <button className="btn-next" onClick={() => setStep(3)}>
+                Próximo
+              </button>
+            </div>
+          </>
+        )}
 
-            {step === 2 && (
-              <>
-                <h2 className="wizard-title">Conteúdo da Mensagem</h2>
-                <div className="content-form">
-                    <div className="form-group">
-                        <label><MessageSquare size={16}/> Mensagem (HTML)</label>
-                        <RichInput 
-                            value={formData.mensagem} 
-                            onChange={(val) => setFormData({...formData, mensagem: val})}
-                            placeholder="Use <b>negrito</b>, <i>itálico</i>..."
-                        />
-                    </div>
-                    
-                    <div className="form-group">
-                        <label><Image size={16}/> Mídia (Opcional)</label>
-                        <input 
-                            className="input-field" 
-                            placeholder="URL da Imagem ou Vídeo (.mp4)"
-                            value={formData.media_url}
-                            onChange={(e) => setFormData({...formData, media_url: e.target.value})}
-                        />
-                    </div>
+        {/* STEP 3: REVISÃO */}
+        {step === 3 && (
+          <>
+            <h3 style={{ marginBottom: '20px' }}>Revisão Final</h3>
+            
+            <div className="review-box">
+              <p><strong>Público:</strong> {targetOptions.find(o => o.id === formData.target)?.title}</p>
+              {formData.media_url && <p><strong>Mídia:</strong> {formData.media_url}</p>}
+              {formData.incluir_oferta && (
+                <p><strong>Oferta:</strong> {plans.find(p => p.id === parseInt(formData.plano_oferta_id))?.nome_exibicao}</p>
+              )}
+              <div className="msg-quote">{formData.mensagem}</div>
+            </div>
 
-                    <div className="offer-toggle-box">
-                        <div className="toggle-header">
-                            <input 
-                                type="checkbox" 
-                                id="offer_chk"
-                                checked={formData.incluir_oferta}
-                                onChange={(e) => setFormData({...formData, incluir_oferta: e.target.checked})}
-                            />
-                            <label htmlFor="offer_chk">Incluir Botão de Oferta</label>
-                        </div>
-                        
-                        {formData.incluir_oferta && (
-                            <div className="offer-details">
-                                <label>Selecione o Plano:</label>
-                                <select 
-                                    className="input-field"
-                                    value={formData.plano_oferta_id}
-                                    onChange={(e) => setFormData({...formData, plano_oferta_id: e.target.value})}
-                                >
-                                    <option value="">Selecione...</option>
-                                    {plans.map(p => (
-                                        <option key={p.id} value={p.id}>{p.nome_exibicao} (R$ {p.preco_atual})</option>
-                                    ))}
-                                </select>
+            <div className="wizard-actions">
+              <button className="btn-back" onClick={() => setStep(2)}>
+                Voltar
+              </button>
+              <button 
+                className="btn-next" 
+                onClick={handleEnviar}
+                disabled={loading}
+              >
+                {loading ? 'Enviando...' : 'Enviar Agora'}
+                <CheckCircle size={18} />
+              </button>
+            </div>
+          </>
+        )}
 
-                                <div className="price-mode-row" style={{marginTop: 15}}>
-                                    <label>Preço:</label>
-                                    <div className="radio-group">
-                                        <label>
-                                            <input 
-                                                type="radio" name="pmode" value="original"
-                                                checked={formData.price_mode === 'original'}
-                                                onChange={() => setFormData({...formData, price_mode: 'original'})}
-                                            /> Original
-                                        </label>
-                                        <label>
-                                            <input 
-                                                type="radio" name="pmode" value="custom"
-                                                checked={formData.price_mode === 'custom'}
-                                                onChange={() => setFormData({...formData, price_mode: 'custom'})}
-                                            /> Promo
-                                        </label>
-                                    </div>
-                                </div>
-                                {formData.price_mode === 'custom' && (
-                                    <input 
-                                        type="number" className="input-field" 
-                                        placeholder="Valor Promocional (Ex: 9.90)"
-                                        style={{marginTop: 5}}
-                                        value={formData.custom_price}
-                                        onChange={(e) => setFormData({...formData, custom_price: e.target.value})}
-                                    />
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-                <div className="wizard-footer">
-                    <button className="btn-back" onClick={() => setStep(1)}>Voltar</button>
-                    <button className="btn-next" onClick={() => setStep(3)}>Revisar <ChevronRight size={18}/></button>
-                </div>
-              </>
-            )}
-
-            {step === 3 && (
-                <>
-                    <h2 className="wizard-title">Confirmar Disparo</h2>
-                    <div className="review-card">
-                        <div className="review-item">
-                            <span>Público:</span>
-                            <strong>{targetOptions.find(o => o.id === formData.target)?.title}</strong>
-                        </div>
-                        <div className="review-item">
-                            <span>Mídia:</span>
-                            <strong>{formData.media_url ? 'Sim (URL definida)' : 'Apenas Texto'}</strong>
-                        </div>
-                        {formData.incluir_oferta && (
-                            <div className="review-item">
-                                <span>Oferta:</span>
-                                <strong>
-                                    {plans.find(p => p.id == formData.plano_oferta_id)?.nome_exibicao} 
-                                    {formData.price_mode === 'custom' ? ` (R$ ${formData.custom_price})` : ''}
-                                </strong>
-                            </div>
-                        )}
-                        <div className="preview-msg-box">
-                            <small>Pré-visualização:</small>
-                            <div dangerouslySetInnerHTML={{__html: formData.mensagem}} />
-                        </div>
-                    </div>
-                    <div className="wizard-footer">
-                        <button className="btn-back" onClick={() => setStep(2)}>Editar</button>
-                        <button className="btn-send-final" onClick={handleEnviar} disabled={loading}>
-                            {loading ? <Loader2 className="spin"/> : <Send size={18}/>} 
-                            DISPARAR AGORA
-                        </button>
-                    </div>
-                </>
-            )}
-          </div>
-      )}
+      </div>
     </div>
   );
 }
