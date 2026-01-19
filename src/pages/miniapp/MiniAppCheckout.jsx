@@ -40,37 +40,49 @@ export function MiniAppCheckout() {
   const [autoUser, setAutoUser] = useState(null);
   const [manualUser, setManualUser] = useState('');
 
+  // 1. Injeta o Script do Telegram (GARANTIA DE FUNCIONAMENTO)
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://telegram.org/js/telegram-web-app.js";
+    script.async = true;
+    script.onload = () => verificarTelegram();
+    document.body.appendChild(script);
+
+    return () => {
+      try { document.body.removeChild(script); } catch (e) {}
+    }
+  }, []);
+
   useEffect(() => {
     carregarDados();
-    verificarTelegram(); // Tenta pegar o ID imediatamente
-    window.scrollTo(0, 0);
+    // Tenta verificar também no mount, caso o script já esteja lá
+    const timer = setTimeout(verificarTelegram, 500); 
+    return () => clearTimeout(timer);
   }, [botId]);
 
   // --- CAPTURA DE DADOS DO TELEGRAM WEB APP ---
   const verificarTelegram = () => {
     try {
-      // Verifica se o objeto do Telegram existe
       if (window.Telegram && window.Telegram.WebApp) {
         const tg = window.Telegram.WebApp;
-        tg.ready(); // Informa que o app carregou
+        tg.ready();
         
-        // Pega os dados do usuário (initDataUnsafe é seguro dentro do bot)
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
           const u = tg.initDataUnsafe.user;
           console.log("Usuário detectado:", u);
           
           setAutoUser({
-            id: u.id,           // NUMÉRICO (IMPORTANTE!)
+            id: u.id, // ID Numérico (O que o bot precisa)
             first_name: u.first_name,
             username: u.username || "Sem User",
             is_bot: false
           });
           
-          tg.expand(); // Expande a tela
+          try { tg.expand(); } catch(e){}
         }
       }
     } catch (e) {
-      console.log("Erro ao detectar Telegram:", e);
+      console.log("Acesso externo (Browser):", e);
     }
   };
 
@@ -96,11 +108,11 @@ export function MiniAppCheckout() {
     e.preventDefault();
     if (!selectedPlan) return;
     
-    // 🔥 Validação: Se não achou automático e não digitou manual
-    if (!autoUser && (!manualUser || manualUser.length < 3)) {
+    // Validação
+    if (!autoUser && (!manualUser || manualUser.length < 2)) {
         return Swal.fire({
-            title: 'Identificação',
-            text: 'Precisamos saber quem é você para entregar o acesso. Se não estiver aparecendo automático, digite seu @usuario.',
+            title: 'Quem é você?',
+            text: 'Informe seu @usuario do Telegram para receber o acesso.',
             icon: 'warning',
             background: '#222',
             color: '#fff',
@@ -111,14 +123,15 @@ export function MiniAppCheckout() {
     let total = parseFloat(selectedPlan.preco_atual);
     if (isBumpSelected && bump) total += parseFloat(bump.preco);
 
-    // Prioriza o usuário automático (ID numérico)
+    // Prioriza o usuário automático
     const finalUserData = autoUser ? {
         id: autoUser.id,
         username: autoUser.username,
         first_name: autoUser.first_name
     } : {
-        id: manualUser, // Vai como string se for manual
-        username: manualUser,
+        // Se for manual, enviamos o texto digitado como ID temporário
+        id: manualUser, 
+        username: manualUser.replace('@', ''), // Limpa o @ para salvar limpo
         first_name: manualUser
     };
 
@@ -128,7 +141,7 @@ export function MiniAppCheckout() {
             bump: isBumpSelected ? bump : null, 
             finalPrice: total, 
             botId,
-            userData: finalUserData // Envia o objeto limpo
+            userData: finalUserData
         }
     });
   };
@@ -207,11 +220,11 @@ export function MiniAppCheckout() {
             {/* ÁREA DE IDENTIFICAÇÃO (Auto ou Manual) */}
             <div style={{margin: '25px 0'}}>
                 <label style={{color: '#ccc', display: 'block', marginBottom: '8px', fontSize: '0.9rem'}}>
-                    Identificação para Entrega
+                    Identificação para Entrega <span style={{color:'red'}}>*</span>
                 </label>
 
                 {autoUser ? (
-                    // MODO AUTOMÁTICO (Se detectado pelo Telegram)
+                    // MODO AUTOMÁTICO
                     <div style={{
                         background: 'rgba(34, 197, 94, 0.1)', 
                         border: '1px solid #22c55e', 
@@ -232,11 +245,11 @@ export function MiniAppCheckout() {
                         </div>
                     </div>
                 ) : (
-                    // MODO MANUAL (Fallback)
+                    // MODO MANUAL (Para quem abre no navegador)
                     <div>
                         <input 
                             type="text" 
-                            placeholder="@seu_usuario ou Nome"
+                            placeholder="@seu_usuario (Ex: @joao123)"
                             value={manualUser}
                             onChange={(e) => setManualUser(e.target.value)}
                             style={{
@@ -244,8 +257,8 @@ export function MiniAppCheckout() {
                                 background: '#222', border: '1px solid #444', color: '#fff', fontSize: '1rem'
                             }}
                         />
-                        <p style={{fontSize: '0.75rem', color: '#777', marginTop: '5px'}}>
-                            *Como não detectamos seu Telegram, informe seu usuário para receber o acesso.
+                        <p style={{fontSize: '0.75rem', color: '#888', marginTop: '5px'}}>
+                            ⚠️ Digite seu <b>@usuario</b> do Telegram corretamente para receber o link.
                         </p>
                     </div>
                 )}
