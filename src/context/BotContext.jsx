@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { botService } from '../services/api';
+// 👇 1. Importamos o Auth para saber quando o usuário muda
+import { useAuth } from './AuthContext';
 
 const BotContext = createContext();
 
@@ -7,13 +9,15 @@ export function BotProvider({ children }) {
   const [bots, setBots] = useState([]);
   const [selectedBot, setSelectedBot] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // 👇 2. Pegamos o usuário atual do sistema
+  const { user } = useAuth();
 
-  // Carrega bots ao iniciar
+  // Carrega bots ao iniciar E SEMPRE que o usuário mudar
   useEffect(() => {
     loadBots();
-  }, []);
+  }, [user]); // 👈 O segredo está aqui: Mudou o user? Recarrega os bots!
 
-  // [NOVO] Função para carregar/recarregar bots COM FILTRAGEM
   async function loadBots() {
     try {
       setLoading(true);
@@ -21,34 +25,39 @@ export function BotProvider({ children }) {
       // 1. Busca TODOS os bots do banco (Raw Data)
       const allBots = await botService.listBots();
       
-      // 2. Identifica quem está logado
-      const loggedUser = JSON.parse(localStorage.getItem('zenyx_admin_user'));
+      // 2. Identifica quem está logado (Usa o user do Contexto ou do Storage por garantia)
+      const loggedUser = user || JSON.parse(localStorage.getItem('zenyx_admin_user'));
       
       let finalBots = allBots;
 
-      // 3. 🕵️‍♂️ APLICA O FILTRO DE VISÃO
-      // Se existe usuário E ele NÃO é Master, aplica o filtro
+      // 3. 🕵️‍♂️ APLICA O FILTRO DE VISÃO (Blindado)
       if (loggedUser && loggedUser.role !== 'master') {
           const allowed = loggedUser.allowed_bots || [];
           
-          // Mantém apenas os bots cujo ID esteja na lista de permitidos
-          finalBots = allBots.filter(bot => allowed.includes(bot.id));
+          // 🔥 FILTRO BLINDADO: Converte tudo para String para evitar erro (3 vs "3")
+          finalBots = allBots.filter(bot => 
+            allowed.map(String).includes(String(bot.id))
+          );
       }
 
       setBots(finalBots);
       
       // 4. Lógica de Seleção Automática
-      // Se houver bots visíveis e nenhum selecionado
-      if (finalBots.length > 0 && !selectedBot) {
-          const savedBotId = localStorage.getItem('zenyx_selected_bot');
-          // Tenta achar o bot salvo dentro da lista PERMITIDA
-          const found = finalBots.find(b => b.id.toString() === savedBotId);
-          setSelectedBot(found || finalBots[0]);
-      }
-      
-      // 5. Segurança: Se o bot selecionado sumiu (foi deletado ou perdeu permissão)
-      if (selectedBot && !finalBots.find(b => b.id === selectedBot.id)) {
-          setSelectedBot(finalBots.length > 0 ? finalBots[0] : null);
+      if (finalBots.length > 0) {
+          // Se o bot selecionado anteriormente não é permitido, muda para o primeiro da lista
+          if (selectedBot && !finalBots.find(b => b.id === selectedBot.id)) {
+             setSelectedBot(finalBots[0]);
+             localStorage.setItem('zenyx_selected_bot', finalBots[0].id);
+          } 
+          // Se não tem nada selecionado, pega o salvo ou o primeiro
+          else if (!selectedBot) {
+             const savedBotId = localStorage.getItem('zenyx_selected_bot');
+             const found = finalBots.find(b => String(b.id) === String(savedBotId));
+             setSelectedBot(found || finalBots[0]);
+          }
+      } else {
+          // Se não sobrou nenhum bot (lista vazia), limpa a seleção
+          setSelectedBot(null);
       }
 
     } catch (error) {
@@ -58,13 +67,11 @@ export function BotProvider({ children }) {
     }
   }
 
-  // Função para trocar de bot
   const changeBot = (bot) => {
     setSelectedBot(bot);
     localStorage.setItem('zenyx_selected_bot', bot.id);
   };
 
-  // Função para forçar atualização da lista (chama após criar/deletar bot)
   const refreshBots = async () => {
     await loadBots();
   };
@@ -82,7 +89,6 @@ export function BotProvider({ children }) {
   );
 }
 
-// Hook personalizado
 export function useBot() {
   return useContext(BotContext);
 }
