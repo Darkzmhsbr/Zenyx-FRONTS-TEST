@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 🔗 SEU DOMÍNIO DO RAILWAY
+// 🔗 SEU DOMÍNIO DO RAILWAY (Ajuste se necessário)
 const API_URL = 'https://zenyx-gbs-testes-production.up.railway.app';
 
 const api = axios.create({
@@ -56,42 +56,135 @@ export const orderBumpService = {
 };
 
 // ============================================================
-// 💳 SERVIÇO DE PAGAMENTOS (LÓGICA ADAPTADA DO PROJETO DE REFERÊNCIA)
+// 📢 SERVIÇO DE REMARKETING
 // ============================================================
-export const paymentService = {
-  // Gera o PIX lendo o ID do storage
-  createPix: async (data) => {
-    // 🔥 Recupera do storage (definido pelo App.jsx)
-    const storedId = localStorage.getItem('telegram_user_id');
-    const storedUser = localStorage.getItem('telegram_username');
-    const storedName = localStorage.getItem('telegram_user_first_name');
-    
-    // Monta o payload final
+export const remarketingService = {
+  send: async (botId, data, isTest = false, specificUserId = null) => {
     const payload = {
-        ...data,
-        telegram_id: String(data.telegram_id || storedId || "000000"), // Prioriza dado passado, depois storage
-        username: data.username || storedUser || "site_user",
-        first_name: data.first_name || storedName || "Visitante"
+      bot_id: botId,
+      target: data.target || 'todos',
+      mensagem: data.mensagem,
+      media_url: data.media_url,
+      incluir_oferta: data.incluir_oferta,
+      plano_oferta_id: data.plano_oferta_id,
+      price_mode: data.price_mode || 'original',
+      custom_price: data.custom_price ? parseFloat(data.custom_price) : 0.0,
+      expiration_mode: data.expiration_mode || 'none',
+      expiration_value: data.expiration_value ? parseInt(data.expiration_value) : 0,
+      is_test: isTest,
+      specific_user_id: specificUserId
     };
-    
-    console.log("📤 PIX Payload (Enviando):", payload);
-    const response = await api.post('/api/pagamento/pix', payload);
-    return response.data;
+    return (await api.post('/api/admin/remarketing/send', payload)).data;
   },
   
-  // Verifica status
-  checkStatus: async (txid) => {
-    const response = await api.get(`/api/pagamento/status/${txid}`);
-    return response.data;
+  getHistory: async (id, page = 1, perPage = 10) => {
+    try { 
+        return (await api.get(`/api/admin/remarketing/history/${id}?page=${page}&per_page=${perPage}`)).data; 
+    } catch { 
+        return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 }; 
+    }
+  },
+  
+  deleteHistory: async (historyId) => {
+    return (await api.delete(`/api/admin/remarketing/history/${historyId}`)).data;
+  },
+  
+  sendIndividual: async (botId, telegramId, historyId) => {
+    return (await api.post('/api/admin/remarketing/send-individual', {
+        bot_id: botId,
+        user_telegram_id: telegramId,
+        campaign_history_id: historyId
+    })).data;
   }
+};
+
+// ============================================================
+// 👥 CRM / CONTATOS
+// ============================================================
+export const crmService = {
+  getContacts: async (botId, filter = 'todos', page = 1, perPage = 50) => {
+    const params = new URLSearchParams({
+      status: filter,
+      page: page.toString(),
+      per_page: perPage.toString()
+    });
+    
+    if (botId) params.append('bot_id', botId);
+    
+    try {
+      const response = await api.get(`/api/admin/contacts?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 };
+    }
+  },
+  
+  getLeads: async (botId, page = 1, perPage = 50) => {
+    const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
+    if (botId) params.append('bot_id', botId);
+    
+    try {
+      return (await api.get(`/api/admin/leads?${params.toString()}`)).data;
+    } catch (error) {
+      return { data: [], total: 0, page: 1, per_page: perPage, total_pages: 0 };
+    }
+  },
+  
+  getFunnelStats: async (botId) => {
+    try {
+      const url = botId ? `/api/admin/contacts/funnel-stats?bot_id=${botId}` : '/api/admin/contacts/funnel-stats';
+      return (await api.get(url)).data;
+    } catch (error) {
+      return { topo: 0, meio: 0, fundo: 0, expirados: 0, total: 0 };
+    }
+  },
+  
+  updateUser: async (userId, data) => (await api.put(`/api/admin/users/${userId}`, data)).data,
+  resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
+};
+
+// Alias para compatibilidade
+export const admin = crmService;
+export const leadService = crmService;
+
+export const adminService = {
+    listAdmins: async (id) => { 
+      try { return (await api.get(`/api/admin/bots/${id}/admins`)).data } catch { return [] } 
+    },
+    addAdmin: async (id, d) => (await api.post(`/api/admin/bots/${id}/admins`, d)).data,
+    updateAdmin: async (botId, adminId, d) => (await api.put(`/api/admin/bots/${botId}/admins/${adminId}`, d)).data,
+    removeAdmin: async (id, tId) => (await api.delete(`/api/admin/bots/${id}/admins/${tId}`)).data
+};
+
+export const dashboardService = { 
+  getStats: async (id = null, startDate = null, endDate = null) => {
+    const params = new URLSearchParams();
+    if (id) params.append('bot_id', id);
+    if (startDate) params.append('start_date', startDate.toISOString());
+    if (endDate) params.append('end_date', endDate.toISOString());
+    return (await api.get(`/api/admin/dashboard/stats?${params.toString()}`)).data;
+  }
+};
+
+export const profileService = {
+  get: async () => (await api.get('/api/admin/profile')).data,
+  update: async (data) => (await api.post('/api/admin/profile', data)).data
 };
 
 // ============================================================
 // 🔗 SERVIÇO DE INTEGRAÇÕES E TRACKING
 // ============================================================
-export const integrationService = {
-  getPushinStatus: async (botId) => (await api.get(`/api/admin/integrations/pushinpay/${botId}`)).data,
-  savePushinToken: async (botId, token) => (await api.post(`/api/admin/integrations/pushinpay/${botId}`, { token })).data
+export const integrationService = { 
+    getConfig: async () => (await api.get('/api/admin/config')).data,
+    saveConfig: async (d) => (await api.post('/api/admin/config', d)).data,
+    
+    getPushinStatus: async (botId) => {
+        if (!botId) return { status: 'desconectado' };
+        try { return (await api.get(`/api/admin/integrations/pushinpay/${botId}`)).data; } 
+        catch { return { status: 'desconectado' }; }
+    },
+    
+    savePushinToken: async (botId, token) => (await api.post(`/api/admin/integrations/pushinpay/${botId}`, { token })).data
 };
 
 export const trackingService = {
@@ -104,15 +197,61 @@ export const trackingService = {
 };
 
 // ============================================================
+// 💳 SERVIÇO DE PAGAMENTOS (CRÍTICO: COM LÓGICA DE STORAGE)
+// ============================================================
+export const paymentService = {
+  // Gera o PIX lendo os dados diretamente do Storage (igual ao seu outro projeto)
+  createPix: async (data) => {
+    // Recupera o que o App.jsx salvou
+    const storedId = localStorage.getItem('telegram_user_id');
+    const storedUser = localStorage.getItem('telegram_username');
+    const storedName = localStorage.getItem('telegram_user_first_name');
+    
+    // Prioridade: ID numérico do Storage > ID passado > "000000"
+    let finalId = "000000";
+    if (storedId && /^\d+$/.test(storedId)) {
+        finalId = storedId;
+    } else if (data.telegram_id && /^\d+$/.test(data.telegram_id)) {
+        finalId = data.telegram_id;
+    }
+
+    // Payload final garantido
+    const payload = {
+        ...data,
+        telegram_id: String(finalId),
+        username: data.username || storedUser || "site_user",
+        first_name: data.first_name || storedName || "Visitante"
+    };
+    
+    console.log("📤 API Enviando PIX para:", payload.telegram_id);
+    
+    const response = await api.post('/api/pagamento/pix', payload);
+    return response.data;
+  },
+  
+  // Verifica status
+  checkStatus: async (txid) => {
+    const response = await api.get(`/api/pagamento/status/${txid}`);
+    return response.data;
+  }
+};
+
+// ============================================================
 // 📱 SERVIÇO DE MINI APP
 // ============================================================
 export const miniappService = {
   saveConfig: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/miniapp/config`, data)).data,
+  
   getConfig: async (botId) => (await api.get(`/api/miniapp/${botId}`)).data,
+  
   listCategories: async (botId) => (await api.get(`/api/admin/bots/${botId}/miniapp/categories`)).data,
   createCategory: async (data) => (await api.post(`/api/admin/miniapp/categories`, data)).data,
   deleteCategory: async (catId) => (await api.delete(`/api/admin/miniapp/categories/${catId}`)).data,
+  
+  // Troca de Modo (Tradicional vs Mini App)
   switchMode: async (botId, mode) => (await api.post(`/api/admin/bots/${botId}/mode`, { modo: mode })).data,
+  
+  // PÚBLICO (Usado pela loja final)
   getPublicData: async (botId) => (await api.get(`/api/miniapp/${botId}`)).data
 };
 

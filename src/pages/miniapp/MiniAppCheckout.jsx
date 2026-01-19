@@ -5,24 +5,11 @@ import Swal from 'sweetalert2';
 import '../../assets/styles/CheckoutPage.css';
 
 // --- ÍCONES ---
-const CheckIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const SecurityIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-);
-const ImmediateIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-);
-const DiscreteIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-);
-const MultiDeviceIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 18h.01" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-);
+const CheckIcon = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 6L9 17L4 12" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const SecurityIcon = () => (<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const ImmediateIcon = () => (<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const DiscreteIcon = () => (<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const MultiDeviceIcon = () => (<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 18h.01" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
 
 export function MiniAppCheckout() {
   const { botId } = useParams();
@@ -35,20 +22,24 @@ export function MiniAppCheckout() {
   const [bump, setBump] = useState(null);
   const [isBumpSelected, setIsBumpSelected] = useState(false);
 
-  // Apenas para exibição visual, não controla lógica
+  // Estados apenas para exibição visual
   const [userName, setUserName] = useState("Visitante");
   const [isIdentified, setIsIdentified] = useState(false);
 
   useEffect(() => {
     carregarDados();
     
-    // Verifica apenas uma vez se existe usuário no storage (definido pelo App.js)
-    const storedFirst = localStorage.getItem('telegram_user_first_name');
+    // Recupera dados do Storage (preenchidos pelo App.jsx)
+    // Não fazemos lógica complexa aqui, apenas lemos o que já existe.
     const storedId = localStorage.getItem('telegram_user_id');
+    const storedName = localStorage.getItem('telegram_user_first_name');
     
-    if (storedId) {
-        setUserName(storedFirst || "Cliente");
+    if (storedId && /^\d+$/.test(storedId)) {
         setIsIdentified(true);
+        setUserName(storedName || "Cliente");
+    } else {
+        setIsIdentified(false);
+        setUserName("Visitante");
     }
   }, [botId]);
 
@@ -74,9 +65,9 @@ export function MiniAppCheckout() {
     if (!selectedPlan) return;
     
     // Validação Simples: Se não tem ID no storage, avisa.
-    // O App.js é responsável por colocar lá.
     const storedId = localStorage.getItem('telegram_user_id');
-    if (!storedId) {
+    
+    if (!storedId || !/^\d+$/.test(storedId)) {
         return Swal.fire({
             title: 'Atenção',
             text: 'Abra este site através do nosso Bot no Telegram para que possamos identificar sua conta.',

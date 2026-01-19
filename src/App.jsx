@@ -41,27 +41,54 @@ const PlaceholderPage = ({ title }) => (
 );
 
 function App() {
-  // 🔥 LÓGICA DO OUTRO PROJETO: Captura Global no App.js
+  // 🔥 LÓGICA DE CAPTURA GLOBAL (IGUAL AO SEU OUTRO PROJETO)
+  // Isso roda uma vez quando o app abre e garante que o usuário seja identificado
   useEffect(() => {
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      try { tg.expand(); } catch (e) {}
-
-      const user = tg.initDataUnsafe?.user;
-      if (user) {
-        console.log("✅ Cliente Telegram Detectado:", user.first_name);
-        
-        // Salva os dados no navegador para serem usados no checkout/api
-        localStorage.setItem('telegram_user_id', user.id);
-        localStorage.setItem('telegram_user_first_name', user.first_name);
-        if (user.username) localStorage.setItem('telegram_username', user.username);
-        
-        // Aplica cores do tema (Opcional, mas estava no seu projeto de referência)
-        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
-        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
-      }
+    // Verifica se o script do Telegram já carregou ou injeta se necessário (fallback)
+    if (!window.Telegram) {
+        const script = document.createElement('script');
+        script.src = "https://telegram.org/js/telegram-web-app.js";
+        script.async = true;
+        document.body.appendChild(script);
     }
+
+    const checkTelegram = setInterval(() => {
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            
+            try { tg.expand(); } catch (e) {}
+
+            const user = tg.initDataUnsafe?.user;
+            
+            if (user) {
+                console.log("✅ [App.js] Cliente Telegram Detectado:", user.first_name);
+                
+                // 💾 SALVA NO LOCALSTORAGE (A Chave do Sucesso)
+                localStorage.setItem('telegram_user_id', user.id);
+                localStorage.setItem('telegram_user_first_name', user.first_name);
+                
+                if (user.username) {
+                    localStorage.setItem('telegram_username', user.username);
+                } else {
+                    localStorage.removeItem('telegram_username'); // Limpa se não tiver
+                }
+                
+                // Aplica cores do tema
+                try {
+                    document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
+                    document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
+                } catch (e) {}
+                
+                clearInterval(checkTelegram); // Para de verificar assim que achar
+            }
+        }
+    }, 200); // Verifica a cada 200ms
+
+    // Para de tentar depois de 5 segundos para não ficar rodando pra sempre
+    setTimeout(() => clearInterval(checkTelegram), 5000);
+
+    return () => clearInterval(checkTelegram);
   }, []);
 
   return (
