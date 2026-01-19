@@ -53,7 +53,7 @@ export const planService = {
 };
 
 // ============================================================
-// 📢 SERVIÇO DE REMARKETING (ATUALIZADO COM FUNIL)
+// 📢 SERVIÇO DE REMARKETING
 // ============================================================
 export const remarketingService = {
   send: async (botId, data, isTest = false, specificUserId = null) => {
@@ -74,7 +74,6 @@ export const remarketingService = {
     return (await api.post('/api/admin/remarketing/send', payload)).data;
   },
   
-  // [MODIFICADO] Adiciona paginação
   getHistory: async (id, page = 1, perPage = 10) => {
     try { 
         return (await api.get(`/api/admin/remarketing/history/${id}?page=${page}&per_page=${perPage}`)).data; 
@@ -83,7 +82,6 @@ export const remarketingService = {
     }
   },
   
-  // [NOVO] Função para deletar histórico
   deleteHistory: async (historyId) => {
     return (await api.delete(`/api/admin/remarketing/history/${historyId}`)).data;
   },
@@ -196,14 +194,20 @@ export const dashboardService = {
   }
 };
 
+// 🔥 [MODIFICADO] AGORA EXIGE O BOT ID
 export const integrationService = { 
     getConfig: async () => (await api.get('/api/admin/config')).data,
     saveConfig: async (d) => (await api.post('/api/admin/config', d)).data,
-    getPushinStatus: async () => {
-        try { return (await api.get('/api/admin/integrations/pushinpay')).data; } 
+    
+    // 👇 Mudou: Agora pede o ID
+    getPushinStatus: async (botId) => {
+        if (!botId) return { status: 'desconectado' };
+        try { return (await api.get(`/api/admin/integrations/pushinpay/${botId}`)).data; } 
         catch { return { status: 'desconectado' }; }
     },
-    savePushinToken: async (token) => (await api.post('/api/admin/integrations/pushinpay', { token })).data
+    
+    // 👇 Mudou: Agora envia o ID
+    savePushinToken: async (botId, token) => (await api.post(`/api/admin/integrations/pushinpay/${botId}`, { token })).data
 };
 
 export const orderBumpService = {
@@ -227,7 +231,7 @@ export const trackingService = {
   deleteLink: async (linkId) => (await api.delete(`/api/admin/tracking/links/${linkId}`)).data
 };
 
-// 🔥 [NOVO] SERVIÇO DE MINI APP (TEMPLATE PERSONALIZÁVEL)
+// 🔥 SERVIÇO DE MINI APP (TEMPLATE PERSONALIZÁVEL)
 export const miniappService = {
   // Configuração Global (Admin)
   saveConfig: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/miniapp/config`, data)).data,
