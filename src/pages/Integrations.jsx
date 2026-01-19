@@ -1,57 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Save, CheckCircle, XCircle, ShieldCheck } from 'lucide-react';
+import { CreditCard, Save, CheckCircle, XCircle, ShieldCheck, AlertCircle } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { integrationService } from '../services/api'; // Importa nosso serviço completo
+import { integrationService } from '../services/api';
+import { useBot } from '../context/BotContext'; // 🔥 IMPORTADO: Para pegar o ID do Bot
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import { Input } from '../components/Input';
 import './Integrations.css';
 
 export function Integrations() {
+  const { selectedBot } = useBot(); // 🔥 PEGA O BOT SELECIONADO
   const [pushinStatus, setPushinStatus] = useState('verificando');
   const [tokenMask, setTokenMask] = useState('');
   const [newToken, setNewToken] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Carrega status ao abrir a tela
+  // Carrega status ao abrir a tela ou quando mudar o bot
   useEffect(() => {
-    carregarStatus();
-  }, []);
+    if (selectedBot) {
+      carregarStatus();
+    }
+  }, [selectedBot]); // 🔥 RECARREGA SE MUDAR O BOT
 
   const carregarStatus = async () => {
+    if (!selectedBot) return;
+
     try {
-      // Tenta buscar do backend (se o endpoint existir)
-      // Se der erro 404/500 no início é normal até configurar o backend
-      const dados = await integrationService.getPushinStatus();
+      // 🔥 CORREÇÃO: Passa o ID do bot selecionado
+      const dados = await integrationService.getPushinStatus(selectedBot.id);
+      
       if(dados) {
         setPushinStatus(dados.status || 'desconectado');
         setTokenMask(dados.token_mask || '');
+        // Limpa o campo de input para não confundir
+        setNewToken('');
       }
     } catch (error) {
-      console.error("Erro ao carregar status (Backend pode estar offline ou endpoint inexistente)", error);
+      console.error("Erro ao carregar status:", error);
       setPushinStatus('desconectado');
     }
   };
 
   const handleSave = async () => {
+    // 🔥 PROTEÇÃO: Obriga a ter um bot selecionado
+    if (!selectedBot) {
+      return Swal.fire({
+        title: 'Atenção',
+        text: 'Selecione um bot no menu superior para configurar.',
+        icon: 'warning',
+        background: '#1b1730',
+        color: '#fff'
+      });
+    }
+
     if (!newToken) return Swal.fire('Erro', 'Cole o token primeiro!', 'warning');
     
     setLoading(true);
     try {
-      await integrationService.savePushinToken(newToken);
+      // 🔥 CORREÇÃO CRÍTICA: Envia (ID_DO_BOT, TOKEN)
+      await integrationService.savePushinToken(selectedBot.id, newToken);
+      
       Swal.fire({
         title: 'Conectado!',
-        text: 'Integração com PushinPay salva com sucesso.',
+        text: `Integração salva para o bot ${selectedBot.nome}.`,
         icon: 'success',
         background: '#1b1730',
         color: '#fff'
       });
+      
       setNewToken('');
-      carregarStatus();
+      carregarStatus(); // Recarrega para mostrar status conectado
     } catch (error) {
+      console.error(error);
       Swal.fire({
         title: 'Erro',
-        text: 'Falha ao salvar token. Verifique o console.',
+        text: 'Falha ao salvar token. Verifique se o token está correto.',
         icon: 'error',
         background: '#1b1730',
         color: '#fff'
@@ -61,11 +84,26 @@ export function Integrations() {
     }
   };
 
+  // Se não tiver bot selecionado, mostra aviso amigável
+  if (!selectedBot) {
+    return (
+      <div className="integrations-container">
+         <div style={{ textAlign: 'center', marginTop: '50px', color: '#ccc' }}>
+            <AlertCircle size={48} style={{ margin: '0 auto 20px', display: 'block', color: '#c333ff' }} />
+            <h2>Nenhum Bot Selecionado</h2>
+            <p>Selecione um bot no menu superior para configurar os pagamentos.</p>
+         </div>
+      </div>
+    );
+  }
+
   return (
     <div className="integrations-container">
       <div style={{ marginBottom: '40px' }}>
         <h1>Integrações de Pagamento</h1>
-        <p style={{ color: 'var(--muted-foreground)' }}>Conecte gateways para processar vendas automáticas no bot.</p>
+        <p style={{ color: 'var(--muted-foreground)' }}>
+          Configurando gateway para: <strong style={{color: '#c333ff'}}>{selectedBot.nome}</strong>
+        </p>
       </div>
 
       <div className="integrations-grid">
@@ -98,7 +136,7 @@ export function Integrations() {
             <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
               <Input 
                 label="Token da API (Bearer Token)" 
-                placeholder={tokenMask || "Cole seu token aqui..."}
+                placeholder={tokenMask ? "Token salvo (Oculto por segurança)" : "Cole seu token aqui..."}
                 value={newToken}
                 onChange={e => setNewToken(e.target.value)}
               />
