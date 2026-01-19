@@ -11,8 +11,8 @@ export function MiniAppPayment() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Dados vindos do Checkout
-  const { plan, bump, finalPrice } = location.state || {};
+  // Dados vindos do Checkout (agora com userData)
+  const { plan, bump, finalPrice, userData } = location.state || {};
   
   const [loading, setLoading] = useState(true);
   const [pixData, setPixData] = useState(null);
@@ -33,19 +33,26 @@ export function MiniAppPayment() {
         generatedRef.current = true;
 
         try {
+            // 🔥 [LÓGICA BLINDADA]
+            // Se veio pelo Telegram Automático, userData.id é um NÚMERO (Ex: 123456789)
+            // Se veio Manual, userData.id é uma STRING (Ex: "@usuario")
+            
             const payload = {
                 bot_id: parseInt(botId),
                 valor: parseFloat(finalPrice),
                 plano_id: plan.id,
                 plano_nome: plan.nome_exibicao,
-                telegram_id: "000000",
-                first_name: "Visitante",
-                username: "visitante",
+                
+                // Envia o ID real (se houver) ou o texto manual
+                telegram_id: String(userData?.id || "Visitante"), 
+                
+                first_name: userData?.name || "Visitante Site",
+                username: userData?.username || "site_user",
                 tem_order_bump: !!bump
             };
 
             const res = await axios.post(`${API_URL}/api/pagamento/pix`, payload);
-            console.log("PIX RESPONSE:", res.data); // Debug no console
+            console.log("PIX RESPONSE:", res.data);
             
             if (res.data) {
                 setPixData(res.data);
@@ -78,7 +85,7 @@ export function MiniAppPayment() {
     }
   }, [timeLeft, status]);
 
-  // Monitoramento (Só inicia se tiver txid)
+  // Monitoramento
   useEffect(() => {
       if (pixData?.txid && status === 'pending') {
           pollRef.current = setInterval(async () => {
@@ -96,9 +103,7 @@ export function MiniAppPayment() {
   }, [pixData, status]);
 
   const copyPix = () => {
-      // Tenta pegar o código com segurança
       const code = pixData?.copia_cola || pixData?.qr_code;
-      
       if (code && code !== "null") {
           navigator.clipboard.writeText(code);
           Swal.fire({toast:true, position:'top', icon:'success', title:'Copiado!', timer:1500, showConfirmButton:false, background:'#333', color:'#fff'});
@@ -122,7 +127,6 @@ export function MiniAppPayment() {
       </div>
   );
 
-  // Valor seguro para exibição
   const safeCode = pixData?.copia_cola || pixData?.qr_code || "";
   const displayCode = safeCode.length > 10 ? safeCode : "Erro ao carregar código Pix.";
 
@@ -167,11 +171,7 @@ export function MiniAppPayment() {
                 {/* CÓDIGO COPIA E COLA */}
                 <div className="copy-paste-section">
                     <label>Código Pix Copia e Cola:</label>
-                    
-                    <div className="pix-code-box">
-                        {displayCode}
-                    </div>
-
+                    <div className="pix-code-box">{displayCode}</div>
                     <button onClick={copyPix} className="btn-action-main" disabled={safeCode.length < 10}>
                         <Copy size={18} /> COPIAR CÓDIGO PIX
                     </button>

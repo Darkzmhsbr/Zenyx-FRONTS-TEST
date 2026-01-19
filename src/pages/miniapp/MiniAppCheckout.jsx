@@ -37,10 +37,39 @@ export function MiniAppCheckout() {
   const [bump, setBump] = useState(null);
   const [isBumpSelected, setIsBumpSelected] = useState(false);
 
+  // Estado para capturar o usuário (Manual ou Automático)
+  const [telegramUser, setTelegramUser] = useState('');
+  const [autoUser, setAutoUser] = useState(null); // 🔥 Dados automáticos do Telegram
+
   useEffect(() => {
     carregarDados();
+    verificarTelegram(); // 🕵️‍♂️ Roda a detecção automática
     window.scrollTo(0, 0);
   }, [botId]);
+
+  // 🔥 A CARTA NA MANGA: Detecta quem é o usuário automaticamente
+  const verificarTelegram = () => {
+    try {
+      if (window.Telegram && window.Telegram.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        
+        // Pega os dados do usuário se disponíveis
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+          const user = tg.initDataUnsafe.user;
+          setAutoUser({
+            id: user.id, // O ID REAL NUMÉRICO! 💎
+            username: user.username,
+            first_name: user.first_name
+          });
+          // Se identificou, já expande a tela do Telegram
+          tg.expand();
+        }
+      }
+    } catch (e) {
+      console.log("Acesso externo (fora do Telegram)", e);
+    }
+  };
 
   const carregarDados = async () => {
     try {
@@ -52,7 +81,6 @@ export function MiniAppCheckout() {
         setPlans(pData);
         if (bData && bData.ativo) setBump(bData);
         
-        // Seleciona o primeiro plano por padrão
         if (pData.length > 0) setSelectedPlan(pData[0]);
     } catch (e) {
         console.error(e);
@@ -66,20 +94,44 @@ export function MiniAppCheckout() {
     e.preventDefault();
     if (!selectedPlan) return;
     
+    // 🔥 Validação Inteligente
+    // Se NÃO tem usuário automático E o campo manual está vazio
+    if (!autoUser && (!telegramUser || telegramUser.trim().length < 2)) {
+        return Swal.fire({
+            title: 'Identificação Necessária',
+            text: 'Para receber o acesso, informe seu Usuário do Telegram.',
+            icon: 'warning',
+            confirmButtonColor: '#E10000',
+            background: '#222',
+            color: '#fff'
+        });
+    }
+
     let total = parseFloat(selectedPlan.preco_atual);
     if (isBumpSelected && bump) total += parseFloat(bump.preco);
+
+    // Prioriza o dado automático (ID Real) sobre o manual
+    const userDataFinal = autoUser ? {
+        id: autoUser.id,
+        username: autoUser.username || "SemUser",
+        name: autoUser.first_name
+    } : {
+        id: telegramUser, // Vai como string se for manual
+        username: telegramUser,
+        name: telegramUser
+    };
 
     navigate(`/loja/${botId}/pagamento`, {
         state: { 
             plan: selectedPlan, 
             bump: isBumpSelected ? bump : null, 
             finalPrice: total, 
-            botId 
+            botId,
+            userData: userDataFinal // 🔥 Envia o objeto completo
         }
     });
   };
 
-  // Helper para formatar preço (separar Inteiro de Centavos)
   const formatPriceParts = (val) => {
     const price = parseFloat(val || 0).toFixed(2);
     const [int, dec] = price.split('.');
@@ -96,17 +148,8 @@ export function MiniAppCheckout() {
 
   return (
     <div className="checkout-page-container">
-      {/* IMAGENS DE FUNDO (GRIDS) - Links Aplicados */}
-      <img 
-        src="https://f005.backblazeb2.com/file/Bot-TikTok/Cards/left-grid.png" 
-        alt="" 
-        className="bg-grid-left" 
-      />
-      <img 
-        src="https://f005.backblazeb2.com/file/Bot-TikTok/Cards/right-grid.png" 
-        alt="" 
-        className="bg-grid-right" 
-      />
+      <img src="https://f005.backblazeb2.com/file/Bot-TikTok/Cards/left-grid.png" alt="" className="bg-grid-left" />
+      <img src="https://f005.backblazeb2.com/file/Bot-TikTok/Cards/right-grid.png" alt="" className="bg-grid-right" />
 
       <header className="checkout-header">
         <h1>ASSINE JÁ!</h1>
@@ -114,8 +157,6 @@ export function MiniAppCheckout() {
       </header>
 
       <div className="checkout-content-wrapper">
-        
-        {/* COLUNA ESQUERDA: LISTA DE PLANOS */}
         <div className="plans-column">
           <h2>Selecione seu plano</h2>
           
@@ -130,16 +171,8 @@ export function MiniAppCheckout() {
                   className={`plan-card-label ${isSelected ? 'selected' : ''}`}
                   onClick={() => setSelectedPlan(plan)}
                 >
-                  <input 
-                    type="radio" 
-                    name="planId" 
-                    value={plan.id}
-                    checked={isSelected}
-                    onChange={() => setSelectedPlan(plan)}
-                    className="plan-radio-input"
-                  />
+                  <input type="radio" name="planId" value={plan.id} checked={isSelected} onChange={() => setSelectedPlan(plan)} className="plan-radio-input"/>
                   
-                  {/* Círculo/Check Esquerda */}
                   <div className="radio-custom">
                     {isSelected ? (
                        <div style={{background: 'var(--primary-red)', borderRadius: '50%', width: 24, height: 24, display:'flex', alignItems:'center', justifyContent:'center'}}>
@@ -150,15 +183,11 @@ export function MiniAppCheckout() {
                     )}
                   </div>
 
-                  {/* Detalhes do Plano */}
                   <div className="plan-info">
                     <div className="plan-name">{plan.nome_exibicao}</div>
-                    <div className="plan-desc">
-                       {plan.descricao || `${plan.dias_duracao} dias de acesso VIP`}
-                    </div>
+                    <div className="plan-desc">{plan.descricao || `${plan.dias_duracao} dias de acesso VIP`}</div>
                   </div>
 
-                  {/* Preço Colorido Direita */}
                   <div className="plan-price-box">
                     <div className="price-row">
                       <span className="currency-symbol">R$</span>
@@ -171,25 +200,63 @@ export function MiniAppCheckout() {
               );
             })}
 
-            {/* ORDER BUMP (Se existir) */}
             {bump && (
-              <div 
-                className={`order-bump-box ${isBumpSelected ? 'active' : ''}`}
-                onClick={() => setIsBumpSelected(!isBumpSelected)}
-              >
-                <div className="bump-checkbox">
-                   {isBumpSelected && <CheckIcon />}
-                </div>
+              <div className={`order-bump-box ${isBumpSelected ? 'active' : ''}`} onClick={() => setIsBumpSelected(!isBumpSelected)}>
+                <div className="bump-checkbox">{isBumpSelected && <CheckIcon />}</div>
                 <div className="bump-content">
                   <h4>OFERTA ÚNICA 🔥</h4>
-                  <p>
-                    Leve também <strong>{bump.nome_produto}</strong> por apenas <span style={{color: 'var(--text-yellow)', fontWeight: 'bold'}}>R$ {formatPriceParts(bump.preco).int},{formatPriceParts(bump.preco).dec}</span>
-                  </p>
+                  <p>Leve também <strong>{bump.nome_produto}</strong> por apenas <span style={{color: 'var(--text-yellow)', fontWeight: 'bold'}}>R$ {formatPriceParts(bump.preco).int},{formatPriceParts(bump.preco).dec}</span></p>
                 </div>
               </div>
             )}
 
-            {/* Botão de Pagar */}
+            {/* 🔥 IDENTIFICAÇÃO DO USUÁRIO (AUTO OU MANUAL) */}
+            <div style={{margin: '20px 0'}}>
+                <label style={{color: '#ccc', display: 'block', marginBottom: '8px', fontSize: '0.9rem'}}>
+                    Identificação para Acesso <span style={{color: 'red'}}>*</span>
+                </label>
+
+                {autoUser ? (
+                    // 🤖 MODO AUTOMÁTICO: Mostra o cartão do usuário detectado
+                    <div style={{
+                        background: 'rgba(16, 185, 129, 0.1)', 
+                        border: '1px solid #10b981', 
+                        padding: '12px', 
+                        borderRadius: '8px',
+                        display: 'flex', alignItems: 'center', gap: '10px'
+                    }}>
+                        <div style={{background: '#10b981', width: 32, height: 32, borderRadius: '50%', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                            <CheckIcon />
+                        </div>
+                        <div>
+                            <p style={{color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '0.9rem'}}>
+                                {autoUser.first_name} {autoUser.username ? `(@${autoUser.username})` : ''}
+                            </p>
+                            <p style={{color: '#10b981', fontSize: '0.75rem', margin: 0}}>
+                                ✅ Conta do Telegram identificada
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    // ✍️ MODO MANUAL: Fallback para quem acessa pelo navegador
+                    <>
+                        <input 
+                            type="text" 
+                            placeholder="Seu @usuario ou Número (Ex: (11) 99999-9999)"
+                            value={telegramUser}
+                            onChange={(e) => setTelegramUser(e.target.value)}
+                            style={{
+                                width: '100%', padding: '12px', borderRadius: '8px',
+                                background: '#222', border: '1px solid #444', color: '#fff', fontSize: '1rem'
+                            }}
+                        />
+                        <p style={{fontSize: '0.75rem', color: '#666', marginTop: '5px'}}>
+                            Informe seu contato do Telegram para receber o link.
+                        </p>
+                    </>
+                )}
+            </div>
+
             <div className="btn-pay-container">
               <button type="submit" className="btn-pay-now">
                 IR PARA O PAGAMENTO
@@ -206,35 +273,22 @@ export function MiniAppCheckout() {
           </form>
         </div>
 
-        {/* COLUNA DIREITA: BENEFÍCIOS */}
         <div className="benefits-column">
           <div className="benefit-item">
             <div className="benefit-icon"><MultiDeviceIcon /></div>
-            <div className="benefit-text">
-              <h4>Acesso Universal</h4>
-              <p>Computador, Notebook, Celular ou Tablet.</p>
-            </div>
+            <div className="benefit-text"><h4>Acesso Universal</h4><p>Computador, Notebook, Celular ou Tablet.</p></div>
           </div>
           <div className="benefit-item">
             <div className="benefit-icon"><DiscreteIcon /></div>
-            <div className="benefit-text">
-              <h4>Sigilo Absoluto</h4>
-              <p>Fatura discreta e 100% segura.</p>
-            </div>
+            <div className="benefit-text"><h4>Sigilo Absoluto</h4><p>Fatura discreta e 100% segura.</p></div>
           </div>
           <div className="benefit-item">
             <div className="benefit-icon"><ImmediateIcon /></div>
-            <div className="benefit-text">
-              <h4>Liberação Imediata</h4>
-              <p>Receba seu acesso assim que pagar.</p>
-            </div>
+            <div className="benefit-text"><h4>Liberação Imediata</h4><p>Receba seu acesso assim que pagar.</p></div>
           </div>
           <div className="benefit-item">
             <div className="benefit-icon"><SecurityIcon /></div>
-            <div className="benefit-text">
-              <h4>Site Blindado</h4>
-              <p>Seus dados protegidos por criptografia.</p>
-            </div>
+            <div className="benefit-text"><h4>Site Blindado</h4><p>Seus dados protegidos por criptografia.</p></div>
           </div>
         </div>
 
