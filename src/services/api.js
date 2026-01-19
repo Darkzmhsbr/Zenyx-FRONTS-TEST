@@ -194,19 +194,16 @@ export const dashboardService = {
   }
 };
 
-// 🔥 [MODIFICADO] AGORA EXIGE O BOT ID
 export const integrationService = { 
     getConfig: async () => (await api.get('/api/admin/config')).data,
     saveConfig: async (d) => (await api.post('/api/admin/config', d)).data,
     
-    // 👇 Mudou: Agora pede o ID
     getPushinStatus: async (botId) => {
         if (!botId) return { status: 'desconectado' };
         try { return (await api.get(`/api/admin/integrations/pushinpay/${botId}`)).data; } 
         catch { return { status: 'desconectado' }; }
     },
     
-    // 👇 Mudou: Agora envia o ID
     savePushinToken: async (botId, token) => (await api.post(`/api/admin/integrations/pushinpay/${botId}`, { token })).data
 };
 
@@ -229,6 +226,22 @@ export const trackingService = {
   listLinks: async (folderId) => (await api.get(`/api/admin/tracking/links/${folderId}`)).data,
   createLink: async (data) => (await api.post('/api/admin/tracking/links', data)).data,
   deleteLink: async (linkId) => (await api.delete(`/api/admin/tracking/links/${linkId}`)).data
+};
+
+// ============================================================
+// 💳 SERVIÇO DE PAGAMENTOS (ADICIONADO)
+// ============================================================
+export const paymentService = {
+  // Gera o PIX enviando os dados limpos
+  createPix: async (payload) => {
+    const response = await api.post('/api/pagamento/pix', payload);
+    return response.data;
+  },
+  // Verifica status
+  checkStatus: async (txid) => {
+    const response = await api.get(`/api/pagamento/status/${txid}`);
+    return response.data;
+  }
 };
 
 // 🔥 SERVIÇO DE MINI APP (TEMPLATE PERSONALIZÁVEL)

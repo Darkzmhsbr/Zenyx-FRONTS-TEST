@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import { paymentService } from '../../services/api'; // 🔥 USA O SERVICE IMPORTADO
 import { QRCodeSVG } from 'qrcode.react'; 
 import { Copy, Loader2, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -12,7 +12,7 @@ export function MiniAppPayment() {
   const navigate = useNavigate();
 
   // Recebe os dados do Checkout (userData tem o ID certo)
-  const { plan, bump, finalPrice, userData } = location.state || {};
+  const { plan, bump, finalPrice } = location.state || {};
   
   const [loading, setLoading] = useState(true);
   const [pixData, setPixData] = useState(null);
@@ -22,9 +22,6 @@ export function MiniAppPayment() {
   const generatedRef = useRef(false);
   const pollRef = useRef(null);
 
-  // SEU BACKEND
-  const API_URL = 'https://zenyx-gbs-testes-production.up.railway.app';
-
   useEffect(() => {
     if (!plan) { navigate(`/loja/${botId}`); return; }
     
@@ -33,32 +30,33 @@ export function MiniAppPayment() {
         generatedRef.current = true;
 
         try {
-            // Se veio do Telegram, userData.id é NÚMERO (Ex: 123456)
-            // Convertemos para String para o JSON, mas o conteúdo é numérico
-            const idFinal = userData?.id ? String(userData.id) : "000000";
-            
+            // 🔥 LEITURA SEGURA DO STORAGE (GARANTE QUE PEGA O ID CERTO)
+            const storedId = localStorage.getItem('telegram_user_id');
+            const storedName = localStorage.getItem('telegram_user_first_name');
+            const storedUsername = localStorage.getItem('telegram_username');
+
+            // Fallback se não tiver nada
+            const idEnvio = storedId || "000000";
+            const nomeEnvio = storedName || "Visitante";
+
             const payload = {
                 bot_id: parseInt(botId),
                 valor: parseFloat(finalPrice),
                 plano_id: plan.id,
                 plano_nome: plan.nome_exibicao,
                 
-                // 🔥 AQUI ESTÁ A CORREÇÃO:
-                telegram_id: idFinal, 
-                first_name: userData?.first_name || "Visitante",
-                username: userData?.username || "site_visit",
+                // Envia dados do Storage para o Backend
+                telegram_id: String(idEnvio), 
+                first_name: nomeEnvio,
+                username: storedUsername || "site_user",
                 
                 tem_order_bump: !!bump
             };
 
-            const res = await axios.post(`${API_URL}/api/pagamento/pix`, payload);
-            console.log("PIX GERADO:", res.data);
-            
-            if (res.data) {
-                setPixData(res.data);
-            } else {
-                throw new Error("Sem resposta do servidor");
-            }
+            // Usa o service centralizado
+            const data = await paymentService.createPix(payload);
+            console.log("PIX:", data);
+            setPixData(data);
 
         } catch (error) {
             console.error("Erro Pix:", error);
@@ -89,8 +87,8 @@ export function MiniAppPayment() {
       if (pixData?.txid && status === 'pending') {
           pollRef.current = setInterval(async () => {
               try {
-                  const res = await axios.get(`${API_URL}/api/pagamento/status/${pixData.txid}`);
-                  if (res.data.status === 'approved' || res.data.status === 'paid') {
+                  const res = await paymentService.checkStatus(pixData.txid);
+                  if (res.status === 'approved' || res.status === 'paid') {
                       setStatus('paid');
                       clearInterval(pollRef.current);
                       setTimeout(() => navigate(`/loja/${botId}/obrigado`), 1500);

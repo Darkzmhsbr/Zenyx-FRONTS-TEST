@@ -57,6 +57,18 @@ export function MiniAppCheckout() {
     carregarDados();
     // Tenta verificar também no mount, caso o script já esteja lá
     const timer = setTimeout(verificarTelegram, 500); 
+    
+    // 🔥 LÓGICA DO OUTRO PROJETO: Recupera do Storage
+    const storedId = localStorage.getItem('telegram_user_id');
+    const storedName = localStorage.getItem('telegram_user_first_name');
+    if (storedId) {
+        setAutoUser({
+            id: storedId,
+            first_name: storedName || "Usuário",
+            username: localStorage.getItem('telegram_username') || ""
+        });
+    }
+
     return () => clearTimeout(timer);
   }, [botId]);
 
@@ -71,6 +83,11 @@ export function MiniAppCheckout() {
           const u = tg.initDataUnsafe.user;
           console.log("Usuário detectado:", u);
           
+          // 🔥 SALVA NO STORAGE (PERSISTÊNCIA)
+          localStorage.setItem('telegram_user_id', u.id);
+          localStorage.setItem('telegram_user_first_name', u.first_name);
+          if(u.username) localStorage.setItem('telegram_username', u.username);
+
           setAutoUser({
             id: u.id, // ID Numérico (O que o bot precisa)
             first_name: u.first_name,
@@ -120,28 +137,22 @@ export function MiniAppCheckout() {
         });
     }
 
+    // Se for manual, salva no storage para usar na próxima página
+    if (!autoUser && manualUser) {
+        localStorage.setItem('telegram_user_id', manualUser);
+        localStorage.setItem('telegram_user_first_name', manualUser);
+        localStorage.setItem('telegram_username', manualUser);
+    }
+
     let total = parseFloat(selectedPlan.preco_atual);
     if (isBumpSelected && bump) total += parseFloat(bump.preco);
-
-    // Prioriza o usuário automático
-    const finalUserData = autoUser ? {
-        id: autoUser.id,
-        username: autoUser.username,
-        first_name: autoUser.first_name
-    } : {
-        // Se for manual, enviamos o texto digitado como ID temporário
-        id: manualUser, 
-        username: manualUser.replace('@', ''), // Limpa o @ para salvar limpo
-        first_name: manualUser
-    };
 
     navigate(`/loja/${botId}/pagamento`, {
         state: { 
             plan: selectedPlan, 
             bump: isBumpSelected ? bump : null, 
             finalPrice: total, 
-            botId,
-            userData: finalUserData
+            botId
         }
     });
   };
