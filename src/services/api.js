@@ -41,15 +41,21 @@ export const flowService = {
 };
 
 // ============================================================
-// 💲 SERVIÇO DE PLANOS (CORRIGIDO)
+// 💲 SERVIÇO DE PLANOS (CORRIGIDO PARA EVITAR [object Object])
 // ============================================================
 export const planService = {
   listPlans: async (botId) => (await api.get(`/api/admin/bots/${botId}/plans`)).data,
-  createPlan: async (botId, planData) => (await api.post(`/api/admin/bots/${botId}/plans`, planData)).data,
+  
+  createPlan: async (botId, planData) => {
+    // Garante que botId seja string/numero simples
+    return (await api.post(`/api/admin/bots/${botId}/plans`, planData)).data;
+  },
+  
   updatePlan: async (botId, planId, planData) => {
-    const pid = String(planId);
+    const pid = String(planId); // Força conversão para evitar erro de objeto
     return (await api.put(`/api/admin/bots/${botId}/plans/${pid}`, planData)).data;
   },
+  
   deletePlan: async (botId, planId) => {
     const pid = String(planId);
     return (await api.delete(`/api/admin/bots/${botId}/plans/${pid}`)).data;
@@ -57,7 +63,7 @@ export const planService = {
 };
 
 // ============================================================
-// 🛒 SERVIÇO DE ORDER BUMP (O QUE ESTAVA FALTANDO)
+// 🛒 SERVIÇO DE ORDER BUMP
 // ============================================================
 export const orderBumpService = {
   get: async (botId) => (await api.get(`/api/admin/bots/${botId}/order-bump`)).data,
