@@ -15,11 +15,9 @@ export function ChatFlow() {
   
   // Estado do Fluxo
   const [flow, setFlow] = useState({
-    // --- NOVOS CAMPOS: MODO DE INÍCIO ---
     start_mode: 'padrao', // 'padrao' ou 'miniapp'
     miniapp_url: '',
     miniapp_btn_text: 'ABRIR LOJA 🛍️',
-    // ------------------------------------
     msg_boas_vindas: '',
     media_url: '',
     btn_text_1: '',
@@ -35,7 +33,7 @@ export function ChatFlow() {
   
   // Estado do Modal
   const [showModal, setShowModal] = useState(false);
-  const [editingStep, setEditingStep] = useState(null); // null = criando novo, step = editando
+  const [editingStep, setEditingStep] = useState(null); 
   const [modalData, setModalData] = useState({
     msg_texto: '',
     msg_media: '',
@@ -60,7 +58,6 @@ export function ChatFlow() {
         if (flowData) {
             setFlow({
                 ...flowData,
-                // Garante valores padrão se vier null do banco
                 start_mode: flowData.start_mode || 'padrao',
                 miniapp_btn_text: flowData.miniapp_btn_text || 'ABRIR LOJA 🛍️',
                 msg_boas_vindas: flowData.msg_boas_vindas || '',
@@ -85,9 +82,8 @@ export function ChatFlow() {
     }
   };
 
-  // Salva apenas a parte fixa (Passo 1 e Final)
+  // Salva apenas a parte fixa
   const handleSaveFixed = async () => {
-    // Validação específica para o modo Mini App
     if (flow.start_mode === 'miniapp' && !flow.miniapp_url) {
         return Swal.fire('Atenção', 'Cole o link do seu Mini App para salvar.', 'warning');
     }
@@ -105,7 +101,7 @@ export function ChatFlow() {
     }
   };
 
-  // Abre modal para CRIAR novo passo
+  // Abre modal para CRIAR
   const handleOpenCreateModal = () => {
     setEditingStep(null);
     setModalData({
@@ -119,7 +115,7 @@ export function ChatFlow() {
     setShowModal(true);
   };
 
-  // Abre modal para EDITAR passo existente
+  // Abre modal para EDITAR
   const handleOpenEditModal = (step) => {
     setEditingStep(step);
     setModalData({
@@ -133,7 +129,7 @@ export function ChatFlow() {
     setShowModal(true);
   };
 
-  // Salva o passo (Criar OU Editar)
+  // Salva o passo
   const handleSaveStep = async () => {
     if (!modalData.msg_texto && !modalData.msg_media) {
       return Swal.fire('Atenção', 'O passo precisa ter texto ou mídia!', 'warning');
@@ -141,14 +137,12 @@ export function ChatFlow() {
     
     try {
         if (editingStep) {
-            // EDITANDO passo existente
             await flowService.updateStep(selectedBot.id, editingStep.id, modalData);
             Swal.fire({ 
                 icon: 'success', title: 'Passo Atualizado!', timer: 1500, showConfirmButton: false, 
                 background: '#151515', color: '#fff' 
             });
         } else {
-            // CRIANDO passo novo
             await flowService.addStep(selectedBot.id, {
                 ...modalData,
                 step_order: steps.length + 1
@@ -161,14 +155,14 @@ export function ChatFlow() {
         
         setShowModal(false);
         setEditingStep(null);
-        carregarTudo(); // Recarrega lista
+        carregarTudo(); 
         
     } catch (error) {
         Swal.fire('Erro', 'Falha ao salvar passo.', 'error');
     }
   };
 
-  // Exclui passo dinâmico
+  // Exclui passo
   const handleDeleteStep = async (stepId) => {
     const result = await Swal.fire({
         title: 'Excluir Passo?',
@@ -198,77 +192,71 @@ export function ChatFlow() {
     <div className="chatflow-container">
       
       <div className="page-header">
-        <div>
-          <h1>Editor de Fluxo de Conversa</h1>
-          <p style={{color: 'var(--muted-foreground)'}}>Configure a sequência de mensagens do seu bot.</p>
+        <div className="header-titles">
+          <h1>Editor de Fluxo</h1>
+          <p>Configure a sequência de mensagens do seu bot.</p>
         </div>
-        <Button onClick={handleSaveFixed} disabled={loading}>
-          <Save size={20} /> Salvar Alterações
-        </Button>
+        <div className="header-actions">
+          <Button onClick={handleSaveFixed} disabled={loading} className="btn-save-main">
+            <Save size={20} /> <span className="btn-text">Salvar Alterações</span>
+          </Button>
+        </div>
       </div>
 
       <div className="flow-steps">
         
         {/* ============================================================ */}
-        {/* 🚀 1. SELETOR DE MODO DE INÍCIO (A NOVA FUNCIONALIDADE) */}
+        {/* 1. SELETOR DE MODO DE INÍCIO */}
         {/* ============================================================ */}
-        <Card className="step-card start-mode-card" style={{borderColor: '#c333ff', marginBottom: '30px'}}>
+        <Card className="step-card start-mode-card">
             <CardContent>
-                <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom:'20px'}}>
+                <div className="card-header-row">
                     <Layout size={24} color="#c333ff" />
-                    <h3 style={{margin:0}}>Modo de Início do Bot (/start)</h3>
+                    <h3>Modo de Início do Bot (/start)</h3>
                 </div>
 
-                <div className="mode-selector" style={{display: 'flex', gap: '20px', marginBottom: '20px'}}>
+                <div className="mode-selector-grid">
                     {/* OPÇÃO 1: PADRÃO */}
                     <div 
-                        className={`mode-option ${flow.start_mode === 'padrao' ? 'selected' : ''}`}
+                        className={`mode-card ${flow.start_mode === 'padrao' ? 'selected-padrao' : ''}`}
                         onClick={() => setFlow({...flow, start_mode: 'padrao'})}
-                        style={{
-                            flex: 1, padding: '15px', borderRadius: '10px', border: '2px solid',
-                            borderColor: flow.start_mode === 'padrao' ? '#c333ff' : '#333',
-                            background: flow.start_mode === 'padrao' ? 'rgba(195, 51, 255, 0.1)' : '#1a1a1a',
-                            cursor: 'pointer'
-                        }}
                     >
-                        <MessageSquare size={24} style={{marginBottom: 10}} />
-                        <h4>Fluxo Padrão</h4>
-                        <p style={{fontSize: '0.8rem', color: '#888'}}>Mensagem + Botão que libera conteúdo dentro do Telegram.</p>
+                        <div className="mode-icon"><MessageSquare size={28} /></div>
+                        <div className="mode-info">
+                            <h4>Fluxo Padrão</h4>
+                            <p>Mensagem + Botão que libera conteúdo dentro do Telegram.</p>
+                        </div>
+                        {flow.start_mode === 'padrao' && <div className="check-badge">ATIVO</div>}
                     </div>
 
-                    {/* OPÇÃO 2: MINI APP (WEB APP) */}
+                    {/* OPÇÃO 2: MINI APP */}
                     <div 
-                        className={`mode-option ${flow.start_mode === 'miniapp' ? 'selected' : ''}`}
+                        className={`mode-card ${flow.start_mode === 'miniapp' ? 'selected-miniapp' : ''}`}
                         onClick={() => setFlow({...flow, start_mode: 'miniapp'})}
-                        style={{
-                            flex: 1, padding: '15px', borderRadius: '10px', border: '2px solid',
-                            borderColor: flow.start_mode === 'miniapp' ? '#00c853' : '#333',
-                            background: flow.start_mode === 'miniapp' ? 'rgba(0, 200, 83, 0.1)' : '#1a1a1a',
-                            cursor: 'pointer'
-                        }}
                     >
-                        <Smartphone size={24} style={{marginBottom: 10}} />
-                        <h4>Mini App / Loja (Automático)</h4>
-                        <p style={{fontSize: '0.8rem', color: '#888'}}>
-                            Botão Web App que abre a loja e <b>identifica o usuário automaticamente</b>.
-                        </p>
+                        <div className="mode-icon"><Smartphone size={28} /></div>
+                        <div className="mode-info">
+                            <h4>Mini App / Loja</h4>
+                            <p>Botão Web App que abre a loja e identifica o usuário automaticamente.</p>
+                        </div>
+                        {flow.start_mode === 'miniapp' && <div className="check-badge">ATIVO</div>}
                     </div>
                 </div>
 
                 {/* CONFIGURAÇÃO EXTRA DO MODO MINI APP */}
                 {flow.start_mode === 'miniapp' && (
-                    <div className="miniapp-config" style={{padding: '15px', background: '#111', borderRadius: '8px', border: '1px solid #333'}}>
-                        <h4 style={{color: '#00c853', marginBottom: '15px'}}>Configuração do Botão Web App</h4>
+                    <div className="miniapp-config-box">
+                        <h4 className="config-title">Configuração do Botão Web App</h4>
                         
-                        <div style={{marginBottom: '15px'}}>
+                        <div className="config-group">
                             <Input 
-                                label="Link da Loja / Mini App (HTTPS Obrigatório)"
+                                label="Link da Loja / Mini App (HTTPS)"
                                 placeholder={`https://${window.location.host}/loja/${selectedBot.id}`}
                                 value={flow.miniapp_url}
                                 onChange={e => setFlow({...flow, miniapp_url: e.target.value})}
                                 icon={<Globe size={16} />}
                             />
-                            <p style={{fontSize: '0.75rem', color: '#666', marginTop: '-8px'}}>
+                            <p className="hint-text">
                                 Dica: Copie o link da sua loja no menu "Extras" ou use o link do Vercel/Railway.
                             </p>
                         </div>
@@ -284,41 +272,38 @@ export function ChatFlow() {
             </CardContent>
         </Card>
 
-        {/* --- PASSO 1: BOAS VINDAS (SEMPRE VISÍVEL) --- */}
+        {/* --- PASSO 1: BOAS VINDAS --- */}
         <Card className="step-card">
           <div className="step-badge">Passo 1 (Início)</div>
           <CardContent>
             <div className="step-header">
-              <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+              <div className="step-title-row">
                   <MessageSquare size={20} color="#d65ad1"/>
                   <h3>Mensagem de Boas-Vindas</h3>
               </div>
             </div>
 
             <div className="form-grid">
-              {/* 🔥 CORREÇÃO: RichInput atualiza o estado corretamente */}
               <RichInput 
                 label="Texto da Mensagem" 
                 value={flow.msg_boas_vindas}
                 onChange={val => {
-                    // Garante que é uma string antes de setar
+                    // 🔥 CORREÇÃO MANTIDA: Garante string
                     const textValue = typeof val === 'object' ? val.target.value : val;
                     setFlow({...flow, msg_boas_vindas: textValue});
                 }}
               />
 
               <Input 
-                label="Link da Mídia (Foto ou Vídeo) - Opcional" 
+                label="Link da Mídia (Opcional)" 
                 placeholder="Ex: https://..." 
                 value={flow.media_url}
                 onChange={e => setFlow({...flow, media_url: e.target.value})}
                 icon={<ImageIcon size={16}/>}
               />
               
-              {/* --- LÓGICA CONDICIONAL: SÓ MOSTRA OPÇÕES DO BOTÃO "PADRÃO" SE O MODO FOR "PADRÃO" --- */}
               {flow.start_mode === 'padrao' && (
                   <div className="buttons-config">
-                      {/* OPÇÃO DE MOSTRAR PLANOS AQUI */}
                       <div className="toggle-wrapper full-width">
                         <label>Mostrar botões de Planos (Checkout) nesta mensagem?</label>
                         <div 
@@ -326,20 +311,19 @@ export function ChatFlow() {
                           onClick={() => setFlow({...flow, mostrar_planos_1: !flow.mostrar_planos_1})}
                         >
                           <div className="toggle-handle"></div>
-                          <span className="toggle-label">{flow.mostrar_planos_1 ? 'MOSTRAR PLANOS' : 'BOTÃO NORMAL'}</span>
+                          <span className="toggle-label">{flow.mostrar_planos_1 ? 'SIM' : 'NÃO'}</span>
                         </div>
                       </div>
 
-                      {/* CONFIG DO BOTÃO (SÓ SE NÃO MOSTRAR PLANOS) */}
                       {!flow.mostrar_planos_1 && (
-                          <div className="row-inputs" style={{marginTop: '15px'}}>
+                          <div className="row-inputs">
                               <Input 
                                   label="Texto do Botão de Ação" 
                                   value={flow.btn_text_1}
                                   onChange={e => setFlow({...flow, btn_text_1: e.target.value})}
                               />
                               <div className="toggle-wrapper">
-                                  <label>Auto-destruir após clicar?</label>
+                                  <label>Auto-destruir ao clicar?</label>
                                   <div 
                                       className={`custom-toggle ${flow.autodestruir_1 ? 'active' : ''}`}
                                       onClick={() => setFlow({...flow, autodestruir_1: !flow.autodestruir_1})}
@@ -356,27 +340,22 @@ export function ChatFlow() {
           </CardContent>
         </Card>
 
-        {/* ============================================================ */}
-        {/* SÓ MOSTRA O RESTO DO FLUXO SE O MODO FOR "PADRÃO" */}
-        {/* ============================================================ */}
         {flow.start_mode === 'padrao' && (
             <>
-                {/* --- LINHA CONECTORA --- */}
                 <div className="connector-line"></div>
-                <ArrowDown size={24} color="#444" style={{marginBottom:'5px'}} />
+                <div className="connector-arrow"><ArrowDown size={24} color="#444" /></div>
 
-                {/* --- PASSOS DINÂMICOS (LISTA) --- */}
                 {steps.map((step, index) => (
                   <React.Fragment key={step.id}>
                       <Card className="step-card step-card-dynamic">
                           <div className="step-badge dynamic-badge">Passo Extra {index + 1}</div>
                           <CardContent>
                               <div className="step-header">
-                                  <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                                  <div className="step-title-row">
                                       <Zap size={20} color="#fff"/>
                                       <h3>Mensagem Intermediária</h3>
                                   </div>
-                                  <div style={{display:'flex', gap:'10px'}}>
+                                  <div className="step-actions">
                                       <button className="icon-btn edit" onClick={() => handleOpenEditModal(step)} title="Editar">
                                           <Edit size={18} color="#3b82f6"/>
                                       </button>
@@ -386,22 +365,26 @@ export function ChatFlow() {
                                   </div>
                               </div>
                               
-                              <p className="preview-text" style={{background:'#111', padding:'10px', borderRadius:'6px'}}>
-                                  {step.msg_texto ? step.msg_texto.substring(0, 100) + (step.msg_texto.length > 100 ? '...' : '') : '(Apenas mídia)'}
-                              </p>
+                              <div className="preview-box">
+                                  <p>{step.msg_texto ? step.msg_texto.substring(0, 100) + (step.msg_texto.length > 100 ? '...' : '') : '(Apenas mídia)'}</p>
+                              </div>
                               
-                              <div style={{marginTop: '10px', display:'flex', gap:'10px'}}>
-                                  {step.mostrar_botao ? <span className="badge">🔘 Botão: {step.btn_texto}</span> : <span className="badge gray">🚫 Sem botão</span>}
-                                  {step.delay_seconds > 0 && <span className="badge blue"><Clock size={12} /> {step.delay_seconds}s</span>}
+                              <div className="step-tags">
+                                  {step.mostrar_botao ? 
+                                    <span className="tag-badge btn">🔘 Botão: {step.btn_texto}</span> : 
+                                    <span className="tag-badge gray">🚫 Sem botão</span>
+                                  }
+                                  {step.delay_seconds > 0 && 
+                                    <span className="tag-badge time"><Clock size={12} /> {step.delay_seconds}s</span>
+                                  }
                               </div>
                           </CardContent>
                       </Card>
                       <div className="connector-line"></div>
-                      <ArrowDown size={24} color="#444" style={{marginBottom:'5px'}} />
+                      <div className="connector-arrow"><ArrowDown size={24} color="#444" /></div>
                   </React.Fragment>
                 ))}
 
-                {/* --- BOTÃO ADICIONAR NOVO PASSO --- */}
                 <div className="add-step-wrapper">
                   <button className="btn-add-step" onClick={handleOpenCreateModal}>
                       <Plus size={20} /> Adicionar Nova Mensagem
@@ -409,21 +392,19 @@ export function ChatFlow() {
                 </div>
 
                 <div className="connector-line"></div>
-                <ArrowDown size={24} color="#444" style={{marginBottom:'5px'}} />
+                <div className="connector-arrow"><ArrowDown size={24} color="#444" /></div>
 
-                {/* --- PASSO FINAL: OFERTA (FIXO) --- */}
                 <Card className="step-card">
                   <div className="step-badge final">Passo Final (Oferta)</div>
                   <CardContent>
                     <div className="step-header">
-                      <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                      <div className="step-title-row">
                           <Zap size={20} color="#10b981"/>
                           <h3>Mensagem de Oferta & Checkout</h3>
                       </div>
                     </div>
 
                     <div className="form-grid">
-                      {/* 🔥 CORREÇÃO: RichInput da Oferta */}
                       <RichInput 
                         label="Texto da Oferta" 
                         value={flow.msg_2_texto}
@@ -448,7 +429,7 @@ export function ChatFlow() {
                           onClick={() => setFlow({...flow, mostrar_planos_2: !flow.mostrar_planos_2})}
                         >
                           <div className="toggle-handle"></div>
-                          <span className="toggle-label">{flow.mostrar_planos_2 ? 'MOSTRAR PLANOS' : 'OCULTAR'}</span>
+                          <span className="toggle-label">{flow.mostrar_planos_2 ? 'SIM' : 'OCULTAR'}</span>
                         </div>
                       </div>
                     </div>
@@ -459,16 +440,15 @@ export function ChatFlow() {
 
       </div>
 
-      {/* ============================================================ */}
-      {/* MODAL PARA CRIAR/EDITAR PASSO (APENAS FLUXO PADRÃO) */}
-      {/* ============================================================ */}
       {showModal && (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>{editingStep ? 'Editar Mensagem' : 'Nova Mensagem Intermediária'}</h2>
+                <div className="modal-header-row">
+                  <h2>{editingStep ? 'Editar Mensagem' : 'Nova Mensagem'}</h2>
+                  <button className="btn-close-modal" onClick={() => setShowModal(false)}>✕</button>
+                </div>
                 
                 <div className="modal-body">
-                    {/* 🔥 CORREÇÃO: RichInput do Modal */}
                     <RichInput 
                         label="Texto"
                         value={modalData.msg_texto}
@@ -478,13 +458,13 @@ export function ChatFlow() {
                         }}
                     />
                     <Input 
-                        label="Mídia URL"
+                        label="Mídia URL (Opcional)"
                         value={modalData.msg_media}
                         onChange={e => setModalData({...modalData, msg_media: e.target.value})}
                     />
                     
-                    <div style={{marginTop: 15, padding: 15, background: '#111', borderRadius: 8}}>
-                        <label style={{display:'flex', alignItems:'center', gap: 10, marginBottom: 10}}>
+                    <div className="modal-options-box">
+                        <label className="checkbox-label">
                             <input 
                                 type="checkbox" 
                                 checked={modalData.mostrar_botao}
@@ -512,15 +492,12 @@ export function ChatFlow() {
                                     })}
                                     icon={<Clock size={16}/>}
                                 />
-                                <p style={{fontSize: '0.8rem', color: '#888', marginTop: '-10px'}}>
-                                    ⏱️ (0 = vai direto pro checkout)
-                                </p>
+                                <p className="hint-text">⏱️ (0 = vai direto pro checkout)</p>
                             </div>
                         )}
                     </div>
 
-                    {/* Toggle: Auto-destruir */}
-                    <div className="toggle-wrapper" style={{marginTop: 15}}>
+                    <div className="toggle-wrapper modal-toggle">
                         <label>Auto-destruir após sair?</label>
                         <div 
                             className={`custom-toggle ${modalData.autodestruir ? 'active' : ''}`}
