@@ -4,40 +4,27 @@ import { planService, orderBumpService } from '../../services/api';
 import Swal from 'sweetalert2';
 import '../../assets/styles/CheckoutPage.css';
 
-// --- ÍCONES SVG ORIGINAIS DO PROJETO BASE ---
+// --- ÍCONES ---
 const CheckIcon = () => (
-  <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M1 5L4.5 8.5L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
+// Ícones de Benefícios (Estilo Outline Red)
 const SecurityIcon = () => (
-  <svg width="100%" height="100%" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 3.33334L6.66666 8.33334V18.3333C6.66666 26.55 12.3833 34.2 20 36.0667C27.6167 34.2 33.3333 26.55 33.3333 18.3333V8.33334L20 3.33334ZM20 23.3333H28.3333" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M15 18.3333L18.3333 21.6667L25 15" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+);
+const ImmediateIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+);
+const DiscreteIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+);
+const MultiDeviceIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 18h.01" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
 );
 
-const LightningIcon = () => (
-  <svg width="100%" height="100%" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.6667 3.33334L6.66666 21.6667H20L18.3333 36.6667L33.3333 18.3333H20L21.6667 3.33334Z" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const PrivateIcon = () => (
-  <svg width="100%" height="100%" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 3.33334C15.4 3.33334 11.6667 7.06667 11.6667 11.6667V16.6667H10C8.16666 16.6667 6.66666 18.1667 6.66666 20V33.3333C6.66666 35.1667 8.16666 36.6667 10 36.6667H30C31.8333 36.6667 33.3333 35.1667 33.3333 33.3333V20C33.3333 18.1667 31.8333 16.6667 30 16.6667H28.3333V11.6667C28.3333 7.06667 24.6 3.33334 20 3.33334ZM20 28.3333C19.0833 28.3333 18.3333 27.5833 18.3333 26.6667C18.3333 25.75 19.0833 25 20 25C20.9167 25 21.6667 25.75 21.6667 26.6667C21.6667 27.5833 20.9167 28.3333 20 28.3333ZM25 16.6667H15V11.6667C15 8.9 17.2333 6.66667 20 6.66667C22.7667 6.66667 25 8.9 25 11.6667V16.6667Z" fill="#555"/>
-  </svg>
-);
-
-const DeviceIcon = () => (
-  <svg width="100%" height="100%" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="8.33334" y="3.33334" width="23.3333" height="33.3333" rx="3" stroke="#aaa" strokeWidth="2"/>
-    <path d="M20 30H20.0167" stroke="#aaa" strokeWidth="3" strokeLinecap="round"/>
-  </svg>
-);
-
-// --- COMPONENTE PRINCIPAL ---
 export function MiniAppCheckout() {
   const { botId } = useParams();
   const navigate = useNavigate();
@@ -52,6 +39,8 @@ export function MiniAppCheckout() {
 
   useEffect(() => {
     carregarDados();
+    // Scroll para o topo ao carregar
+    window.scrollTo(0, 0);
   }, [botId]);
 
   const carregarDados = async () => {
@@ -74,7 +63,8 @@ export function MiniAppCheckout() {
     }
   };
 
-  const handlePayment = () => {
+  const handlePayment = (e) => {
+    e.preventDefault();
     if (!selectedPlan) return;
     
     let total = parseFloat(selectedPlan.preco_atual);
@@ -90,100 +80,155 @@ export function MiniAppCheckout() {
     });
   };
 
-  if (loading) return <div className="checkout-page-container"></div>;
+  // Helper para formatar preço (separar Inteiro de Centavos)
+  const formatPriceParts = (val) => {
+    const price = parseFloat(val || 0).toFixed(2);
+    const [int, dec] = price.split('.');
+    return { int, dec };
+  };
+
+  if (loading) {
+    return (
+      <div className="checkout-page-container" style={{display:'flex', justifyContent:'center', alignItems:'center'}}>
+        <p style={{color:'#fff'}}>Carregando ofertas...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="checkout-page-container">
-      {/* Elementos de Grade do Fundo (Decorativos do seu CSS) */}
-      <div className="bg-grid-left"></div>
-      <div className="bg-grid-right"></div>
+      {/* Imagens de fundo (grids) - Certifique-se de ter essas imagens na pasta public/images ou remova se preferir apenas CSS */}
+      <img src="/images/left-grid.png" alt="" className="bg-grid-left" onError={(e) => e.target.style.display='none'} />
+      <img src="/images/right-grid.png" alt="" className="bg-grid-right" onError={(e) => e.target.style.display='none'} />
 
-      <div className="checkout-content">
-        <div className="checkout-header">
-          <h2>Finalizar Assinatura</h2>
-          <p>Escolha o melhor plano para você</p>
+      <header className="checkout-header">
+        <h1>ASSINE JÁ!</h1>
+        <p>LIBERAÇÃO IMEDIATA DE ACESSO!</p>
+      </header>
+
+      <div className="checkout-content-wrapper">
+        
+        {/* COLUNA ESQUERDA: LISTA DE PLANOS */}
+        <div className="plans-column">
+          <h2>Selecione seu plano</h2>
+          
+          <form onSubmit={handlePayment}>
+            {plans.map((plan) => {
+              const isSelected = selectedPlan?.id === plan.id;
+              const { int, dec } = formatPriceParts(plan.preco_atual);
+
+              return (
+                <label 
+                  key={plan.id} 
+                  className={`plan-card-label ${isSelected ? 'selected' : ''}`}
+                  onClick={() => setSelectedPlan(plan)}
+                >
+                  <input 
+                    type="radio" 
+                    name="planId" 
+                    value={plan.id}
+                    checked={isSelected}
+                    onChange={() => setSelectedPlan(plan)}
+                    className="plan-radio-input"
+                  />
+                  
+                  {/* Círculo/Check Esquerda */}
+                  <div className="radio-custom">
+                    {isSelected ? (
+                       <div style={{background: 'var(--primary-red)', borderRadius: '50%', width: 24, height: 24, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                         <CheckIcon />
+                       </div>
+                    ) : (
+                       <div style={{border: '2px solid #ccc', borderRadius: '50%', width: 20, height: 20}}></div>
+                    )}
+                  </div>
+
+                  {/* Detalhes do Plano */}
+                  <div className="plan-info">
+                    <div className="plan-name">{plan.nome_exibicao}</div>
+                    <div className="plan-desc">
+                       {plan.descricao || `${plan.dias_duracao} dias de acesso VIP`}
+                    </div>
+                  </div>
+
+                  {/* Preço Colorido Direita */}
+                  <div className="plan-price-box">
+                    <div className="price-row">
+                      <span className="currency-symbol">R$</span>
+                      <span className="price-int">{int},</span>
+                      <span className="price-dec">{dec}</span>
+                    </div>
+                    <span className="pix-text">via PIX</span>
+                  </div>
+                </label>
+              );
+            })}
+
+            {/* ORDER BUMP (Se existir) */}
+            {bump && (
+              <div 
+                className={`order-bump-box ${isBumpSelected ? 'active' : ''}`}
+                onClick={() => setIsBumpSelected(!isBumpSelected)}
+              >
+                <div className="bump-checkbox">
+                   {isBumpSelected && <CheckIcon />}
+                </div>
+                <div className="bump-content">
+                  <h4>OFERTA ÚNICA 🔥</h4>
+                  <p>
+                    Leve também <strong>{bump.nome_produto}</strong> por apenas <span style={{color: 'var(--text-yellow)', fontWeight: 'bold'}}>R$ {formatPriceParts(bump.preco).int},{formatPriceParts(bump.preco).dec}</span>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Botão de Pagar */}
+            <div className="btn-pay-container">
+              <button type="submit" className="btn-pay-now">
+                IR PARA O PAGAMENTO
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="secure-info">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              Pagamento processado com segurança bancária
+            </div>
+          </form>
         </div>
 
-        {/* LISTA DE PLANOS */}
-        <div className="plans-list">
-          {plans.map((plan) => (
-            <div 
-              key={plan.id}
-              className={`plan-selection-card ${selectedPlan?.id === plan.id ? 'active' : ''}`}
-              onClick={() => setSelectedPlan(plan)}
-            >
-              <div className="plan-left">
-                <div className="custom-checkbox">
-                  {selectedPlan?.id === plan.id && <CheckIcon />}
-                </div>
-                <div className="plan-info">
-                  <span className="plan-name">{plan.nome_exibicao}</span>
-                  <span className="plan-desc">{plan.descricao || `${plan.dias_duracao} dias de acesso ilimitado`}</span>
-                </div>
-              </div>
-              
-              <div className="plan-price-box">
-                <span className="plan-price">R$ {parseFloat(plan.preco_atual).toFixed(2).replace('.', ',')}</span>
-              </div>
+        {/* COLUNA DIREITA: BENEFÍCIOS */}
+        <div className="benefits-column">
+          <div className="benefit-item">
+            <div className="benefit-icon"><MultiDeviceIcon /></div>
+            <div className="benefit-text">
+              <h4>Acesso Universal</h4>
+              <p>Computador, Notebook, Celular ou Tablet.</p>
             </div>
-          ))}
-        </div>
-
-        {/* ORDER BUMP (SE TIVER) */}
-        {bump && (
-          <div 
-            className="order-bump-container"
-            onClick={() => setIsBumpSelected(!isBumpSelected)}
-          >
-            <div className="bump-header">
-              <div className="custom-checkbox" style={{borderColor: isBumpSelected ? '#E10000' : '#555', background: isBumpSelected ? '#E10000' : 'transparent'}}>
-                 {isBumpSelected && <CheckIcon />}
-              </div>
-              <span className="bump-tag">OFERTA ÚNICA 🔥</span>
-            </div>
-            <p className="bump-desc">
-                Adicione <strong>{bump.nome_produto}</strong> ao seu pedido por apenas <span style={{color:'#fbbf24'}}>R$ {parseFloat(bump.preco).toFixed(2).replace('.', ',')}</span>.
-            </p>
           </div>
-        )}
-
-        {/* BOTÃO DE AÇÃO */}
-        <div className="btn-pay-container">
-          <button className="btn-pay-now" onClick={handlePayment}>
-            PAGAR COM PIX
-          </button>
-        </div>
-
-        {/* BENEFÍCIOS (BASEADO NOS ÍCONES DO SEU PROJETO) */}
-        <div className="benefits-section">
-            <div className="benefit-item">
-                <div className="benefit-icon"><SecurityIcon /></div>
-                <div className="benefit-text">
-                    <h4>Compra Segura</h4>
-                    <p>Seus dados estão protegidos.</p>
-                </div>
+          <div className="benefit-item">
+            <div className="benefit-icon"><DiscreteIcon /></div>
+            <div className="benefit-text">
+              <h4>Sigilo Absoluto</h4>
+              <p>Fatura discreta e 100% segura.</p>
             </div>
-            <div className="benefit-item">
-                <div className="benefit-icon"><LightningIcon /></div>
-                <div className="benefit-text">
-                    <h4>Acesso Imediato</h4>
-                    <p>Receba acesso na hora.</p>
-                </div>
+          </div>
+          <div className="benefit-item">
+            <div className="benefit-icon"><ImmediateIcon /></div>
+            <div className="benefit-text">
+              <h4>Liberação Imediata</h4>
+              <p>Receba seu acesso assim que pagar.</p>
             </div>
-            <div className="benefit-item">
-                <div className="benefit-icon"><PrivateIcon /></div>
-                <div className="benefit-text">
-                    <h4>Sigilo Total</h4>
-                    <p>Fatura discreta no cartão.</p>
-                </div>
+          </div>
+          <div className="benefit-item">
+            <div className="benefit-icon"><SecurityIcon /></div>
+            <div className="benefit-text">
+              <h4>Site Blindado</h4>
+              <p>Seus dados protegidos por criptografia.</p>
             </div>
-            <div className="benefit-item">
-                <div className="benefit-icon"><DeviceIcon /></div>
-                <div className="benefit-text">
-                    <h4>Multi-Telas</h4>
-                    <p>Acesse pelo celular ou PC.</p>
-                </div>
-            </div>
+          </div>
         </div>
 
       </div>

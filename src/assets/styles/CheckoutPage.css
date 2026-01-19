@@ -1,4 +1,4 @@
-/* CheckoutPage.css - BASE ORIGINAL */
+/* CheckoutPage-v1.css - REVAMPED STYLE */
 
 :root {
   --primary-red: #E10000;
@@ -10,6 +10,7 @@
   --text-yellow: #fbbf24;
 }
 
+/* CONTAINER PRINCIPAL */
 .checkout-page-container {
   min-height: 100vh;
   width: 100%;
@@ -21,7 +22,7 @@
   padding-bottom: 50px;
 }
 
-/* BACKGROUND GRIDS */
+/* BACKGROUND GRIDS (Efeito de fundo) */
 .bg-grid-left, .bg-grid-right {
   position: absolute;
   opacity: 0.15;
@@ -32,190 +33,227 @@
 .bg-grid-left { top: 0; left: 0; }
 .bg-grid-right { bottom: 0; right: 0; }
 
-.checkout-content {
-  position: relative;
-  z-index: 1;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
 /* HEADER */
 .checkout-header {
   text-align: center;
-  margin-bottom: 30px;
-}
-.checkout-header h2 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  margin-bottom: 5px;
-  letter-spacing: -0.5px;
-}
-.checkout-header p {
-  color: var(--text-gray);
-  font-size: 0.9rem;
+  padding: 30px 20px;
+  position: relative;
+  z-index: 2;
 }
 
-/* CARD DE PLANO */
-.plan-selection-card {
-  background: var(--card-bg);
-  border: 1px solid #333;
+.checkout-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.checkout-header p {
+  color: var(--text-yellow);
+  font-weight: bold;
+  font-size: 1rem;
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@media (min-width: 768px) {
+  .checkout-header h1 { font-size: 3rem; }
+  .checkout-header p { font-size: 1.2rem; }
+}
+
+/* LAYOUT FLEX (Colunas) */
+.checkout-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 1100px;
+  margin: 0 auto;
+  gap: 30px;
+  padding: 0 15px;
+  position: relative;
+  z-index: 2;
+}
+
+@media (min-width: 1024px) {
+  .checkout-content-wrapper {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+  }
+}
+
+/* --- COLUNA ESQUERDA: PLANOS --- */
+.plans-column {
+  width: 100%;
+  background: var(--glass-bg);
+  border: 1px solid rgba(225, 0, 0, 0.3);
   border-radius: 12px;
-  margin-bottom: 12px;
-  padding: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.plans-column h2 {
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  font-weight: 700;
+  color: #fff;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+}
+
+/* CARD DO PLANO (Estilo Novo) */
+.plan-card-label {
+  display: flex;
+  align-items: stretch;
+  background: #fff; /* Fundo branco para contraste */
+  color: #333;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  min-height: 80px;
+  border: 2px solid transparent;
+}
+
+.plan-card-label:hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.plan-card-label.selected {
+  border-color: var(--primary-red);
+}
+
+/* Input Radio escondido */
+.plan-radio-input { display: none; }
+
+/* Ícone/Checkbox Esquerda */
+.radio-custom {
+  width: 50px;
+  background: #F3F3F3;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  border-right: 1px solid #e5e5e5;
+  flex-shrink: 0;
+}
+
+/* Informações do Plano (Centro) */
+.plan-info {
+  flex-grow: 1;
+  padding: 12px 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.plan-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #000;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.plan-desc {
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Caixa de Preço (Direita) */
+.plan-price-box {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  color: #fff;
+  min-width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  text-align: center;
+}
+
+/* Quando selecionado, fica VERMELHO */
+.plan-card-label.selected .plan-price-box {
+  background: linear-gradient(135deg, var(--primary-red) 0%, var(--dark-red) 100%);
+}
+
+.price-row {
+  display: flex;
+  align-items: flex-start;
+  line-height: 1;
+}
+
+.currency-symbol { font-size: 0.8rem; margin-top: 4px; margin-right: 2px; }
+.price-int { font-size: 2rem; font-weight: 800; }
+.price-dec { font-size: 1rem; margin-top: 4px; font-weight: 700;}
+
+.pix-text {
+  font-size: 0.65rem;
+  margin-top: 4px;
+  opacity: 0.9;
+  text-transform: uppercase;
+}
+
+/* ORDER BUMP (Oferta Extra) */
+.order-bump-box {
+  margin-top: 25px;
+  background: rgba(251, 191, 36, 0.1); /* Fundo amarelado sutil */
+  border: 1px dashed var(--text-yellow);
+  padding: 15px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.plan-selection-card:hover {
-  border-color: #444;
-}
-
-.plan-selection-card.active {
-  background: linear-gradient(to right, rgba(225, 0, 0, 0.08), transparent);
-  border-color: var(--primary-red);
-  box-shadow: 0 0 20px rgba(225, 0, 0, 0.15);
-}
-
-.plan-left {
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 15px;
 }
 
-/* CHECKBOX CUSTOMIZADA */
-.custom-checkbox {
+.order-bump-box:hover {
+  background: rgba(251, 191, 36, 0.15);
+}
+
+.bump-checkbox {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
-  border: 2px solid #444;
+  border: 2px solid var(--text-gray);
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  flex-shrink: 0;
+  transition: 0.2s;
 }
 
-.plan-selection-card.active .custom-checkbox {
+.order-bump-box.active .bump-checkbox {
   background: var(--primary-red);
   border-color: var(--primary-red);
 }
 
-.plan-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.plan-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.2;
-}
-
-.plan-desc {
-  font-size: 0.8rem;
-  color: var(--text-gray);
-  margin-top: 2px;
-}
-
-.plan-price-box {
-  text-align: right;
-}
-
-.plan-price {
-  font-size: 1.2rem;
-  font-weight: 800;
+.bump-content h4 {
+  margin: 0;
   color: var(--text-yellow);
-}
-
-.plan-period {
-  font-size: 0.7rem;
-  color: #666;
-  display: block;
-}
-
-/* ORDER BUMP */
-.order-bump-container {
-  margin-top: 25px;
-  background: rgba(251, 191, 36, 0.05);
-  border: 1px dashed var(--text-yellow);
-  padding: 15px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.order-bump-container:hover {
-  background: rgba(251, 191, 36, 0.08);
-}
-
-.bump-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 5px;
-}
-
-.bump-tag {
-  color: var(--primary-red);
-  font-weight: 800;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
+  font-weight: 800;
   animation: blink 1.5s infinite;
 }
 
-.bump-desc {
-  font-size: 0.9rem;
+.bump-content p {
+  margin: 4px 0 0 0;
+  font-size: 0.85rem;
   color: #ddd;
-  line-height: 1.4;
-  margin: 0;
-  padding-left: 34px; /* Alinha com o texto acima (24px checkbox + 10px gap) */
-}
-
-/* BENEFÍCIOS GRID */
-.benefits-section {
-  margin-top: 35px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.benefit-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.benefit-icon {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-}
-
-.benefit-text h4 {
-  margin: 0 0 2px 0;
-  font-size: 0.9rem;
-  color: #fff;
-  font-weight: 700;
-}
-
-.benefit-text p {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--text-gray);
   line-height: 1.3;
 }
 
 /* BOTÃO DE PAGAMENTO */
-.btn-pay-container {
-  margin-top: 30px;
-}
+.btn-pay-container { margin-top: 25px; }
 
 .btn-pay-now {
   width: 100%;
@@ -223,25 +261,86 @@
   color: white;
   border: none;
   padding: 18px;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 800;
   border-radius: 8px;
   cursor: pointer;
   text-transform: uppercase;
-  box-shadow: 0 4px 20px rgba(225, 0, 0, 0.4);
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(225, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.btn-pay-now:active {
-  transform: scale(0.98);
+.btn-pay-now:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(225, 0, 0, 0.6);
+}
+
+/* --- COLUNA DIREITA: BENEFÍCIOS --- */
+.benefits-column {
+  width: 100%;
+  background: var(--glass-bg);
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (min-width: 1024px) {
+  .benefits-column { max-width: 380px; }
+}
+
+.benefit-item {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  align-items: flex-start;
+}
+.benefit-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.benefit-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+/* Força cor vermelha nos SVGs */
+.benefit-icon svg path, .benefit-icon svg rect {
+  stroke: var(--primary-red);
+  /* Se alguns ícones usam fill, descomente abaixo ou ajuste caso a caso */
+  /* fill: var(--primary-red); */ 
+}
+
+.benefit-text h4 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  color: #fff;
+  font-weight: 700;
+}
+.benefit-text p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-gray);
+  line-height: 1.4;
+}
+
+/* Footer info */
+.secure-info {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 0.75rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 @keyframes blink {
   0% { opacity: 1; }
-  50% { opacity: 0.6; }
+  50% { opacity: 0.7; }
   100% { opacity: 1; }
 }
