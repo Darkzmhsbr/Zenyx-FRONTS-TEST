@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useBot } from '../../context/BotContext';
-import { remarketingService, planService } from '../../services/api';
+// CORREÇÃO DOS CAMINHOS (DE ../../ PARA ../)
+import { useBot } from '../context/BotContext';
+import { remarketingService, planService } from '../services/api';
 import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, RotateCcw, Edit, Play, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { Button } from '../../components/Button';
-import { RichInput } from '../../components/RichInput';
+import { Button } from '../components/Button';
+import { Card, CardContent } from '../components/Card';
+import { RichInput } from '../components/RichInput';
 import Swal from 'sweetalert2';
+// O CSS geralmente fica na mesma pasta, então ./ funciona
 import './Remarketing.css';
 
 export function Remarketing() {
@@ -17,6 +20,7 @@ export function Remarketing() {
   // Paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [perPage] = useState(10);
   
   // Formulário
@@ -31,6 +35,7 @@ export function Remarketing() {
     expiration_mode: 'none',
     expiration_value: '',
     agendar: false,
+    data_agendamento: '',
     tipo_envio: 'massivo'
   });
 
@@ -60,17 +65,19 @@ export function Remarketing() {
       try {
           const data = await remarketingService.getHistory(selectedBot.id, currentPage, perPage);
           setHistory(data.data || []);
+          setTotalCount(data.total || 0);
           setTotalPages(data.total_pages || 1);
       } catch (e) { console.error(e); setHistory([]); }
   };
 
   const handleDeleteHistory = async (id) => {
       const result = await Swal.fire({
-          title: 'Excluir?',
-          text: "Remove apenas do histórico visual.",
+          title: 'Excluir registro?',
+          text: "Isso removerá apenas do histórico.",
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#d33',
+          confirmButtonText: 'Sim, excluir',
           background: '#151515', color: '#fff'
       });
 
@@ -83,7 +90,7 @@ export function Remarketing() {
       }
   };
 
-  // 🔥 [CORREÇÃO] REUTILIZAR DADOS
+  // REUTILIZAR DADOS
   const handleReusar = (item) => {
     try {
       // 1. Parse Seguro do Config
@@ -94,8 +101,7 @@ export function Remarketing() {
           config = item.config || {};
       }
       
-      // 2. Mapeamento de Chaves (O Segredo!)
-      // O backend salva 'msg', 'media', 'offer'. O form usa 'mensagem', 'media_url'.
+      // 2. Mapeamento de Chaves
       const novaMsg = config.msg || config.mensagem || '';
       const novaMedia = config.media || config.media_url || '';
       const novaOferta = config.offer !== undefined ? config.offer : (config.incluir_oferta || false);
@@ -116,7 +122,7 @@ export function Remarketing() {
         agendar: false
       });
 
-      setStep(1); // Vai para o passo 1
+      setStep(1);
       window.scrollTo(0, 0); 
       
       const Toast = Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true});
@@ -163,16 +169,17 @@ export function Remarketing() {
     setLoading(true);
     
     try {
-      await remarketingService.send(selectedBot.id, formData);
+      const result = await remarketingService.send(selectedBot.id, formData);
+      
       Swal.fire({
         title: 'Disparo Iniciado!',
-        text: 'A campanha está sendo processada em segundo plano. Atualize o histórico em alguns instantes para ver os resultados.',
+        text: 'A campanha está sendo processada em segundo plano.',
         icon: 'success',
         background: '#151515', color: '#fff'
       });
 
       setStep(4);
-      setTimeout(carregarHistorico, 2000); // Espera um pouco pra atualizar
+      setTimeout(carregarHistorico, 2000);
     } catch (error) {
       console.error(error);
       Swal.fire('Erro', 'Falha ao enviar campanha', 'error');
