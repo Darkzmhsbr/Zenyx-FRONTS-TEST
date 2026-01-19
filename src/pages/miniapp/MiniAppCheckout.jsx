@@ -35,13 +35,12 @@ export function MiniAppCheckout() {
   const [bump, setBump] = useState(null);
   const [isBumpSelected, setIsBumpSelected] = useState(false);
 
-  // Estados de Usuário
+  // Estado de Usuário (Apenas Automático agora)
   const [autoUser, setAutoUser] = useState(null);
-  const [manualUser, setManualUser] = useState('');
 
-  // 1. INJEÇÃO E RADAR DE DETECÇÃO (A CARTA NA MANGA)
+  // 1. INJEÇÃO E RADAR DE DETECÇÃO (LÓGICA BLINDADA)
   useEffect(() => {
-    // Injeta script se não existir
+    // Injeta script do Telegram se não existir
     if (!document.getElementById('tg-script')) {
         const script = document.createElement('script');
         script.id = 'tg-script';
@@ -50,19 +49,19 @@ export function MiniAppCheckout() {
         document.body.appendChild(script);
     }
 
-    // Tenta recuperar do Storage (Backup caso o usuário recarregue a página)
+    // Tenta recuperar do Storage (Memória do Navegador)
+    // Isso é vital se o usuário atualizar a página
     const storedId = localStorage.getItem('telegram_user_id');
     const storedFirst = localStorage.getItem('telegram_user_first_name');
     
-    // Só recupera se for ID NUMÉRICO (não recupera se for 'manual' ou username antigo)
+    // Só aceita recuperar se o ID for numérico (validando que veio do Telegram)
     if (storedId && /^\d+$/.test(storedId)) {
-        setAutoUser({ id: storedId, first_name: storedFirst || "Usuário" });
+        setAutoUser({ id: storedId, first_name: storedFirst || "Cliente" });
     }
 
     carregarDados();
 
-    // 🔥 RADAR: Tenta detectar o Telegram a cada 100ms por 5 segundos
-    // Isso garante que pegamos o ID mesmo se o script demorar a carregar
+    // 🔥 RADAR: Tenta detectar o Telegram a cada 100ms
     const interval = setInterval(() => {
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
             verificarTelegram();
@@ -70,7 +69,7 @@ export function MiniAppCheckout() {
         }
     }, 100);
 
-    // Desiste de procurar após 5 segundos
+    // Desiste de procurar após 5 segundos para não pesar
     const timeout = setTimeout(() => clearInterval(interval), 5000);
 
     return () => {
@@ -88,7 +87,7 @@ export function MiniAppCheckout() {
       if (user) {
         console.log("✅ TG Detectado via Radar:", user);
         
-        // 🔥 SALVA NO LOCALSTORAGE (IGUAL AO SEU PROJETO ANTIGO)
+        // 🔥 SALVA NO LOCALSTORAGE IMEDIATAMENTE
         localStorage.setItem('telegram_user_id', user.id);
         localStorage.setItem('telegram_user_first_name', user.first_name);
         if (user.username) localStorage.setItem('telegram_username', user.username);
@@ -111,7 +110,6 @@ export function MiniAppCheckout() {
             planService.listPlans(botId),
             orderBumpService.get(botId)
         ]);
-        
         setPlans(pData);
         if (bData && bData.ativo) setBump(bData);
         if (pData.length > 0) setSelectedPlan(pData[0]);
@@ -127,24 +125,19 @@ export function MiniAppCheckout() {
     e.preventDefault();
     if (!selectedPlan) return;
     
-    // Validação
-    if (!autoUser && (!manualUser || manualUser.length < 2)) {
+    // VERIFICAÇÃO DE SEGURANÇA
+    // Se não temos usuário no estado E não temos no Storage, bloqueia.
+    const storedId = localStorage.getItem('telegram_user_id');
+    
+    if (!autoUser && !storedId) {
         return Swal.fire({
-            title: 'Quem é você?',
-            text: 'Informe seu @usuario do Telegram para receber o acesso.',
-            icon: 'warning',
+            title: 'Acesso Negado',
+            text: 'Por favor, abra esta loja através do nosso Bot no Telegram para garantir a entrega do seu acesso.',
+            icon: 'error',
             background: '#222',
             color: '#fff',
             confirmButtonColor: '#E10000'
         });
-    }
-
-    // Se for manual, salva no storage também (para o api.js pegar depois como fallback)
-    if (!autoUser && manualUser) {
-        const cleanUser = manualUser.replace('@', '').trim();
-        localStorage.setItem('telegram_user_id', cleanUser);
-        localStorage.setItem('telegram_user_first_name', manualUser);
-        localStorage.setItem('telegram_username', cleanUser);
     }
 
     let total = parseFloat(selectedPlan.preco_atual);
@@ -166,7 +159,11 @@ export function MiniAppCheckout() {
     return { int, dec };
   };
 
-  if (loading) return <div className="checkout-page-container"><p style={{color:'#fff'}}>Carregando...</p></div>;
+  if (loading) return (
+      <div className="checkout-page-container" style={{display:'flex', justifyContent:'center', alignItems:'center'}}>
+        <p style={{color:'#fff'}}>Carregando...</p>
+      </div>
+  );
 
   return (
     <div className="checkout-page-container">
@@ -225,49 +222,27 @@ export function MiniAppCheckout() {
               </div>
             )}
 
-            {/* ÁREA DE IDENTIFICAÇÃO */}
+            {/* ÁREA DE IDENTIFICAÇÃO AUTOMÁTICA (SEM INPUT) */}
             <div style={{margin: '25px 0'}}>
-                <label style={{color: '#ccc', display: 'block', marginBottom: '8px', fontSize: '0.9rem'}}>Identificação</label>
-                
-                {autoUser ? (
-                    // MODO AUTOMÁTICO
-                    <div style={{
-                        background: 'rgba(34, 197, 94, 0.1)', 
-                        border: '1px solid #22c55e', 
-                        padding: '12px 15px', 
-                        borderRadius: '8px',
-                        display: 'flex', alignItems: 'center', gap: '12px'
-                    }}>
-                        <div style={{background: '#22c55e', width: 36, height: 36, borderRadius: '50%', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                            <CheckIcon />
-                        </div>
-                        <div>
-                            <p style={{color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '0.95rem'}}>
-                                {autoUser.first_name}
-                            </p>
-                            <p style={{color: '#4ade80', fontSize: '0.75rem', margin: 0}}>
-                                Telegram Conectado ✅
-                            </p>
-                        </div>
+                <div style={{
+                    background: 'rgba(34, 197, 94, 0.1)', 
+                    border: '1px solid #22c55e', 
+                    padding: '12px 15px', 
+                    borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', gap: '12px'
+                }}>
+                    <div style={{background: '#22c55e', width: 36, height: 36, borderRadius: '50%', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                        <CheckIcon />
                     </div>
-                ) : (
-                    // MODO MANUAL (Para quem abre no navegador)
                     <div>
-                        <input 
-                            type="text" 
-                            placeholder="@seu_usuario (Ex: @joao123)"
-                            value={manualUser}
-                            onChange={(e) => setManualUser(e.target.value)}
-                            style={{
-                                width: '100%', padding: '14px', borderRadius: '8px',
-                                background: '#222', border: '1px solid #444', color: '#fff', fontSize: '1rem'
-                            }}
-                        />
-                        <p style={{fontSize: '0.75rem', color: '#888', marginTop: '5px'}}>
-                            *Não detectamos seu Telegram. Digite seu usuário para receber o acesso.
+                        <p style={{color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '0.95rem'}}>
+                            {autoUser ? autoUser.first_name : "Identificando..."}
+                        </p>
+                        <p style={{color: '#4ade80', fontSize: '0.75rem', margin: 0}}>
+                            {autoUser ? "Conta Telegram Conectada ✅" : "Aguardando detecção..."}
                         </p>
                     </div>
-                )}
+                </div>
             </div>
 
             <div className="btn-pay-container">
