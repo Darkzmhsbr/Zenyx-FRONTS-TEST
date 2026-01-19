@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { planService, orderBumpService } from '../../services/api';
 import Swal from 'sweetalert2';
-import '../../assets/styles/CheckoutPage-v1.css'; // O CSS que definimos anteriormente
+import '../../assets/styles/CheckoutPage.css';
 
 // --- ÍCONES ---
 const CheckIcon = () => (
