@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom'; // 🔥 Adicionado useLocation
 import { 
   Save, ArrowLeft, MessageSquare, Key, Headphones, 
   Smartphone, Layout, PlayCircle, Type, Plus, Trash2, Edit, Image as ImageIcon, Link, User, Palette, Shield, Radio
@@ -13,6 +13,7 @@ import './Bots.css';
 export function BotConfig() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation(); // 🔥 Hook para ler o estado da navegação
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('geral');
   
@@ -46,8 +47,14 @@ export function BotConfig() {
   const [currentCat, setCurrentCat] = useState(null);
 
   useEffect(() => {
+    // 🔥 Verifica se veio algum comando de aba do NewBot.jsx
+    if (location.state?.initialTab) {
+        setActiveTab(location.state.initialTab);
+        // Limpa o state para não ficar preso na aba se der F5 (opcional, mas boa prática)
+        window.history.replaceState({}, document.title);
+    }
     carregarDados();
-  }, [id]);
+  }, [id, location.state]); // Adicionado location.state nas dependências
 
   const carregarDados = async () => {
     try {
