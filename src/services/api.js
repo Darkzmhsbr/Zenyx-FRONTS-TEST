@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// 🔗 SEU DOMÍNIO DO RAILWAY (Ajuste se necessário)
+// 🔗 SEU DOMÍNIO DO RAILWAY
 const API_URL = 'https://zenyx-gbs-testes-production.up.railway.app';
 
 const api = axios.create({
@@ -41,40 +41,29 @@ export const flowService = {
 };
 
 // ============================================================
-// 💲 SERVIÇO DE PLANOS E ORDER BUMP
-// ============================================================
-// ============================================================
-// 💲 SERVIÇO DE PLANOS E ORDER BUMP (CORRIGIDO)
+// 💲 SERVIÇO DE PLANOS (CORRIGIDO)
 // ============================================================
 export const planService = {
-  // Lista todos os planos de um bot
-  listPlans: async (botId) => {
-    return (await api.get(`/api/admin/bots/${botId}/plans`)).data;
-  },
-
-  // Cria um novo plano (POST)
-  createPlan: async (botId, planData) => {
-    return (await api.post(`/api/admin/bots/${botId}/plans`, planData)).data;
-  },
-
-  // Atualiza um plano existente (PUT)
-  // Atenção: A rota correta é /api/admin/plans/{plano_id} (sem bot_id no meio)
-  // Ou /api/admin/bots/{bot_id}/plans/{plano_id} dependendo do backend.
-  // Vamos usar a estrutura do main (2).py que é: /api/admin/plans/{plano_id}
+  listPlans: async (botId) => (await api.get(`/api/admin/bots/${botId}/plans`)).data,
+  createPlan: async (botId, planData) => (await api.post(`/api/admin/bots/${botId}/plans`, planData)).data,
   updatePlan: async (botId, planId, planData) => {
-    // Se o backend esperar a rota com bot_id, use: `/api/admin/bots/${botId}/plans/${planId}`
-    // Mas o erro [object Object] sugere que planId estava vindo errado.
-    // Vamos garantir que planId seja uma string/número limpo.
     const pid = String(planId);
     return (await api.put(`/api/admin/bots/${botId}/plans/${pid}`, planData)).data;
   },
-
-  // Deleta um plano (DELETE)
   deletePlan: async (botId, planId) => {
     const pid = String(planId);
     return (await api.delete(`/api/admin/bots/${botId}/plans/${pid}`)).data;
   },
 };
+
+// ============================================================
+// 🛒 SERVIÇO DE ORDER BUMP (O QUE ESTAVA FALTANDO)
+// ============================================================
+export const orderBumpService = {
+  get: async (botId) => (await api.get(`/api/admin/bots/${botId}/order-bump`)).data,
+  save: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/order-bump`, data)).data
+};
+
 // ============================================================
 // 📢 SERVIÇO DE REMARKETING
 // ============================================================
@@ -217,17 +206,14 @@ export const trackingService = {
 };
 
 // ============================================================
-// 💳 SERVIÇO DE PAGAMENTOS (CRÍTICO: COM LÓGICA DE STORAGE)
+// 💳 SERVIÇO DE PAGAMENTOS
 // ============================================================
 export const paymentService = {
-  // Gera o PIX lendo os dados diretamente do Storage (igual ao seu outro projeto)
   createPix: async (data) => {
-    // Recupera o que o App.jsx salvou
     const storedId = localStorage.getItem('telegram_user_id');
     const storedUser = localStorage.getItem('telegram_username');
     const storedName = localStorage.getItem('telegram_user_first_name');
     
-    // Prioridade: ID numérico do Storage > ID passado > "000000"
     let finalId = "000000";
     if (storedId && /^\d+$/.test(storedId)) {
         finalId = storedId;
@@ -235,7 +221,6 @@ export const paymentService = {
         finalId = data.telegram_id;
     }
 
-    // Payload final garantido
     const payload = {
         ...data,
         telegram_id: String(finalId),
@@ -244,12 +229,10 @@ export const paymentService = {
     };
     
     console.log("📤 API Enviando PIX para:", payload.telegram_id);
-    
     const response = await api.post('/api/pagamento/pix', payload);
     return response.data;
   },
   
-  // Verifica status
   checkStatus: async (txid) => {
     const response = await api.get(`/api/pagamento/status/${txid}`);
     return response.data;
@@ -268,10 +251,8 @@ export const miniappService = {
   createCategory: async (data) => (await api.post(`/api/admin/miniapp/categories`, data)).data,
   deleteCategory: async (catId) => (await api.delete(`/api/admin/miniapp/categories/${catId}`)).data,
   
-  // Troca de Modo (Tradicional vs Mini App)
   switchMode: async (botId, mode) => (await api.post(`/api/admin/bots/${botId}/mode`, { modo: mode })).data,
   
-  // PÚBLICO (Usado pela loja final)
   getPublicData: async (botId) => (await api.get(`/api/miniapp/${botId}`)).data
 };
 
