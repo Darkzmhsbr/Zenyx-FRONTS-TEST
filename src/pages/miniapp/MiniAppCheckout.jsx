@@ -5,24 +5,11 @@ import Swal from 'sweetalert2';
 import '../../assets/styles/CheckoutPage.css';
 
 // --- ÍCONES ---
-const CheckIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const SecurityIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-);
-const ImmediateIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-);
-const DiscreteIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-);
-const MultiDeviceIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 18h.01" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-);
+const CheckIcon = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 6L9 17L4 12" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const SecurityIcon = () => (<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const ImmediateIcon = () => (<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const DiscreteIcon = () => (<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+const MultiDeviceIcon = () => (<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 18h.01" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
 
 export function MiniAppCheckout() {
   const { botId } = useParams();
@@ -35,12 +22,12 @@ export function MiniAppCheckout() {
   const [bump, setBump] = useState(null);
   const [isBumpSelected, setIsBumpSelected] = useState(false);
 
-  // Estado de Usuário (Apenas Automático agora)
+  // Estado de Usuário
   const [autoUser, setAutoUser] = useState(null);
 
-  // 1. INJEÇÃO E RADAR DE DETECÇÃO (LÓGICA BLINDADA)
+  // 1. INJEÇÃO E RADAR DE DETECÇÃO (LÓGICA CORRIGIDA)
   useEffect(() => {
-    // Injeta script do Telegram se não existir
+    // Injeta script
     if (!document.getElementById('tg-script')) {
         const script = document.createElement('script');
         script.id = 'tg-script';
@@ -49,26 +36,28 @@ export function MiniAppCheckout() {
         document.body.appendChild(script);
     }
 
-    // Tenta recuperar do Storage (Memória do Navegador)
+    // 🔥 CORREÇÃO PRINCIPAL: REMOVI A TRAVA DE ID NUMÉRICO
+    // Agora ele recupera qualquer coisa que esteja no cache para mostrar na tela.
+    // Isso permite que você veja o usuário errado e clique em "Não é você?"
     const storedId = localStorage.getItem('telegram_user_id');
     const storedFirst = localStorage.getItem('telegram_user_first_name');
     
-    // Só aceita recuperar se o ID for numérico (validando que veio do Telegram)
-    if (storedId && /^\d+$/.test(storedId)) {
-        setAutoUser({ id: storedId, first_name: storedFirst || "Cliente" });
+    if (storedId) {
+        console.log("📦 Usuário recuperado do cache:", storedId);
+        setAutoUser({ id: storedId, first_name: storedFirst || "Usuário" });
     }
 
     carregarDados();
 
-    // 🔥 RADAR: Tenta detectar o Telegram a cada 100ms
+    // Radar de Detecção
     const interval = setInterval(() => {
+        // Verifica se o Telegram injetou os dados
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
             verificarTelegram();
-            clearInterval(interval); // Parar assim que achar
+            clearInterval(interval);
         }
     }, 100);
 
-    // Desiste de procurar após 5 segundos
     const timeout = setTimeout(() => clearInterval(interval), 5000);
 
     return () => {
@@ -86,10 +75,14 @@ export function MiniAppCheckout() {
       if (user) {
         console.log("✅ TG Detectado via Radar:", user);
         
-        // 🔥 SALVA NO LOCALSTORAGE
-        localStorage.setItem('telegram_user_id', user.id);
-        localStorage.setItem('telegram_user_first_name', user.first_name);
-        if (user.username) localStorage.setItem('telegram_username', user.username);
+        // Verifica se o usuário atual é diferente do cache e ATUALIZA
+        const storedId = localStorage.getItem('telegram_user_id');
+        if (String(user.id) !== String(storedId)) {
+            console.log("🔄 Atualizando usuário do cache...");
+            localStorage.setItem('telegram_user_id', user.id);
+            localStorage.setItem('telegram_user_first_name', user.first_name);
+            if (user.username) localStorage.setItem('telegram_username', user.username);
+        }
         
         setAutoUser({
           id: user.id,
@@ -103,15 +96,27 @@ export function MiniAppCheckout() {
     } catch (e) { console.log("Browser mode"); }
   };
 
-  // 🔥 FUNÇÃO PARA LIMPAR IDENTIDADE ERRADA
+  // 🔥 FUNÇÃO DE LIMPEZA (IMPORTANTE)
   const resetIdentity = () => {
-      localStorage.removeItem('telegram_user_id');
-      localStorage.removeItem('telegram_user_first_name');
-      localStorage.removeItem('telegram_username');
-      setAutoUser(null);
-      
-      // Força recarregamento para tentar detectar de novo
-      window.location.reload();
+      Swal.fire({
+          title: 'Trocar Conta?',
+          text: 'Isso limpará seus dados salvos neste navegador.',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Sim, sair',
+          cancelButtonText: 'Cancelar',
+          background: '#222', color: '#fff'
+      }).then((result) => {
+          if (result.isConfirmed) {
+              localStorage.removeItem('telegram_user_id');
+              localStorage.removeItem('telegram_user_first_name');
+              localStorage.removeItem('telegram_username');
+              setAutoUser(null);
+              window.location.reload(); // Recarrega para tentar detectar de novo
+          }
+      });
   };
 
   const carregarDados = async () => {
@@ -125,7 +130,7 @@ export function MiniAppCheckout() {
         if (pData.length > 0) setSelectedPlan(pData[0]);
     } catch (e) {
         console.error(e);
-        Swal.fire('Erro', 'Não foi possível carregar os planos.', 'error');
+        // Silencioso para não atrapalhar
     } finally {
         setLoading(false);
     }
@@ -138,10 +143,11 @@ export function MiniAppCheckout() {
     // VERIFICAÇÃO DE SEGURANÇA
     const storedId = localStorage.getItem('telegram_user_id');
     
+    // Se não tiver nada no storage e nada detectado, bloqueia
     if (!autoUser && !storedId) {
         return Swal.fire({
-            title: 'Acesso Negado',
-            text: 'Por favor, abra esta loja através do nosso Bot no Telegram para garantir a entrega do seu acesso.',
+            title: 'Quem é você?',
+            text: 'Não conseguimos identificar sua conta Telegram. Por favor, abra a loja novamente pelo Bot.',
             icon: 'error',
             background: '#222',
             color: '#fff',
@@ -231,7 +237,7 @@ export function MiniAppCheckout() {
               </div>
             )}
 
-            {/* ÁREA DE IDENTIFICAÇÃO AUTOMÁTICA */}
+            {/* ÁREA DE IDENTIFICAÇÃO (CORRIGIDA) */}
             <div style={{margin: '25px 0'}}>
                 <div style={{
                     background: autoUser ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
@@ -249,6 +255,7 @@ export function MiniAppCheckout() {
                             {autoUser ? <CheckIcon /> : <span style={{color:'#fff', fontSize:'12px'}}>?</span>}
                         </div>
                         <div>
+                            {/* Mostra o nome que está no cache, mesmo se for o antigo */}
                             <p style={{color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '0.95rem'}}>
                                 {autoUser ? autoUser.first_name : "Identificando..."}
                             </p>
@@ -258,7 +265,7 @@ export function MiniAppCheckout() {
                         </div>
                     </div>
                     
-                    {/* BOTÃO DE SAIR / TROCAR CONTA */}
+                    {/* BOTÃO DE SAIR VISÍVEL SE TIVER DADOS NO CACHE */}
                     {autoUser && (
                         <button 
                             type="button" 
