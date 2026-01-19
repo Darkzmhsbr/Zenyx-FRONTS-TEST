@@ -122,8 +122,27 @@ export function MiniAppCheckout() {
   };
 
   const handlePayment = (e) => {
-    e.preventDefault();
-    if (!selectedPlan) return;
+        e.preventDefault();
+        if (!selectedPlan) return;
+        
+        if (!autoUser && (!manualUser || manualUser.length < 2)) {
+            return Swal.fire({title: 'Identificação', text: 'Informe seu usuário.', icon: 'warning'});
+        }
+
+        // LIMPEZA DO USER MANUAL
+        let userDataFinal = autoUser;
+        if (!autoUser) {
+            const cleanUser = manualUser.replace('@', '').trim().toLowerCase();
+            userDataFinal = {
+                id: cleanUser, // Envia o nome limpo como ID temporário
+                username: cleanUser,
+                first_name: manualUser
+            };
+            
+            // Salva no storage para persistir
+            localStorage.setItem('telegram_user_id', cleanUser);
+            localStorage.setItem('telegram_username', cleanUser);
+        }
     
     // Validação
     if (!autoUser && (!manualUser || manualUser.length < 2)) {

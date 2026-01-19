@@ -232,8 +232,17 @@ export const trackingService = {
 // 💳 SERVIÇO DE PAGAMENTOS (ADICIONADO)
 // ============================================================
 export const paymentService = {
-  // Gera o PIX enviando os dados limpos
-  createPix: async (payload) => {
+  createPix: async (data) => {
+    // Recupera do storage se faltar
+    const storedId = localStorage.getItem('telegram_user_id');
+    const storedUser = localStorage.getItem('telegram_username');
+    
+    const payload = {
+        ...data,
+        telegram_id: String(data.telegram_id || storedId || "000000"),
+        username: data.username || storedUser || "site_user"
+    };
+    
     const response = await api.post('/api/pagamento/pix', payload);
     return response.data;
   },
