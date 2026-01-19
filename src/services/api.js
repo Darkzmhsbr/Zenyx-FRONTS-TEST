@@ -43,18 +43,38 @@ export const flowService = {
 // ============================================================
 // 💲 SERVIÇO DE PLANOS E ORDER BUMP
 // ============================================================
+// ============================================================
+// 💲 SERVIÇO DE PLANOS E ORDER BUMP (CORRIGIDO)
+// ============================================================
 export const planService = {
-  listPlans: async (botId) => (await api.get(`/api/admin/bots/${botId}/plans`)).data,
-  createPlan: async (botId, planData) => (await api.post(`/api/admin/bots/${botId}/plans`, planData)).data,
-  updatePlan: async (botId, planId, planData) => (await api.put(`/api/admin/bots/${botId}/plans/${planId}`, planData)).data,
-  deletePlan: async (botId, planId) => (await api.delete(`/api/admin/bots/${botId}/plans/${planId}`)).data,
-};
+  // Lista todos os planos de um bot
+  listPlans: async (botId) => {
+    return (await api.get(`/api/admin/bots/${botId}/plans`)).data;
+  },
 
-export const orderBumpService = {
-  get: async (botId) => (await api.get(`/api/admin/bots/${botId}/order-bump`)).data,
-  save: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/order-bump`, data)).data
-};
+  // Cria um novo plano (POST)
+  createPlan: async (botId, planData) => {
+    return (await api.post(`/api/admin/bots/${botId}/plans`, planData)).data;
+  },
 
+  // Atualiza um plano existente (PUT)
+  // Atenção: A rota correta é /api/admin/plans/{plano_id} (sem bot_id no meio)
+  // Ou /api/admin/bots/{bot_id}/plans/{plano_id} dependendo do backend.
+  // Vamos usar a estrutura do main (2).py que é: /api/admin/plans/{plano_id}
+  updatePlan: async (botId, planId, planData) => {
+    // Se o backend esperar a rota com bot_id, use: `/api/admin/bots/${botId}/plans/${planId}`
+    // Mas o erro [object Object] sugere que planId estava vindo errado.
+    // Vamos garantir que planId seja uma string/número limpo.
+    const pid = String(planId);
+    return (await api.put(`/api/admin/bots/${botId}/plans/${pid}`, planData)).data;
+  },
+
+  // Deleta um plano (DELETE)
+  deletePlan: async (botId, planId) => {
+    const pid = String(planId);
+    return (await api.delete(`/api/admin/bots/${botId}/plans/${pid}`)).data;
+  },
+};
 // ============================================================
 // 📢 SERVIÇO DE REMARKETING
 // ============================================================
