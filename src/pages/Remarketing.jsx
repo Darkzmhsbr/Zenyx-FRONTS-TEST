@@ -284,7 +284,7 @@ export function Remarketing() {
   // ============================================================
   // RENDER - HISTÓRICO
   // ============================================================
-  if (step === 0) {
+  if (step === 0) { // Ou step === 4, ajuste conforme sua lógica de navegação
     return (
       <div className="remarketing-container">
         <div className="wizard-container">
@@ -314,10 +314,24 @@ export function Remarketing() {
                   console.error('Erro ao parsear config:', e);
                 }
 
-                const targetLabel = targetOptions.find(t => t.id === item.target)?.title || 'Desconhecido';
-                const dataFormatada = item.data_envio 
-                  ? new Date(item.data_envio).toLocaleString('pt-BR')
-                  : 'Data desconhecida';
+                const targetLabel = targetOptions.find(t => t.id === item.target)?.title || item.target || 'Desconhecido';
+                
+                // 🔥 CORREÇÃO DA DATA (Lógica Blindada)
+                let dataFormatada = 'Data desconhecida';
+                if (item.data) {
+                    try {
+                        const dateObj = new Date(item.data);
+                        if (!isNaN(dateObj.getTime())) {
+                            dataFormatada = dateObj.toLocaleString('pt-BR', {
+                                day: '2-digit', month: '2-digit', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit'
+                            });
+                        }
+                    } catch (e) { console.error("Erro data:", item.data); }
+                }
+
+                // 🔥 CORREÇÃO DA MENSAGEM (Busca msg OU mensagem)
+                const msgPreview = config.msg || config.mensagem || "Sem texto";
 
                 return (
                   <div key={item.id} className="history-item">
@@ -331,6 +345,10 @@ export function Remarketing() {
                       <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '5px' }}>
                         ✅ {item.sent_success || 0} enviados • 
                         ❌ {item.blocked_count || 0} bloqueados
+                      </div>
+                      {/* Prévia da mensagem (Opcional, ajuda a identificar) */}
+                      <div style={{ fontSize: '0.7rem', color: '#444', marginTop: '3px', fontStyle:'italic' }}>
+                         "{msgPreview.substring(0, 40)}..."
                       </div>
                     </div>
                     <div className="history-actions">
