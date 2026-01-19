@@ -21,31 +21,54 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = (username, password) => {
-    // 🔒 VALIDAÇÃO SIMPLES (FRONTEND)
-    if (username === 'ZeKai' && password === '123456') {
-      const userData = { name: 'Admin Zenyx', username };
+    // ============================================================
+    // 🔒 LISTA DE USUÁRIOS E PERMISSÕES (ATUALIZADA)
+    // ============================================================
+    const usuarios = {
+      'ZeKai': { 
+        pass: '123456', 
+        name: 'Admin Zenyx', 
+        role: 'master',      // Mestre: Vê tudo
+        allowed_bots: []     // (Master ignora essa lista)
+      },
+      'ManitoMHS': { 
+        pass: 'Hermano8762', 
+        name: 'Sócio Manito', 
+        role: 'partner',     // Sócio: Vê apenas os bots permitidos
+        // 👇 AQUI ESTÁ O BOT DELE CONFIGURADO
+        allowed_bots: [3]    // ID 3 Liberado!
+      }
+    };
+
+    // Verifica se o usuário existe e a senha bate
+    if (usuarios[username] && usuarios[username].pass === password) {
+      const userConfig = usuarios[username];
+      
+      // Cria o objeto do usuário com as permissões
+      const userData = { 
+        name: userConfig.name, 
+        username: username,
+        role: userConfig.role,
+        allowed_bots: userConfig.allowed_bots 
+      };
+
       setUser(userData);
       localStorage.setItem('zenyx_admin_user', JSON.stringify(userData));
       return true;
     }
+    
     return false;
   };
 
   // ============================================================
-  // 🔥 FUNÇÃO LOGOUT CORRIGIDA
+  // 🔥 FUNÇÃO LOGOUT
   // ============================================================
   const logout = () => {
     console.log("🚪 Fazendo logout...");
-    
-    // Limpa estado
     setUser(null);
-    
-    // Limpa localStorage
     localStorage.removeItem('zenyx_admin_user');
     localStorage.removeItem('zenyx_selected_bot');
     localStorage.removeItem('zenyx_theme');
-    
-    // Força reload da página para garantir limpeza total
     window.location.href = '/login';
   };
 
