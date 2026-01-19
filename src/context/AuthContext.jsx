@@ -7,7 +7,6 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verifica se já tem login salvo ao abrir o site
     const savedUser = localStorage.getItem('zenyx_admin_user');
     if (savedUser) {
       try {
@@ -22,29 +21,29 @@ export function AuthProvider({ children }) {
 
   const login = (username, password) => {
     // ============================================================
-    // 🔒 LISTA DE USUÁRIOS E PERMISSÕES (ATUALIZADA)
+    // 🔒 LISTA DE USUÁRIOS E PERMISSÕES
     // ============================================================
     const usuarios = {
       'ZeKai': { 
         pass: '123456', 
         name: 'Admin Zenyx', 
-        role: 'master',      // Mestre: Vê tudo
-        allowed_bots: []     // (Master ignora essa lista)
+        // 🔥 MUDEI AQUI: De 'master' para 'admin' para aplicar o filtro de IDs
+        role: 'admin',      
+        // 👇 SEUS BOTS (ZeKinha e Mister MK7)
+        allowed_bots: [1, 2] 
       },
       'ManitoMHS': { 
         pass: 'Hermano8762', 
         name: 'Sócio Manito', 
-        role: 'partner',     // Sócio: Vê apenas os bots permitidos
-        // 👇 AQUI ESTÁ O BOT DELE CONFIGURADO
-        allowed_bots: [3]    // ID 3 Liberado!
+        role: 'partner',     
+        // 👇 BOT DELE (Club Fans)
+        allowed_bots: [3]    
       }
     };
 
-    // Verifica se o usuário existe e a senha bate
     if (usuarios[username] && usuarios[username].pass === password) {
       const userConfig = usuarios[username];
       
-      // Cria o objeto do usuário com as permissões
       const userData = { 
         name: userConfig.name, 
         username: username,
@@ -60,9 +59,6 @@ export function AuthProvider({ children }) {
     return false;
   };
 
-  // ============================================================
-  // 🔥 FUNÇÃO LOGOUT
-  // ============================================================
   const logout = () => {
     console.log("🚪 Fazendo logout...");
     setUser(null);
