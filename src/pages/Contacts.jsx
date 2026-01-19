@@ -53,7 +53,8 @@ export function Contacts() {
     if(!selectedBot) return;
     try {
         const hist = await remarketingService.getHistory(selectedBot.id);
-        setCampaignHistory(Array.isArray(hist.data) ? hist.data.slice(0, 3) : []);
+        const lista = Array.isArray(hist.data) ? hist.data : [];
+        setCampaignHistory(lista.slice(0, 3)); // Pega os 3 últimos
     } catch (e) {
         console.error("Erro ao carregar histórico", e);
     }
@@ -126,7 +127,6 @@ export function Contacts() {
           });
 
           if (result.isConfirmed) {
-              // 🔥 [CORRIGIDO] Usa crmService em vez de fetch direto
               await crmService.resendAccess(editingUser.id);
               
               Swal.fire({
@@ -169,7 +169,10 @@ export function Contacts() {
   // Helpers Visuais
   const formatDate = (dateString) => {
       if (!dateString) return '-';
-      return new Date(dateString).toLocaleDateString('pt-BR');
+      try {
+        const d = new Date(dateString);
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('pt-BR');
+      } catch { return '-'; }
   };
 
   const getStatusBadge = (status) => {
@@ -180,7 +183,6 @@ export function Contacts() {
 
   // 🔥 [NOVO] Verificar se deve mostrar botão "Reenviar Acesso"
   const mostrarBotaoReenviar = () => {
-      // Mostra se status for paid/active/approved OU se custom_expiration estiver vazio (vitalício)
       return editingUser && (
           ['paid', 'active', 'approved'].includes(editingUser.status) ||
           editingUser.custom_expiration === ''
@@ -312,7 +314,17 @@ export function Contacts() {
                                 }
                                 
                                 const mensagem = config.mensagem || config.msg || 'Sem texto';
-                                const dataFormatada = new Date(camp.data_envio).toLocaleDateString('pt-BR');
+                                
+                                // 🔥 CORREÇÃO DA DATA: Usa 'camp.data' do backend (que vem em ISO)
+                                let dataFormatada = 'Data desconhecida';
+                                if (camp.data) {
+                                    try {
+                                        const dateObj = new Date(camp.data);
+                                        if (!isNaN(dateObj.getTime())) {
+                                            dataFormatada = dateObj.toLocaleDateString('pt-BR');
+                                        }
+                                    } catch (e) {}
+                                }
                                 
                                 return (
                                     <div key={camp.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(0,0,0,0.3)', padding:'8px', borderRadius:'6px'}}>
@@ -384,7 +396,7 @@ export function Contacts() {
                         </div>
                     </div>
 
-                    {/* 🔥 [NOVO] BOTÃO REENVIAR ACESSO */}
+                    {/* BOTÃO REENVIAR ACESSO */}
                     {mostrarBotaoReenviar() && (
                         <div style={{
                             background: 'rgba(16, 185, 129, 0.05)', 
