@@ -15,41 +15,44 @@ api.interceptors.response.use(
   e => Promise.reject(e)
 );
 
-// --- SERVIÇO DE BOTS ---
+// ============================================================
+// 🤖 SERVIÇO DE BOTS
+// ============================================================
 export const botService = {  
-  createBot : async ( dados ) => {    
-    const response = await api.post ( '/api/admin/bots' , dados ) ; 
-    return response.data ;
-  } ,
-  listBots : async ( ) => {    
-    const response = await api.get ( '/api/admin/bots' ) ; 
-    return response.data ;
-  } ,
-  getBot : async ( botId ) => {    
-    const response = await api.get ( `/api/admin/bots/${botId}` ) ; 
-    return response.data ;
-  } ,
-  updateBot : async ( botId , dados ) => {    
-    const response = await api.put ( `/api/admin/bots/${botId}` , dados ) ; 
-    return response.data ;
-  } ,
-  toggleBot : async ( botId ) => {    
-    const response = await api.post ( `/api/admin/bots/${botId}/toggle` ) ; 
-    return response.data ;
-  } ,
-  deleteBot : async ( botId ) => {    
-    const response = await api.delete ( `/api/admin/bots/${botId}` ) ; 
-    return response.data ;
-  }
-} ;
+  createBot: async (dados) => (await api.post('/api/admin/bots', dados)).data,
+  listBots: async () => (await api.get('/api/admin/bots')).data,
+  getBot: async (botId) => (await api.get(`/api/admin/bots/${botId}`)).data,
+  updateBot: async (botId, dados) => (await api.put(`/api/admin/bots/${botId}`, dados)).data,
+  toggleBot: async (botId) => (await api.post(`/api/admin/bots/${botId}/toggle`)).data,
+  deleteBot: async (botId) => (await api.delete(`/api/admin/bots/${botId}`)).data,
+  getStats: async (botId, start, end) => (await api.get(`/api/admin/dashboard/stats?bot_id=${botId}&start_date=${start}&end_date=${end}`)).data,
+};
 
-// --- PLANOS ---
+// ============================================================
+// 💬 SERVIÇO DE FLUXO E MENSAGENS
+// ============================================================
+export const flowService = {
+  getFlow: async (botId) => (await api.get(`/api/admin/bots/${botId}/flow`)).data,
+  saveFlow: async (botId, flowData) => (await api.post(`/api/admin/bots/${botId}/flow`, flowData)).data,
+  getSteps: async (botId) => (await api.get(`/api/admin/bots/${botId}/flow/steps`)).data,
+  addStep: async (botId, stepData) => (await api.post(`/api/admin/bots/${botId}/flow/steps`, stepData)).data,
+  updateStep: async (botId, stepId, stepData) => (await api.put(`/api/admin/bots/${botId}/flow/steps/${stepId}`, stepData)).data,
+  deleteStep: async (botId, stepId) => (await api.delete(`/api/admin/bots/${botId}/flow/steps/${stepId}`)).data,
+};
+
+// ============================================================
+// 💲 SERVIÇO DE PLANOS E ORDER BUMP
+// ============================================================
 export const planService = {
-  listPlans: async (id) => (await api.get(`/api/admin/bots/${id}/plans`)).data, 
-  savePlan: async (p) => (await api.post('/api/admin/plans', p)).data,
-  createPlan: async (botId, dados) => (await api.post(`/api/admin/bots/${botId}/plans`, dados)).data,
-  updatePlan: async (id, dados) => (await api.put(`/api/admin/plans/${id}`, dados)).data,
-  deletePlan: async (id) => (await api.delete(`/api/admin/plans/${id}`)).data
+  listPlans: async (botId) => (await api.get(`/api/admin/bots/${botId}/plans`)).data,
+  createPlan: async (botId, planData) => (await api.post(`/api/admin/bots/${botId}/plans`, planData)).data,
+  updatePlan: async (botId, planId, planData) => (await api.put(`/api/admin/bots/${botId}/plans/${planId}`, planData)).data,
+  deletePlan: async (botId, planId) => (await api.delete(`/api/admin/bots/${botId}/plans/${planId}`)).data,
+};
+
+export const orderBumpService = {
+  get: async (botId) => (await api.get(`/api/admin/bots/${botId}/order-bump`)).data,
+  save: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/order-bump`, data)).data
 };
 
 // ============================================================
@@ -92,37 +95,6 @@ export const remarketingService = {
         user_telegram_id: telegramId,
         campaign_history_id: historyId
     })).data;
-  }
-};
-
-// ============================================================
-// 🔥 FLOW V2
-// ============================================================
-export const flowService = {
-  getFlow: async (botId) => {
-    try { return (await api.get(`/api/admin/bots/${botId}/flow`)).data; } 
-    catch { return null; }
-  },
-  
-  saveFlow: async (botId, data) => {
-    return (await api.post(`/api/admin/bots/${botId}/flow`, data)).data;
-  },
-  
-  getSteps: async (botId) => {
-    try { return (await api.get(`/api/admin/bots/${botId}/flow/steps`)).data; } 
-    catch { return []; }
-  },
-  
-  addStep: async (botId, stepData) => {
-    return (await api.post(`/api/admin/bots/${botId}/flow/steps`, stepData)).data;
-  },
-  
-  updateStep: async (botId, stepId, stepData) => {
-    return (await api.put(`/api/admin/bots/${botId}/flow/steps/${stepId}`, stepData)).data;
-  },
-  
-  deleteStep: async (botId, stepId) => {
-    return (await api.delete(`/api/admin/bots/${botId}/flow/steps/${stepId}`)).data;
   }
 };
 
@@ -171,7 +143,7 @@ export const crmService = {
   resendAccess: async (userId) => (await api.post(`/api/admin/users/${userId}/resend-access`)).data
 };
 
-// Alias
+// Alias para compatibilidade
 export const admin = crmService;
 export const leadService = crmService;
 
@@ -194,6 +166,14 @@ export const dashboardService = {
   }
 };
 
+export const profileService = {
+  get: async () => (await api.get('/api/admin/profile')).data,
+  update: async (data) => (await api.post('/api/admin/profile', data)).data
+};
+
+// ============================================================
+// 🔗 SERVIÇO DE INTEGRAÇÕES E TRACKING
+// ============================================================
 export const integrationService = { 
     getConfig: async () => (await api.get('/api/admin/config')).data,
     saveConfig: async (d) => (await api.post('/api/admin/config', d)).data,
@@ -207,18 +187,6 @@ export const integrationService = {
     savePushinToken: async (botId, token) => (await api.post(`/api/admin/integrations/pushinpay/${botId}`, { token })).data
 };
 
-export const orderBumpService = {
-  get: async (botId) => {
-    try { return (await api.get(`/api/admin/bots/${botId}/order-bump`)).data; } catch { return null; }
-  },
-  save: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/order-bump`, data)).data
-};
-
-export const profileService = {
-  get: async () => (await api.get('/api/admin/profile')).data,
-  update: async (data) => (await api.post('/api/admin/profile', data)).data
-};
-
 export const trackingService = {
   listFolders: async () => (await api.get('/api/admin/tracking/folders')).data,
   createFolder: async (data) => (await api.post('/api/admin/tracking/folders', data)).data,
@@ -229,36 +197,43 @@ export const trackingService = {
 };
 
 // ============================================================
-// 💳 SERVIÇO DE PAGAMENTOS (ADICIONADO)
+// 💳 SERVIÇO DE PAGAMENTOS (CRÍTICO: COM LÓGICA DE STORAGE)
 // ============================================================
 export const paymentService = {
   createPix: async (data) => {
-    // Recupera do storage se faltar
+    // 🔥 LÓGICA VENCEDORA: Tenta recuperar do Storage se o componente não enviou
     const storedId = localStorage.getItem('telegram_user_id');
     const storedUser = localStorage.getItem('telegram_username');
     
+    // Prioriza dados passados, depois storage, depois fallback
+    let finalId = String(data.telegram_id || storedId || "000000");
+    let finalUser = data.username || storedUser || "site_user";
+
     const payload = {
         ...data,
-        telegram_id: String(data.telegram_id || storedId || "000000"),
-        username: data.username || storedUser || "site_user"
+        telegram_id: finalId,
+        username: finalUser
     };
     
+    console.log("📤 PIX Payload (Enviando):", payload);
     const response = await api.post('/api/pagamento/pix', payload);
     return response.data;
   },
-  // Verifica status
+  
   checkStatus: async (txid) => {
     const response = await api.get(`/api/pagamento/status/${txid}`);
     return response.data;
   }
 };
 
-// 🔥 SERVIÇO DE MINI APP (TEMPLATE PERSONALIZÁVEL)
+// ============================================================
+// 📱 SERVIÇO DE MINI APP
+// ============================================================
 export const miniappService = {
-  // Configuração Global (Admin)
   saveConfig: async (botId, data) => (await api.post(`/api/admin/bots/${botId}/miniapp/config`, data)).data,
   
-  // Categorias (Admin)
+  getConfig: async (botId) => (await api.get(`/api/miniapp/${botId}`)).data,
+  
   listCategories: async (botId) => (await api.get(`/api/admin/bots/${botId}/miniapp/categories`)).data,
   createCategory: async (data) => (await api.post(`/api/admin/miniapp/categories`, data)).data,
   deleteCategory: async (catId) => (await api.delete(`/api/admin/miniapp/categories/${catId}`)).data,

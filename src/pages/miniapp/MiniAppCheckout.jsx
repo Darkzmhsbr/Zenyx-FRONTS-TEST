@@ -32,75 +32,77 @@ export function MiniAppCheckout() {
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   
-  // Bump
   const [bump, setBump] = useState(null);
   const [isBumpSelected, setIsBumpSelected] = useState(false);
 
-  // 🔥 IDENTIFICAÇÃO AUTOMÁTICA
+  // Estados de Usuário
   const [autoUser, setAutoUser] = useState(null);
   const [manualUser, setManualUser] = useState('');
 
-  // 1. Injeta o Script do Telegram (GARANTIA DE FUNCIONAMENTO)
+  // 1. INJEÇÃO E RADAR DE DETECÇÃO (A CARTA NA MANGA)
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = "https://telegram.org/js/telegram-web-app.js";
-    script.async = true;
-    script.onload = () => verificarTelegram();
-    document.body.appendChild(script);
+    // Injeta script se não existir
+    if (!document.getElementById('tg-script')) {
+        const script = document.createElement('script');
+        script.id = 'tg-script';
+        script.src = "https://telegram.org/js/telegram-web-app.js";
+        script.async = true;
+        document.body.appendChild(script);
+    }
+
+    // Tenta recuperar do Storage (Backup caso o usuário recarregue a página)
+    const storedId = localStorage.getItem('telegram_user_id');
+    const storedFirst = localStorage.getItem('telegram_user_first_name');
+    
+    // Só recupera se for ID NUMÉRICO (não recupera se for 'manual' ou username antigo)
+    if (storedId && /^\d+$/.test(storedId)) {
+        setAutoUser({ id: storedId, first_name: storedFirst || "Usuário" });
+    }
+
+    carregarDados();
+
+    // 🔥 RADAR: Tenta detectar o Telegram a cada 100ms por 5 segundos
+    // Isso garante que pegamos o ID mesmo se o script demorar a carregar
+    const interval = setInterval(() => {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+            verificarTelegram();
+            clearInterval(interval); // Parar assim que achar
+        }
+    }, 100);
+
+    // Desiste de procurar após 5 segundos
+    const timeout = setTimeout(() => clearInterval(interval), 5000);
 
     return () => {
-      try { document.body.removeChild(script); } catch (e) {}
-    }
-  }, []);
-
-  useEffect(() => {
-    carregarDados();
-    // Tenta verificar também no mount, caso o script já esteja lá
-    const timer = setTimeout(verificarTelegram, 500); 
-    
-    // 🔥 LÓGICA DO OUTRO PROJETO: Recupera do Storage
-    const storedId = localStorage.getItem('telegram_user_id');
-    const storedName = localStorage.getItem('telegram_user_first_name');
-    if (storedId) {
-        setAutoUser({
-            id: storedId,
-            first_name: storedName || "Usuário",
-            username: localStorage.getItem('telegram_username') || ""
-        });
-    }
-
-    return () => clearTimeout(timer);
+        clearInterval(interval);
+        clearTimeout(timeout);
+    };
   }, [botId]);
 
-  // --- CAPTURA DE DADOS DO TELEGRAM WEB APP ---
   const verificarTelegram = () => {
     try {
-      if (window.Telegram && window.Telegram.WebApp) {
-        const tg = window.Telegram.WebApp;
-        tg.ready();
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      const user = tg.initDataUnsafe?.user;
+      
+      if (user) {
+        console.log("✅ TG Detectado via Radar:", user);
         
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-          const u = tg.initDataUnsafe.user;
-          console.log("Usuário detectado:", u);
-          
-          // 🔥 SALVA NO STORAGE (PERSISTÊNCIA)
-          localStorage.setItem('telegram_user_id', u.id);
-          localStorage.setItem('telegram_user_first_name', u.first_name);
-          if(u.username) localStorage.setItem('telegram_username', u.username);
-
-          setAutoUser({
-            id: u.id, // ID Numérico (O que o bot precisa)
-            first_name: u.first_name,
-            username: u.username || "Sem User",
-            is_bot: false
-          });
-          
-          try { tg.expand(); } catch(e){}
-        }
+        // 🔥 SALVA NO LOCALSTORAGE (IGUAL AO SEU PROJETO ANTIGO)
+        localStorage.setItem('telegram_user_id', user.id);
+        localStorage.setItem('telegram_user_first_name', user.first_name);
+        if (user.username) localStorage.setItem('telegram_username', user.username);
+        
+        setAutoUser({
+          id: user.id,
+          first_name: user.first_name,
+          username: user.username,
+          is_bot: false
+        });
+        
+        try { tg.expand(); } catch(e){}
       }
-    } catch (e) {
-      console.log("Acesso externo (Browser):", e);
-    }
+    } catch (e) { console.log("Browser mode"); }
   };
 
   const carregarDados = async () => {
@@ -122,27 +124,8 @@ export function MiniAppCheckout() {
   };
 
   const handlePayment = (e) => {
-        e.preventDefault();
-        if (!selectedPlan) return;
-        
-        if (!autoUser && (!manualUser || manualUser.length < 2)) {
-            return Swal.fire({title: 'Identificação', text: 'Informe seu usuário.', icon: 'warning'});
-        }
-
-        // LIMPEZA DO USER MANUAL
-        let userDataFinal = autoUser;
-        if (!autoUser) {
-            const cleanUser = manualUser.replace('@', '').trim().toLowerCase();
-            userDataFinal = {
-                id: cleanUser, // Envia o nome limpo como ID temporário
-                username: cleanUser,
-                first_name: manualUser
-            };
-            
-            // Salva no storage para persistir
-            localStorage.setItem('telegram_user_id', cleanUser);
-            localStorage.setItem('telegram_username', cleanUser);
-        }
+    e.preventDefault();
+    if (!selectedPlan) return;
     
     // Validação
     if (!autoUser && (!manualUser || manualUser.length < 2)) {
@@ -156,11 +139,12 @@ export function MiniAppCheckout() {
         });
     }
 
-    // Se for manual, salva no storage para usar na próxima página
+    // Se for manual, salva no storage também (para o api.js pegar depois como fallback)
     if (!autoUser && manualUser) {
-        localStorage.setItem('telegram_user_id', manualUser);
+        const cleanUser = manualUser.replace('@', '').trim();
+        localStorage.setItem('telegram_user_id', cleanUser);
         localStorage.setItem('telegram_user_first_name', manualUser);
-        localStorage.setItem('telegram_username', manualUser);
+        localStorage.setItem('telegram_username', cleanUser);
     }
 
     let total = parseFloat(selectedPlan.preco_atual);
@@ -182,13 +166,7 @@ export function MiniAppCheckout() {
     return { int, dec };
   };
 
-  if (loading) {
-    return (
-      <div className="checkout-page-container" style={{display:'flex', justifyContent:'center', alignItems:'center'}}>
-        <p style={{color:'#fff'}}>Carregando...</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="checkout-page-container"><p style={{color:'#fff'}}>Carregando...</p></div>;
 
   return (
     <div className="checkout-page-container">
@@ -247,12 +225,10 @@ export function MiniAppCheckout() {
               </div>
             )}
 
-            {/* ÁREA DE IDENTIFICAÇÃO (Auto ou Manual) */}
+            {/* ÁREA DE IDENTIFICAÇÃO */}
             <div style={{margin: '25px 0'}}>
-                <label style={{color: '#ccc', display: 'block', marginBottom: '8px', fontSize: '0.9rem'}}>
-                    Identificação para Entrega <span style={{color:'red'}}>*</span>
-                </label>
-
+                <label style={{color: '#ccc', display: 'block', marginBottom: '8px', fontSize: '0.9rem'}}>Identificação</label>
+                
                 {autoUser ? (
                     // MODO AUTOMÁTICO
                     <div style={{
@@ -270,7 +246,7 @@ export function MiniAppCheckout() {
                                 {autoUser.first_name}
                             </p>
                             <p style={{color: '#4ade80', fontSize: '0.75rem', margin: 0}}>
-                                Conta Telegram Identificada ✅
+                                Telegram Conectado ✅
                             </p>
                         </div>
                     </div>
@@ -288,7 +264,7 @@ export function MiniAppCheckout() {
                             }}
                         />
                         <p style={{fontSize: '0.75rem', color: '#888', marginTop: '5px'}}>
-                            ⚠️ Digite seu <b>@usuario</b> do Telegram corretamente para receber o link.
+                            *Não detectamos seu Telegram. Digite seu usuário para receber o acesso.
                         </p>
                     </div>
                 )}
