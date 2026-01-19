@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { planService, orderBumpService } from '../../services/api';
 import Swal from 'sweetalert2';
-import '../../assets/styles/CheckoutPage.css';
+import '../../assets/styles/CheckoutPage-v1.css'; // O CSS que definimos anteriormente
 
 // --- ÍCONES ---
 const CheckIcon = () => (
@@ -39,7 +39,6 @@ export function MiniAppCheckout() {
 
   useEffect(() => {
     carregarDados();
-    // Scroll para o topo ao carregar
     window.scrollTo(0, 0);
   }, [botId]);
 
@@ -97,9 +96,17 @@ export function MiniAppCheckout() {
 
   return (
     <div className="checkout-page-container">
-      {/* Imagens de fundo (grids) - Certifique-se de ter essas imagens na pasta public/images ou remova se preferir apenas CSS */}
-      <img src="/images/left-grid.png" alt="" className="bg-grid-left" onError={(e) => e.target.style.display='none'} />
-      <img src="/images/right-grid.png" alt="" className="bg-grid-right" onError={(e) => e.target.style.display='none'} />
+      {/* IMAGENS DE FUNDO (GRIDS) - Links Aplicados */}
+      <img 
+        src="https://f005.backblazeb2.com/file/Bot-TikTok/Cards/left-grid.png" 
+        alt="" 
+        className="bg-grid-left" 
+      />
+      <img 
+        src="https://f005.backblazeb2.com/file/Bot-TikTok/Cards/right-grid.png" 
+        alt="" 
+        className="bg-grid-right" 
+      />
 
       <header className="checkout-header">
         <h1>ASSINE JÁ!</h1>
