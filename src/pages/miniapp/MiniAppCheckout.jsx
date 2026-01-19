@@ -50,7 +50,6 @@ export function MiniAppCheckout() {
     }
 
     // Tenta recuperar do Storage (Memória do Navegador)
-    // Isso é vital se o usuário atualizar a página
     const storedId = localStorage.getItem('telegram_user_id');
     const storedFirst = localStorage.getItem('telegram_user_first_name');
     
@@ -69,7 +68,7 @@ export function MiniAppCheckout() {
         }
     }, 100);
 
-    // Desiste de procurar após 5 segundos para não pesar
+    // Desiste de procurar após 5 segundos
     const timeout = setTimeout(() => clearInterval(interval), 5000);
 
     return () => {
@@ -87,7 +86,7 @@ export function MiniAppCheckout() {
       if (user) {
         console.log("✅ TG Detectado via Radar:", user);
         
-        // 🔥 SALVA NO LOCALSTORAGE IMEDIATAMENTE
+        // 🔥 SALVA NO LOCALSTORAGE
         localStorage.setItem('telegram_user_id', user.id);
         localStorage.setItem('telegram_user_first_name', user.first_name);
         if (user.username) localStorage.setItem('telegram_username', user.username);
@@ -102,6 +101,17 @@ export function MiniAppCheckout() {
         try { tg.expand(); } catch(e){}
       }
     } catch (e) { console.log("Browser mode"); }
+  };
+
+  // 🔥 FUNÇÃO PARA LIMPAR IDENTIDADE ERRADA
+  const resetIdentity = () => {
+      localStorage.removeItem('telegram_user_id');
+      localStorage.removeItem('telegram_user_first_name');
+      localStorage.removeItem('telegram_username');
+      setAutoUser(null);
+      
+      // Força recarregamento para tentar detectar de novo
+      window.location.reload();
   };
 
   const carregarDados = async () => {
@@ -126,7 +136,6 @@ export function MiniAppCheckout() {
     if (!selectedPlan) return;
     
     // VERIFICAÇÃO DE SEGURANÇA
-    // Se não temos usuário no estado E não temos no Storage, bloqueia.
     const storedId = localStorage.getItem('telegram_user_id');
     
     if (!autoUser && !storedId) {
@@ -222,26 +231,46 @@ export function MiniAppCheckout() {
               </div>
             )}
 
-            {/* ÁREA DE IDENTIFICAÇÃO AUTOMÁTICA (SEM INPUT) */}
+            {/* ÁREA DE IDENTIFICAÇÃO AUTOMÁTICA */}
             <div style={{margin: '25px 0'}}>
                 <div style={{
-                    background: 'rgba(34, 197, 94, 0.1)', 
-                    border: '1px solid #22c55e', 
+                    background: autoUser ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
+                    border: autoUser ? '1px solid #22c55e' : '1px solid #444', 
                     padding: '12px 15px', 
-                    borderRadius: '8px',
-                    display: 'flex', alignItems: 'center', gap: '12px'
+                    borderRadius: '8px', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                 }}>
-                    <div style={{background: '#22c55e', width: 36, height: 36, borderRadius: '50%', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                        <CheckIcon />
+                    <div style={{display:'flex', alignItems:'center', gap: '12px'}}>
+                        <div style={{
+                            background: autoUser ? '#22c55e' : '#666', 
+                            width: 36, height: 36, borderRadius: '50%', 
+                            display:'flex', alignItems:'center', justifyContent:'center'
+                        }}>
+                            {autoUser ? <CheckIcon /> : <span style={{color:'#fff', fontSize:'12px'}}>?</span>}
+                        </div>
+                        <div>
+                            <p style={{color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '0.95rem'}}>
+                                {autoUser ? autoUser.first_name : "Identificando..."}
+                            </p>
+                            <p style={{color: autoUser ? '#4ade80' : '#888', fontSize: '0.75rem', margin: 0}}>
+                                {autoUser ? "Conta Telegram Conectada ✅" : "Aguardando..."}
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <p style={{color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '0.95rem'}}>
-                            {autoUser ? autoUser.first_name : "Identificando..."}
-                        </p>
-                        <p style={{color: '#4ade80', fontSize: '0.75rem', margin: 0}}>
-                            {autoUser ? "Conta Telegram Conectada ✅" : "Aguardando detecção..."}
-                        </p>
-                    </div>
+                    
+                    {/* BOTÃO DE SAIR / TROCAR CONTA */}
+                    {autoUser && (
+                        <button 
+                            type="button" 
+                            onClick={resetIdentity}
+                            style={{
+                                background: 'transparent', border: 'none', color: '#ff4444', 
+                                fontSize: '0.75rem', textDecoration: 'underline', cursor: 'pointer'
+                            }}
+                        >
+                            Não é você?
+                        </button>
+                    )}
                 </div>
             </div>
 
