@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useBot } from '../../context/BotContext';
-import { remarketingService, planService } from '../../services/api';
-import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, RotateCcw, Edit, Play, Trash2, ChevronLeft, ChevronRight, Zap, Loader2 } from 'lucide-react';
-import { Button } from '../../components/Button';
-import { Card, CardContent } from '../../components/Card';
-import { RichInput } from '../../components/RichInput'; // Componente de Texto Rico
+// CORREÇÃO DOS CAMINHOS (DE ../../ PARA ../)
+import { useBot } from '../context/BotContext';
+import { remarketingService, planService } from '../services/api';
+import { Send, Users, Image, MessageSquare, CheckCircle, AlertTriangle, History, Tag, Clock, RotateCcw, Edit, Play, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Button } from '../components/Button';
+import { Card, CardContent } from '../components/Card';
+import { RichInput } from '../components/RichInput';
 import Swal from 'sweetalert2';
+// O CSS geralmente fica na mesma pasta, então ./ funciona
 import './Remarketing.css';
 
 export function Remarketing() {
