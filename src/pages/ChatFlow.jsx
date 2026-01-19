@@ -296,10 +296,15 @@ export function ChatFlow() {
             </div>
 
             <div className="form-grid">
+              {/* 🔥 CORREÇÃO: RichInput atualiza o estado corretamente */}
               <RichInput 
                 label="Texto da Mensagem" 
                 value={flow.msg_boas_vindas}
-                onChange={val => setFlow({...flow, msg_boas_vindas: val})}
+                onChange={val => {
+                    // Garante que é uma string antes de setar
+                    const textValue = typeof val === 'object' ? val.target.value : val;
+                    setFlow({...flow, msg_boas_vindas: textValue});
+                }}
               />
 
               <Input 
@@ -418,10 +423,14 @@ export function ChatFlow() {
                     </div>
 
                     <div className="form-grid">
+                      {/* 🔥 CORREÇÃO: RichInput da Oferta */}
                       <RichInput 
                         label="Texto da Oferta" 
                         value={flow.msg_2_texto}
-                        onChange={val => setFlow({...flow, msg_2_texto: val})}
+                        onChange={val => {
+                            const textValue = typeof val === 'object' ? val.target.value : val;
+                            setFlow({...flow, msg_2_texto: textValue});
+                        }}
                       />
                       
                       <Input 
@@ -459,10 +468,14 @@ export function ChatFlow() {
                 <h2>{editingStep ? 'Editar Mensagem' : 'Nova Mensagem Intermediária'}</h2>
                 
                 <div className="modal-body">
+                    {/* 🔥 CORREÇÃO: RichInput do Modal */}
                     <RichInput 
                         label="Texto"
                         value={modalData.msg_texto}
-                        onChange={val => setModalData({...modalData, msg_texto: val})}
+                        onChange={val => {
+                            const textValue = typeof val === 'object' ? val.target.value : val;
+                            setModalData({...modalData, msg_texto: textValue});
+                        }}
                     />
                     <Input 
                         label="Mídia URL"
