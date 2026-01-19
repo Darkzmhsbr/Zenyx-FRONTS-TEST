@@ -67,10 +67,16 @@ export function AuthProvider({ children }) {
   // ============================================================
   const logout = () => {
     console.log("🚪 Fazendo logout...");
+    
+    // Limpa estado
     setUser(null);
+    
+    // Limpa localStorage
     localStorage.removeItem('zenyx_admin_user');
     localStorage.removeItem('zenyx_selected_bot');
     localStorage.removeItem('zenyx_theme');
+    
+    // Força reload da página para garantir limpeza total
     window.location.href = '/login';
   };
 
