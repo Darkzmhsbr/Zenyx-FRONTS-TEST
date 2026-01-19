@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { BotProvider } from './context/BotContext';
 import { AuthProvider } from './context/AuthContext';
@@ -19,7 +20,7 @@ import { OrderBump } from './pages/OrderBump';
 import { Profile } from './pages/Profile';
 import { Tracking } from './pages/Tracking';
 
-// 🔥 AQUI ESTÁ A MÁGICA: IMPORTANDO A LOJA REAL
+// 🔥 IMPORTANDO A LOJA REAL
 import { MiniAppHome } from './pages/miniapp/MiniAppHome';
 import { MiniAppCategory } from './pages/miniapp/MiniAppCategory';
 import { MiniAppCheckout } from './pages/miniapp/MiniAppCheckout';
@@ -40,6 +41,40 @@ const PlaceholderPage = ({ title }) => (
 );
 
 function App() {
+  // 🔥 LÓGICA DE CAPTURA GLOBAL DO TELEGRAM (A BASE DO SUCESSO)
+  // Isso garante que o ID seja salvo assim que o Mini App abrir
+  useEffect(() => {
+    // Verifica se está rodando dentro do Telegram
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready(); // Informa que o app carregou
+      
+      try { tg.expand(); } catch (e) {} // Expande para tela cheia
+
+      // Tenta pegar os dados do usuário (initDataUnsafe é seguro dentro do bot)
+      const user = tg.initDataUnsafe?.user;
+      
+      if (user) {
+        console.log("✅ Cliente Telegram Detectado (Global):", user.first_name);
+        
+        // 💾 SALVA NO ARMAZENAMENTO DO NAVEGADOR
+        // Isso permite que o api.js e o Checkout recuperem o ID numérico depois
+        localStorage.setItem('telegram_user_id', user.id);
+        localStorage.setItem('telegram_user_first_name', user.first_name);
+        
+        if (user.username) {
+            localStorage.setItem('telegram_username', user.username);
+        }
+        
+        // Aplica cores do tema do Telegram (Opcional, mas melhora a experiência)
+        try {
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
+        } catch (e) {}
+      }
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <BotProvider>
@@ -49,7 +84,6 @@ function App() {
             <Route path="/logout" element={<Logout />} />
             
             {/* 🔥 ROTAS PÚBLICAS DA LOJA (MINI APP) */}
-            {/* Agora elas apontam para os arquivos reais, não para o Placeholder */}
             <Route path="/loja/:botId" element={<MiniAppHome />} />
             <Route path="/loja/:botId/categoria/:slug" element={<MiniAppCategory />} />
             <Route path="/loja/:botId/checkout" element={<MiniAppCheckout />} />
