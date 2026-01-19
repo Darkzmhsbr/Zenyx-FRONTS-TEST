@@ -41,36 +41,25 @@ const PlaceholderPage = ({ title }) => (
 );
 
 function App() {
-  // 🔥 LÓGICA DE CAPTURA GLOBAL DO TELEGRAM (A BASE DO SUCESSO)
-  // Isso garante que o ID seja salvo assim que o Mini App abrir
+  // 🔥 LÓGICA DO OUTRO PROJETO: Captura Global no App.js
   useEffect(() => {
-    // Verifica se está rodando dentro do Telegram
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
-      tg.ready(); // Informa que o app carregou
-      
-      try { tg.expand(); } catch (e) {} // Expande para tela cheia
+      tg.ready();
+      try { tg.expand(); } catch (e) {}
 
-      // Tenta pegar os dados do usuário (initDataUnsafe é seguro dentro do bot)
       const user = tg.initDataUnsafe?.user;
-      
       if (user) {
-        console.log("✅ Cliente Telegram Detectado (Global):", user.first_name);
+        console.log("✅ Cliente Telegram Detectado:", user.first_name);
         
-        // 💾 SALVA NO ARMAZENAMENTO DO NAVEGADOR
-        // Isso permite que o api.js e o Checkout recuperem o ID numérico depois
+        // Salva os dados no navegador para serem usados no checkout/api
         localStorage.setItem('telegram_user_id', user.id);
         localStorage.setItem('telegram_user_first_name', user.first_name);
+        if (user.username) localStorage.setItem('telegram_username', user.username);
         
-        if (user.username) {
-            localStorage.setItem('telegram_username', user.username);
-        }
-        
-        // Aplica cores do tema do Telegram (Opcional, mas melhora a experiência)
-        try {
-            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
-            document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
-        } catch (e) {}
+        // Aplica cores do tema (Opcional, mas estava no seu projeto de referência)
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
       }
     }
   }, []);
