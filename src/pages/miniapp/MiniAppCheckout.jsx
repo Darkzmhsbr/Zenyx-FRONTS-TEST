@@ -11,7 +11,6 @@ const CheckIcon = () => (
   </svg>
 );
 
-// Ícones de Benefícios (Estilo Outline Red)
 const SecurityIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#E10000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
 );
@@ -37,37 +36,41 @@ export function MiniAppCheckout() {
   const [bump, setBump] = useState(null);
   const [isBumpSelected, setIsBumpSelected] = useState(false);
 
-  // Estado para capturar o usuário (Manual ou Automático)
-  const [telegramUser, setTelegramUser] = useState('');
-  const [autoUser, setAutoUser] = useState(null); // 🔥 Dados automáticos do Telegram
+  // 🔥 IDENTIFICAÇÃO AUTOMÁTICA
+  const [autoUser, setAutoUser] = useState(null);
+  const [manualUser, setManualUser] = useState('');
 
   useEffect(() => {
     carregarDados();
-    verificarTelegram(); // 🕵️‍♂️ Roda a detecção automática
+    verificarTelegram(); // Tenta pegar o ID imediatamente
     window.scrollTo(0, 0);
   }, [botId]);
 
-  // 🔥 A CARTA NA MANGA: Detecta quem é o usuário automaticamente
+  // --- CAPTURA DE DADOS DO TELEGRAM WEB APP ---
   const verificarTelegram = () => {
     try {
+      // Verifica se o objeto do Telegram existe
       if (window.Telegram && window.Telegram.WebApp) {
         const tg = window.Telegram.WebApp;
-        tg.ready();
+        tg.ready(); // Informa que o app carregou
         
-        // Pega os dados do usuário se disponíveis
+        // Pega os dados do usuário (initDataUnsafe é seguro dentro do bot)
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-          const user = tg.initDataUnsafe.user;
+          const u = tg.initDataUnsafe.user;
+          console.log("Usuário detectado:", u);
+          
           setAutoUser({
-            id: user.id, // O ID REAL NUMÉRICO! 💎
-            username: user.username,
-            first_name: user.first_name
+            id: u.id,           // NUMÉRICO (IMPORTANTE!)
+            first_name: u.first_name,
+            username: u.username || "Sem User",
+            is_bot: false
           });
-          // Se identificou, já expande a tela do Telegram
-          tg.expand();
+          
+          tg.expand(); // Expande a tela
         }
       }
     } catch (e) {
-      console.log("Acesso externo (fora do Telegram)", e);
+      console.log("Erro ao detectar Telegram:", e);
     }
   };
 
@@ -80,7 +83,6 @@ export function MiniAppCheckout() {
         
         setPlans(pData);
         if (bData && bData.ativo) setBump(bData);
-        
         if (pData.length > 0) setSelectedPlan(pData[0]);
     } catch (e) {
         console.error(e);
@@ -94,31 +96,30 @@ export function MiniAppCheckout() {
     e.preventDefault();
     if (!selectedPlan) return;
     
-    // 🔥 Validação Inteligente
-    // Se NÃO tem usuário automático E o campo manual está vazio
-    if (!autoUser && (!telegramUser || telegramUser.trim().length < 2)) {
+    // 🔥 Validação: Se não achou automático e não digitou manual
+    if (!autoUser && (!manualUser || manualUser.length < 3)) {
         return Swal.fire({
-            title: 'Identificação Necessária',
-            text: 'Para receber o acesso, informe seu Usuário do Telegram.',
+            title: 'Identificação',
+            text: 'Precisamos saber quem é você para entregar o acesso. Se não estiver aparecendo automático, digite seu @usuario.',
             icon: 'warning',
-            confirmButtonColor: '#E10000',
             background: '#222',
-            color: '#fff'
+            color: '#fff',
+            confirmButtonColor: '#E10000'
         });
     }
 
     let total = parseFloat(selectedPlan.preco_atual);
     if (isBumpSelected && bump) total += parseFloat(bump.preco);
 
-    // Prioriza o dado automático (ID Real) sobre o manual
-    const userDataFinal = autoUser ? {
+    // Prioriza o usuário automático (ID numérico)
+    const finalUserData = autoUser ? {
         id: autoUser.id,
-        username: autoUser.username || "SemUser",
-        name: autoUser.first_name
+        username: autoUser.username,
+        first_name: autoUser.first_name
     } : {
-        id: telegramUser, // Vai como string se for manual
-        username: telegramUser,
-        name: telegramUser
+        id: manualUser, // Vai como string se for manual
+        username: manualUser,
+        first_name: manualUser
     };
 
     navigate(`/loja/${botId}/pagamento`, {
@@ -127,7 +128,7 @@ export function MiniAppCheckout() {
             bump: isBumpSelected ? bump : null, 
             finalPrice: total, 
             botId,
-            userData: userDataFinal // 🔥 Envia o objeto completo
+            userData: finalUserData // Envia o objeto limpo
         }
     });
   };
@@ -141,7 +142,7 @@ export function MiniAppCheckout() {
   if (loading) {
     return (
       <div className="checkout-page-container" style={{display:'flex', justifyContent:'center', alignItems:'center'}}>
-        <p style={{color:'#fff'}}>Carregando ofertas...</p>
+        <p style={{color:'#fff'}}>Carregando...</p>
       </div>
     );
   }
@@ -166,13 +167,8 @@ export function MiniAppCheckout() {
               const { int, dec } = formatPriceParts(plan.preco_atual);
 
               return (
-                <label 
-                  key={plan.id} 
-                  className={`plan-card-label ${isSelected ? 'selected' : ''}`}
-                  onClick={() => setSelectedPlan(plan)}
-                >
+                <label key={plan.id} className={`plan-card-label ${isSelected ? 'selected' : ''}`} onClick={() => setSelectedPlan(plan)}>
                   <input type="radio" name="planId" value={plan.id} checked={isSelected} onChange={() => setSelectedPlan(plan)} className="plan-radio-input"/>
-                  
                   <div className="radio-custom">
                     {isSelected ? (
                        <div style={{background: 'var(--primary-red)', borderRadius: '50%', width: 24, height: 24, display:'flex', alignItems:'center', justifyContent:'center'}}>
@@ -182,12 +178,10 @@ export function MiniAppCheckout() {
                        <div style={{border: '2px solid #ccc', borderRadius: '50%', width: 20, height: 20}}></div>
                     )}
                   </div>
-
                   <div className="plan-info">
                     <div className="plan-name">{plan.nome_exibicao}</div>
                     <div className="plan-desc">{plan.descricao || `${plan.dias_duracao} dias de acesso VIP`}</div>
                   </div>
-
                   <div className="plan-price-box">
                     <div className="price-row">
                       <span className="currency-symbol">R$</span>
@@ -210,50 +204,50 @@ export function MiniAppCheckout() {
               </div>
             )}
 
-            {/* 🔥 IDENTIFICAÇÃO DO USUÁRIO (AUTO OU MANUAL) */}
-            <div style={{margin: '20px 0'}}>
+            {/* ÁREA DE IDENTIFICAÇÃO (Auto ou Manual) */}
+            <div style={{margin: '25px 0'}}>
                 <label style={{color: '#ccc', display: 'block', marginBottom: '8px', fontSize: '0.9rem'}}>
-                    Identificação para Acesso <span style={{color: 'red'}}>*</span>
+                    Identificação para Entrega
                 </label>
 
                 {autoUser ? (
-                    // 🤖 MODO AUTOMÁTICO: Mostra o cartão do usuário detectado
+                    // MODO AUTOMÁTICO (Se detectado pelo Telegram)
                     <div style={{
-                        background: 'rgba(16, 185, 129, 0.1)', 
-                        border: '1px solid #10b981', 
-                        padding: '12px', 
+                        background: 'rgba(34, 197, 94, 0.1)', 
+                        border: '1px solid #22c55e', 
+                        padding: '12px 15px', 
                         borderRadius: '8px',
-                        display: 'flex', alignItems: 'center', gap: '10px'
+                        display: 'flex', alignItems: 'center', gap: '12px'
                     }}>
-                        <div style={{background: '#10b981', width: 32, height: 32, borderRadius: '50%', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                        <div style={{background: '#22c55e', width: 36, height: 36, borderRadius: '50%', display:'flex', alignItems:'center', justifyContent:'center'}}>
                             <CheckIcon />
                         </div>
                         <div>
-                            <p style={{color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '0.9rem'}}>
-                                {autoUser.first_name} {autoUser.username ? `(@${autoUser.username})` : ''}
+                            <p style={{color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '0.95rem'}}>
+                                {autoUser.first_name}
                             </p>
-                            <p style={{color: '#10b981', fontSize: '0.75rem', margin: 0}}>
-                                ✅ Conta do Telegram identificada
+                            <p style={{color: '#4ade80', fontSize: '0.75rem', margin: 0}}>
+                                Conta Telegram Identificada ✅
                             </p>
                         </div>
                     </div>
                 ) : (
-                    // ✍️ MODO MANUAL: Fallback para quem acessa pelo navegador
-                    <>
+                    // MODO MANUAL (Fallback)
+                    <div>
                         <input 
                             type="text" 
-                            placeholder="Seu @usuario ou Número (Ex: (11) 99999-9999)"
-                            value={telegramUser}
-                            onChange={(e) => setTelegramUser(e.target.value)}
+                            placeholder="@seu_usuario ou Nome"
+                            value={manualUser}
+                            onChange={(e) => setManualUser(e.target.value)}
                             style={{
-                                width: '100%', padding: '12px', borderRadius: '8px',
+                                width: '100%', padding: '14px', borderRadius: '8px',
                                 background: '#222', border: '1px solid #444', color: '#fff', fontSize: '1rem'
                             }}
                         />
-                        <p style={{fontSize: '0.75rem', color: '#666', marginTop: '5px'}}>
-                            Informe seu contato do Telegram para receber o link.
+                        <p style={{fontSize: '0.75rem', color: '#777', marginTop: '5px'}}>
+                            *Como não detectamos seu Telegram, informe seu usuário para receber o acesso.
                         </p>
-                    </>
+                    </div>
                 )}
             </div>
 

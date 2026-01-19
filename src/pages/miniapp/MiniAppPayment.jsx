@@ -11,13 +11,13 @@ export function MiniAppPayment() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Dados vindos do Checkout (agora com userData)
+  // Recebe os dados do Checkout (userData tem o ID certo)
   const { plan, bump, finalPrice, userData } = location.state || {};
   
   const [loading, setLoading] = useState(true);
   const [pixData, setPixData] = useState(null);
   const [status, setStatus] = useState('pending');
-  const [timeLeft, setTimeLeft] = useState(600); // 10 min
+  const [timeLeft, setTimeLeft] = useState(600); 
   
   const generatedRef = useRef(false);
   const pollRef = useRef(null);
@@ -33,9 +33,9 @@ export function MiniAppPayment() {
         generatedRef.current = true;
 
         try {
-            // 🔥 [LÓGICA BLINDADA]
-            // Se veio pelo Telegram Automático, userData.id é um NÚMERO (Ex: 123456789)
-            // Se veio Manual, userData.id é uma STRING (Ex: "@usuario")
+            // Se veio do Telegram, userData.id é NÚMERO (Ex: 123456)
+            // Convertemos para String para o JSON, mas o conteúdo é numérico
+            const idFinal = userData?.id ? String(userData.id) : "000000";
             
             const payload = {
                 bot_id: parseInt(botId),
@@ -43,21 +43,21 @@ export function MiniAppPayment() {
                 plano_id: plan.id,
                 plano_nome: plan.nome_exibicao,
                 
-                // Envia o ID real (se houver) ou o texto manual
-                telegram_id: String(userData?.id || "Visitante"), 
+                // 🔥 AQUI ESTÁ A CORREÇÃO:
+                telegram_id: idFinal, 
+                first_name: userData?.first_name || "Visitante",
+                username: userData?.username || "site_visit",
                 
-                first_name: userData?.name || "Visitante Site",
-                username: userData?.username || "site_user",
                 tem_order_bump: !!bump
             };
 
             const res = await axios.post(`${API_URL}/api/pagamento/pix`, payload);
-            console.log("PIX RESPONSE:", res.data);
+            console.log("PIX GERADO:", res.data);
             
             if (res.data) {
                 setPixData(res.data);
             } else {
-                throw new Error("Resposta vazia do servidor");
+                throw new Error("Sem resposta do servidor");
             }
 
         } catch (error) {
@@ -65,7 +65,6 @@ export function MiniAppPayment() {
             Swal.fire({
                 icon: 'error',
                 title: 'Erro ao gerar Pix',
-                text: 'Tente novamente em instantes.',
                 background: '#222', color: '#fff'
             });
         } finally {
@@ -107,8 +106,6 @@ export function MiniAppPayment() {
       if (code && code !== "null") {
           navigator.clipboard.writeText(code);
           Swal.fire({toast:true, position:'top', icon:'success', title:'Copiado!', timer:1500, showConfirmButton:false, background:'#333', color:'#fff'});
-      } else {
-          Swal.fire({toast:true, position:'top', icon:'error', title:'Código indisponível', background:'#333', color:'#fff'});
       }
   };
 
@@ -122,7 +119,7 @@ export function MiniAppPayment() {
       <div className="payment-page-container">
           <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
             <Loader2 className="spin" size={50} color="#10b981"/>
-            <p style={{marginTop: 15, color: '#aaa', fontSize:'0.9rem'}}>Conectando ao banco...</p>
+            <p style={{marginTop: 15, color: '#aaa', fontSize:'0.9rem'}}>Gerando cobrança...</p>
           </div>
       </div>
   );
@@ -133,25 +130,19 @@ export function MiniAppPayment() {
   return (
     <div className="payment-page-container">
       <div className="payment-card">
-        
         {status === 'paid' ? (
              <div className="success-state" style={{padding: '40px 0'}}>
                 <CheckCircle size={80} color="#10b981" style={{marginBottom: 20}} />
                 <h2 style={{color: '#10b981', marginBottom: 10}}>Pagamento Aprovado!</h2>
-                <p style={{color: '#888'}}>Redirecionando para seu acesso...</p>
+                <p style={{color: '#888'}}>Acesso liberado no Bot.</p>
              </div>
         ) : (
              <>
-                <div className="payment-header">
-                  <h2>Pagamento via PIX</h2>
-                </div>
-
+                <div className="payment-header"><h2>Pagamento via PIX</h2></div>
                 <div className="plan-summary">
                     <span className="plan-label">{plan.nome_exibicao}</span>
                     <span className="plan-value">R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
                 </div>
-
-                {/* QR CODE */}
                 <div className="qr-section">
                     <div className="qr-container">
                         {safeCode.length > 10 ? (
@@ -167,8 +158,6 @@ export function MiniAppPayment() {
                         Expira em: {formatTime(timeLeft)}
                     </div>
                 </div>
-
-                {/* CÓDIGO COPIA E COLA */}
                 <div className="copy-paste-section">
                     <label>Código Pix Copia e Cola:</label>
                     <div className="pix-code-box">{displayCode}</div>
@@ -176,14 +165,11 @@ export function MiniAppPayment() {
                         <Copy size={18} /> COPIAR CÓDIGO PIX
                     </button>
                 </div>
-
                 <div className="waiting-status">
-                    <div className="pulse-dot"></div>
-                    <span>Aguardando confirmação...</span>
+                    <div className="pulse-dot"></div><span>Aguardando confirmação...</span>
                 </div>
              </>
         )}
-
       </div>
     </div>
   );
